@@ -6,11 +6,10 @@ import { useAuth } from '../context/AuthContext';
 export default function Register() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [form, setForm] = useState({
-    name: '', email: '', password: '', gender: '', phone: ''
-  });
-  const [error, setError]   = useState('');
+  const [form, setForm]       = useState({ name: '', email: '', password: '', gender: '', phone: '' });
+  const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -28,6 +27,8 @@ export default function Register() {
       setLoading(false);
     }
   };
+
+  const pwdStrength = form.password.length === 0 ? null : form.password.length >= 6 ? 'good' : 'weak';
 
   return (
     <div style={{
@@ -84,14 +85,44 @@ export default function Register() {
 
             <div className="field">
               <label>Password</label>
-              <input name="password" type="password" value={form.password}
-                onChange={handleChange} placeholder="Min. 6 characters" required />
+              <div style={{ position: 'relative' }}>
+                <input
+                  name="password"
+                  type={showPwd ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder="Min. 6 characters"
+                  required
+                  style={{ paddingRight: 44 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPwd(p => !p)}
+                  style={{
+                    position: 'absolute', right: 12, top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--muted)', fontSize: 16, padding: 0, lineHeight: 1
+                  }}
+                  aria-label={showPwd ? 'Hide password' : 'Show password'}
+                >
+                  {showPwd ? '🙈' : '👁️'}
+                </button>
+              </div>
+              {/* Password strength hint */}
+              {pwdStrength && (
+                <p style={{
+                  fontSize: 12, marginTop: 6,
+                  color: pwdStrength === 'good' ? 'var(--success)' : '#C0392B'
+                }}>
+                  {pwdStrength === 'good' ? '✓ Password looks good' : '✗ Password must be at least 6 characters'}
+                </p>
+              )}
             </div>
 
             <div className="field">
               <label>Gender</label>
-              <select name="gender" value={form.gender}
-                onChange={handleChange} required>
+              <select name="gender" value={form.gender} onChange={handleChange} required>
                 <option value="">Select your gender</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>

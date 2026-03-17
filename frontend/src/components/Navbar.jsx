@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getSocket } from '../hooks/useWebSocket';
@@ -9,6 +9,7 @@ export default function Navbar() {
   const location = useLocation();
   const [notifications, setNotifications] = useState([]);
   const [showDropdown, setShowDropdown]   = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     const socket = getSocket();
@@ -25,6 +26,17 @@ export default function Navbar() {
       socket.off('new_booking');
       socket.off('ride_status_updated');
     };
+  }, []);
+
+  /* Close dropdown when clicking outside */
+  useEffect(() => {
+    const handleClick = e => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
   if (!user) return null;
@@ -86,15 +98,17 @@ export default function Navbar() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
 
         {/* Bell */}
-        <div style={{ position: 'relative' }}>
-          <button onClick={() => { setShowDropdown(!showDropdown); setNotifications([]); }}
+        <div style={{ position: 'relative' }} ref={dropdownRef}>
+          <button
+            onClick={() => setShowDropdown(s => !s)}
             style={{
               background: notifications.length > 0 ? 'var(--coral-pale)' : 'var(--cream)',
               border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)',
               width: 36, height: 36, cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               position: 'relative', fontSize: 16, transition: 'background 0.2s'
-            }}>
+            }}
+          >
             🔔
             {notifications.length > 0 && (
               <span style={{
@@ -113,18 +127,29 @@ export default function Navbar() {
             <div style={{
               position: 'absolute', right: 0, top: 44,
               background: 'var(--white)', borderRadius: 'var(--radius-md)',
-              width: 290, boxShadow: 'var(--shadow-lg)',
+              width: 300, boxShadow: 'var(--shadow-lg)',
               border: '1px solid var(--border)', zIndex: 100, overflow: 'hidden'
             }}>
               <div style={{
                 padding: '12px 16px', borderBottom: '1px solid var(--border)',
-                fontWeight: 500, fontSize: 13
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
               }}>
-                Notifications
+                <span style={{ fontWeight: 500, fontSize: 13 }}>Notifications</span>
+                {notifications.length > 0 && (
+                  <button
+                    onClick={() => setNotifications([])}
+                    style={{
+                      fontSize: 11, color: 'var(--muted)', background: 'none',
+                      border: 'none', cursor: 'pointer', padding: 0
+                    }}
+                  >
+                    Clear all
+                  </button>
+                )}
               </div>
               {notifications.length === 0 ? (
                 <p style={{ padding: 20, color: 'var(--muted)', fontSize: 13, textAlign: 'center' }}>
-                  All caught up!
+                  All caught up! 🎉
                 </p>
               ) : (
                 notifications.map(n => (
@@ -155,7 +180,7 @@ export default function Navbar() {
           </span>
         </div>
 
-        <button onClick={() => { logout(); navigate('/login'); }} style={{
+        <button onClick={() => { logout(); navigate('/'); }} style={{
           padding: '6px 14px', background: 'var(--cream-dark)',
           border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)',
           fontSize: 12, fontWeight: 500, cursor: 'pointer', color: 'var(--muted)',

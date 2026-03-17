@@ -4,6 +4,82 @@ import api from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import { getSocket } from '../hooks/useWebSocket';
 
+const STATUS_STEPS = ['open', 'full', 'in_progress', 'completed'];
+const STATUS_LABELS = {
+  open:        'Open',
+  full:        'Full',
+  in_progress: 'In Progress',
+  completed:   'Completed',
+  cancelled:   'Cancelled',
+};
+
+function StatusTimeline({ status }) {
+  if (status === 'cancelled') {
+    return (
+      <div style={{
+        background: '#FEE2E2', borderRadius: 'var(--radius-sm)',
+        padding: '10px 14px', fontSize: 13, color: '#991B1B',
+        fontWeight: 500, textAlign: 'center', marginBottom: 20
+      }}>
+        🚫 This ride has been cancelled
+      </div>
+    );
+  }
+  const currentIdx = STATUS_STEPS.indexOf(status);
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <p style={{
+        fontSize: 11, color: 'var(--muted)', fontWeight: 500,
+        textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12
+      }}>Ride Progress</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+        {STATUS_STEPS.map((step, i) => {
+          const done    = i <= currentIdx;
+          const current = i === currentIdx;
+          return (
+            <div key={step} style={{ display: 'flex', alignItems: 'center', flex: i < STATUS_STEPS.length - 1 ? 1 : 'none' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center', fontSize: 12,
+                  background: done ? 'var(--coral)' : 'var(--cream-dark)',
+                  color: done ? 'white' : 'var(--muted)',
+                  fontWeight: 700,
+                  boxShadow: current ? '0 0 0 3px rgba(204,120,92,0.25)' : 'none',
+                  transition: 'all 0.3s'
+                }}>
+                  {done && !current ? '✓' : i + 1}
+                </div>
+                <span style={{
+                  fontSize: 10, color: done ? 'var(--coral-dark)' : 'var(--muted)',
+                  fontWeight: current ? 600 : 400, whiteSpace: 'nowrap'
+                }}>
+                  {STATUS_LABELS[step]}
+                </span>
+              </div>
+              {i < STATUS_STEPS.length - 1 && (
+                <div style={{
+                  flex: 1, height: 2, marginBottom: 20,
+                  background: i < currentIdx ? 'var(--coral)' : 'var(--cream-dark)',
+                  transition: 'background 0.3s'
+                }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <div style={{ textAlign: 'center', padding: 80 }}>
+      <div className="spinner" />
+    </div>
+  );
+}
+
 export default function RideDetail() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -54,17 +130,13 @@ export default function RideDetail() {
     try {
       const res = await api.patch(`/rides/${id}/status`, { status });
       setRide(res.data.ride);
-      setMessage(`Ride marked as ${status.replace('_', ' ')}`);
+      setMessage(`Ride marked as ${STATUS_LABELS[status] || status}`);
     } catch (err) {
       setError(err.response?.data?.message || 'Update failed');
     }
   };
 
-  if (loading) return (
-    <div style={{ textAlign: 'center', padding: 80, color: 'var(--muted)' }}>
-      Loading ride details...
-    </div>
-  );
+  if (loading) return <Spinner />;
 
   if (!ride) return (
     <div style={{ textAlign: 'center', padding: 80 }}>
@@ -82,12 +154,12 @@ export default function RideDetail() {
   return (
     <div className="page-wrapper" style={{ maxWidth: 560 }}>
 
-      <button onClick={() => navigate('/search')} style={{
+      <button onClick={() => navigate(-1)} style={{
         background: 'none', border: 'none', cursor: 'pointer',
         color: 'var(--muted)', fontSize: 13, display: 'flex',
         alignItems: 'center', gap: 4, padding: 0, marginBottom: 20
       }}>
-        ← Back to Search
+        ← Back
       </button>
 
       <div className="card">
@@ -114,6 +186,9 @@ export default function RideDetail() {
         </div>
 
         <hr className="divider" />
+
+        {/* Status timeline */}
+        <StatusTimeline status={ride.status} />
 
         {/* Details grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 20 }}>

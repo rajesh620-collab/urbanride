@@ -3,15 +3,31 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
 import { getSocket } from '../hooks/useWebSocket';
 
+function RideCardSkeleton() {
+  return (
+    <div style={{
+      background: 'var(--white)', border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-md)', padding: 20, marginBottom: 12
+    }}>
+      {[['70%', '30%'], ['50%', '20%']].map(([w1, w2], i) => (
+        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: i === 0 ? 10 : 0 }}>
+          <div className="skeleton" style={{ width: w1, height: 16, borderRadius: 6 }} />
+          <div className="skeleton" style={{ width: w2, height: 16, borderRadius: 6 }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function SearchRide() {
   const navigate = useNavigate();
-  const [landmarks, setLandmarks]   = useState([]);
-  const [filters, setFilters]       = useState({ source: '', destination: '', time: '', femaleOnly: false });
-  const [rides, setRides]           = useState([]);
-  const [searched, setSearched]     = useState(false);
-  const [loading, setLoading]       = useState(false);
+  const [landmarks, setLandmarks]       = useState([]);
+  const [filters, setFilters]           = useState({ source: '', destination: '', time: '', femaleOnly: false });
+  const [rides, setRides]               = useState([]);
+  const [searched, setSearched]         = useState(false);
+  const [loading, setLoading]           = useState(false);
   const [pendingSaved, setPendingSaved] = useState(false);
-  const [liveAlert, setLiveAlert]   = useState(null);
+  const [liveAlert, setLiveAlert]       = useState(null);
 
   useEffect(() => {
     api.get('/landmarks').then(res => setLandmarks(res.data.landmarks));
@@ -42,10 +58,11 @@ export default function SearchRide() {
       if (filters.time)        params.time        = filters.time;
       if (filters.femaleOnly)  params.femaleOnly  = 'true';
 
-      const res = await api.get("/landmarks");
-setLandmarks(res.data.landmarks);
+      const res = await api.get('/rides', { params });
+      const foundRides = res.data.rides || [];
+      setRides(foundRides);
 
-      if (res.data.rides.length === 0 && filters.source && filters.destination) {
+      if (foundRides.length === 0 && filters.source && filters.destination) {
         try {
           await api.post('/pending', {
             sourceLandmark:      filters.source,
@@ -54,7 +71,7 @@ setLandmarks(res.data.landmarks);
             femaleOnly:          filters.femaleOnly
           });
           setPendingSaved(true);
-        } catch {}
+        } catch { /* silent */ }
       }
     } catch (err) {
       console.error(err);
@@ -90,7 +107,7 @@ setLandmarks(res.data.landmarks);
             </p>
           </div>
           <button className="btn-outline" style={{ borderColor: '#4A7C59', color: '#4A7C59' }}
-            onClick={() => { setRides(liveAlert.rides); setSearched(true); setLiveAlert(null); }}>
+            onClick={() => { setRides(liveAlert.rides || []); setSearched(true); setLiveAlert(null); }}>
             View
           </button>
         </div>
@@ -104,22 +121,18 @@ setLandmarks(res.data.landmarks);
               <label>From</label>
               <select name="source" value={filters.source} onChange={handleChange}>
                 <option value="">Any source</option>
-                {landmarks && landmarks.map((landmark) => (
-  <option key={landmark._id} value={landmark.name}>
-    {landmark.name}
-  </option>
-))}
+                {landmarks && landmarks.map(lm => (
+                  <option key={lm._id} value={lm.name}>{lm.name}</option>
+                ))}
               </select>
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
               <label>To</label>
               <select name="destination" value={filters.destination} onChange={handleChange}>
                 <option value="">Any destination</option>
-                {landmarks && landmarks.map((landmark) => (
-  <option key={landmark._id} value={landmark.name}>
-    {landmark.name}
-  </option>
-))}
+                {landmarks && landmarks.map(lm => (
+                  <option key={lm._id} value={lm.name}>{lm.name}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -143,6 +156,9 @@ setLandmarks(res.data.landmarks);
         </form>
       </div>
 
+      {/* Loading skeletons */}
+      {loading && [1, 2, 3].map(i => <RideCardSkeleton key={i} />)}
+
       {/* No results */}
       {searched && !loading && rides.length === 0 && (
         <div style={{
@@ -165,7 +181,7 @@ setLandmarks(res.data.landmarks);
       )}
 
       {/* Results */}
-      {rides.length > 0 && (
+      {!loading && rides.length > 0 && (
         <div>
           <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 14 }}>
             {rides.length} ride{rides.length > 1 ? 's' : ''} available
@@ -174,16 +190,16 @@ setLandmarks(res.data.landmarks);
             <div key={ride._id} style={{
               background: 'var(--white)', border: '1px solid var(--border)',
               borderRadius: 'var(--radius-md)', padding: 20, marginBottom: 12,
-              transition: 'box-shadow 0.2s', cursor: 'pointer'
+              transition: 'box-shadow 0.2s, transform 0.2s', cursor: 'pointer'
             }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
-              onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
               onClick={() => navigate(`/ride/${ride._id}`)}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div>
-                  <span style={{ fontWeight: 500, fontSize: 15 }}>{ride.sourceLandmark}</span>
-                  <span style={{ color: 'var(--coral)', margin: '0 8px' }}>→</span>
-                  <span style={{ fontWeight: 500, fontSize: 15 }}>{ride.destinationLandmark}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontWeight: 600, fontSize: 15 }}>{ride.sourceLandmark}</span>
+                  <span style={{ color: 'var(--coral)', fontSize: 18 }}>→</span>
+                  <span style={{ fontWeight: 600, fontSize: 15 }}>{ride.destinationLandmark}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {ride.femaleOnly && <span className="badge-female">Female only</span>}
@@ -191,14 +207,12 @@ setLandmarks(res.data.landmarks);
                 </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-                  <span>{new Date(ride.departureTime).toLocaleString()}</span>
-                  <span style={{ margin: '0 10px', color: 'var(--border)' }}>|</span>
-                  <span>{ride.availableSeats} seat{ride.availableSeats !== 1 ? 's' : ''} left</span>
-                  <span style={{ margin: '0 10px', color: 'var(--border)' }}>|</span>
-                  <span>by {ride.driverName}</span>
+                <div style={{ fontSize: 13, color: 'var(--muted)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <span>🕐 {new Date(ride.departureTime).toLocaleString()}</span>
+                  <span>💺 {ride.availableSeats} seat{ride.availableSeats !== 1 ? 's' : ''} left</span>
+                  <span>👤 {ride.driverName}</span>
                 </div>
-                <span style={{ fontWeight: 600, color: 'var(--coral)', fontSize: 15 }}>
+                <span style={{ fontWeight: 700, color: 'var(--coral)', fontSize: 16, whiteSpace: 'nowrap', marginLeft: 12 }}>
                   ₹{ride.farePerSeat}
                 </span>
               </div>

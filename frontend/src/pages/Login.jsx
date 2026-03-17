@@ -6,9 +6,10 @@ import { useAuth } from '../context/AuthContext';
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [form, setForm]     = useState({ email: '', password: '' });
-  const [error, setError]   = useState('');
+  const [form, setForm]       = useState({ email: '', password: '' });
+  const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -72,8 +73,30 @@ export default function Login() {
             </div>
             <div className="field">
               <label>Password</label>
-              <input name="password" type="password" value={form.password}
-                onChange={handleChange} placeholder="••••••••" required />
+              <div style={{ position: 'relative' }}>
+                <input
+                  name="password"
+                  type={showPwd ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  required
+                  style={{ paddingRight: 44 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPwd(p => !p)}
+                  style={{
+                    position: 'absolute', right: 12, top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--muted)', fontSize: 16, padding: 0, lineHeight: 1
+                  }}
+                  aria-label={showPwd ? 'Hide password' : 'Show password'}
+                >
+                  {showPwd ? '🙈' : '👁️'}
+                </button>
+              </div>
             </div>
             <button type="submit" className="btn-primary" disabled={loading}
               style={{ marginTop: 8 }}>

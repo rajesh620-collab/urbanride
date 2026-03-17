@@ -12,6 +12,7 @@ export default function PostRide() {
     departureTime: '', totalSeats: 1, femaleOnly: false, farePerSeat: ''
   });
   const [error, setError]     = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -31,10 +32,10 @@ export default function PostRide() {
     setLoading(true);
     try {
       await api.post('/rides', form);
-      navigate('/my-rides');
+      setSuccess('Ride posted successfully! Redirecting...');
+      setTimeout(() => navigate('/my-rides'), 1800);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to post ride');
-    } finally {
       setLoading(false);
     }
   };
@@ -44,7 +45,7 @@ export default function PostRide() {
 
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <button onClick={() => navigate('/search')} style={{
+        <button onClick={() => navigate(-1)} style={{
           background: 'none', border: 'none', cursor: 'pointer',
           color: 'var(--muted)', fontSize: 13, display: 'flex',
           alignItems: 'center', gap: 4, padding: 0, marginBottom: 16
@@ -58,7 +59,8 @@ export default function PostRide() {
       </div>
 
       <div className="card">
-        {error && <div className="alert-error">{error}</div>}
+        {error   && <div className="alert-error">{error}</div>}
+        {success && <div className="alert-success">{success}</div>}
 
         <form onSubmit={handleSubmit}>
 
@@ -108,7 +110,7 @@ export default function PostRide() {
           </p>
 
           <div className="field">
-            <label>Departure Date & Time</label>
+            <label>Departure Date &amp; Time</label>
             <input type="datetime-local" name="departureTime"
               value={form.departureTime} onChange={handleChange} required />
           </div>
@@ -160,7 +162,7 @@ export default function PostRide() {
           )}
 
           <button type="submit" className="btn-primary"
-            disabled={loading} style={{ marginTop: 24 }}>
+            disabled={loading || !!success} style={{ marginTop: 24 }}>
             {loading ? 'Posting ride...' : 'Post Ride'}
           </button>
         </form>

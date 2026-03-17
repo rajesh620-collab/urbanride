@@ -2,12 +2,20 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
 
+function Spinner() {
+  return (
+    <div style={{ textAlign: 'center', padding: 80 }}>
+      <div className="spinner" />
+    </div>
+  );
+}
+
 export default function MyRides() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab]   = useState('posted');
+  const [activeTab, setActiveTab]     = useState('posted');
   const [postedRides, setPostedRides] = useState([]);
   const [bookedRides, setBookedRides] = useState([]);
-  const [loading, setLoading]       = useState(true);
+  const [loading, setLoading]         = useState(true);
 
   useEffect(() => {
     Promise.all([api.get('/rides/my'), api.get('/bookings/my')])
@@ -18,11 +26,14 @@ export default function MyRides() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return (
-    <div style={{ textAlign: 'center', padding: 80, color: 'var(--muted)' }}>
-      Loading your rides...
-    </div>
-  );
+  if (loading) return <Spinner />;
+
+  /* badge colour lookup for booking statuses */
+  const bookingBadge = {
+    confirmed: { bg: '#EDF6F0', color: '#166534' },
+    pending:   { bg: '#FEF3C7', color: '#92400E' },
+    cancelled: { bg: '#FEE2E2', color: '#991B1B' },
+  };
 
   return (
     <div className="page-wrapper" style={{ maxWidth: 640 }}>
@@ -150,8 +161,8 @@ export default function MyRides() {
                   </div>
                   <span style={{
                     fontSize: 11, fontWeight: 500, padding: '3px 10px', borderRadius: 20,
-                    background: b.status === 'confirmed' ? '#EDF6F0' : '#FEE2E2',
-                    color: b.status === 'confirmed' ? '#166534' : '#991B1B'
+                    background: (bookingBadge[b.status] || bookingBadge.cancelled).bg,
+                    color:      (bookingBadge[b.status] || bookingBadge.cancelled).color
                   }}>
                     {b.status}
                   </span>
