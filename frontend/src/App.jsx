@@ -10,21 +10,6 @@ import RideDetail from './pages/Ridedetail';
 import MyRides from './pages/MyRides';
 import LandingPage from './pages/LandingPage';
 
-// Show nothing while the auth token is being validated
-function AuthGate({ children }) {
-  const { loading } = useAuth();
-  if (loading) return (
-    <div style={{
-      minHeight: '100vh', display: 'flex',
-      alignItems: 'center', justifyContent: 'center',
-      background: 'var(--cream)'
-    }}>
-      <div className="spinner" />
-    </div>
-  );
-  return children;
-}
-
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" replace />;
@@ -39,7 +24,7 @@ function AppContent() {
   useWebSocket();
 
   return (
-    <AuthGate>
+    <>
       <Navbar />
       <Routes>
         <Route path="/"          element={<GuestRoute><LandingPage /></GuestRoute>} />
@@ -51,7 +36,7 @@ function AppContent() {
         <Route path="/my-rides"  element={<ProtectedRoute><MyRides /></ProtectedRoute>} />
         <Route path="*"          element={<Navigate to="/" replace />} />
       </Routes>
-    </AuthGate>
+    </>
   );
 }
 

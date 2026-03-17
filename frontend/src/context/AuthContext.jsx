@@ -1,34 +1,33 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import api from "../api/axiosInstance";
+import { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
-  const [user, setUser]         = useState(null);
-  const [loading, setLoading]   = useState(true);   // wait for token check
+/* Decode JWT payload and check expiry without hitting the backend */
+function isTokenValid(token) {
+  if (!token) return false;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    // exp is in seconds, Date.now() in ms
+    return payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+}
 
-  useEffect(() => {
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(() => {
     const saved = localStorage.getItem("user");
     const token = localStorage.getItem("token");
 
-    if (!saved || !token) {
-      setLoading(false);
-      return;
+    if (saved && isTokenValid(token)) {
+      return JSON.parse(saved);
     }
 
-    // Verify token is still valid with a lightweight profile call
-    api.get("/auth/me")
-      .then(() => {
-        setUser(JSON.parse(saved));
-      })
-      .catch(() => {
-        // Token expired / invalid — clear everything
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        setUser(null);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    // Clear stale/invalid data
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    return null;
+  });
 
   const login = (userData, token) => {
     localStorage.setItem("token", token);
@@ -43,7 +42,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
