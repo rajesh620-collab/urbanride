@@ -792,3 +792,35 @@ html { scroll-behavior: smooth; }
     margin-bottom: 0;
   }
 }
+
+/* ═══════════════════════════════════════════ */
+/* ── TESTIMONIAL INFINITE CAROUSEL        ── */
+/* ═══════════════════════════════════════════ */
+
+.testimonial-carousel {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+
+.testimonial-track {
+  display: flex;
+  gap: 20px;
+  animation: scrollTestimonials 40s linear infinite;
+  width: max-content;
+}
+
+.testimonial-carousel:hover .testimonial-track {
+  animation-play-state: paused;
+}
+
+.testimonial-slide {
+  flex-shrink: 0;
+}
+
+@keyframes scrollTestimonials {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}

@@ -3,14 +3,31 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { RevealOnScroll } from '../hooks/useScrollReveal.jsx';
 
+/* ─── FEATURE SVG ICONS ─── */
+const FeatureIcon = ({ type, color }) => {
+  const icons = {
+    matching: <><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="none" stroke="white" strokeWidth="1.5"/><circle cx="12" cy="9" r="2.5" fill="white"/><path d="M2 20h4l1.5-3L10 22l2-5 2 5 2.5-5L18 20h4" stroke="white" strokeWidth="1.2" fill="none" opacity="0.7"/></>,
+    speed: <><circle cx="12" cy="12" r="9" fill="none" stroke="white" strokeWidth="1.5"/><path d="M12 7v5l3 3" stroke="white" strokeWidth="1.8" strokeLinecap="round"/><path d="M5 4l2 2M19 4l-2 2" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.6"/></>,
+    community: <><circle cx="9" cy="7" r="3" fill="none" stroke="white" strokeWidth="1.5"/><circle cx="15" cy="7" r="3" fill="none" stroke="white" strokeWidth="1.5"/><path d="M3 21c0-4 2.7-6 6-6s6 2 6 6" fill="none" stroke="white" strokeWidth="1.5"/><path d="M15 15c3.3 0 6 2 6 6" fill="none" stroke="white" strokeWidth="1.5" opacity="0.7"/></>,
+    savings: <><circle cx="12" cy="12" r="8" fill="none" stroke="white" strokeWidth="1.5"/><path d="M12 8v8M9 11h6M9 14h6" stroke="white" strokeWidth="1.5" strokeLinecap="round"/><path d="M4 18l3-4 3 2 4-5 4 3" stroke="white" strokeWidth="1" fill="none" opacity="0.5"/></>,
+    green: <><path d="M17 8C12 8 8 12 8 17" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round"/><path d="M8 17c0-5 4-9 9-9" fill="none" stroke="white" strokeWidth="1.5"/><path d="M12 12c-2 2-3 4-3 6" stroke="white" strokeWidth="1" opacity="0.6"/><circle cx="6" cy="6" r="2" fill="none" stroke="white" strokeWidth="1" opacity="0.4"/><path d="M4 20L20 4" stroke="white" strokeWidth="0.5" opacity="0.2"/></>,
+    shield: <><path d="M12 3l7 4v5c0 5.25-3 8.25-7 10-4-1.75-7-4.75-7-10V7l7-4z" fill="none" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/><path d="M9 12l2 2 4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></>,
+  };
+  return (
+    <div style={{ width: 64, height: 64, borderRadius: 16, background: `linear-gradient(135deg, ${color}, ${color}CC)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 4px 16px ${color}33`, marginBottom: 18 }}>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">{icons[type]}</svg>
+    </div>
+  );
+};
+
 /* ─── DATA ─── */
 const features = [
-  { icon: '📍', title: 'Smart Matching', desc: 'Landmark-based algorithm finds best ride matches based on route and preferences.', color: '#6366F1' },
-  { icon: '⏱', title: 'Rides in Minutes', desc: 'Find and book a pooled ride within minutes. Real-time availability.', color: '#EC4899' },
-  { icon: '👥', title: 'Community First', desc: 'Build connections with daily commuters heading your way.', color: '#14B8A6' },
-  { icon: '💰', title: 'Save up to 60%', desc: 'Split fuel costs with co-riders. Every shared ride saves money.', color: '#F59E0B' },
-  { icon: '🌿', title: 'Go Green', desc: 'Fewer cars = reduced emissions. Eco-friendly choice every ride.', color: '#22C55E' },
-  { icon: '🛡', title: 'Verified & Safe', desc: 'Verified riders, female-only options, real-time smart notifications.', color: '#8B5CF6' },
+  { type: 'matching', title: 'Smart Matching', desc: 'Landmark-based algorithm finds best ride matches based on route, time, and preferences automatically.', color: '#6366F1', tagline: 'AI-Powered' },
+  { type: 'speed', title: 'Rides in Minutes', desc: 'Find and book a pooled ride within minutes. Real-time availability at your fingertips.', color: '#EC4899', tagline: 'Lightning Fast' },
+  { type: 'community', title: 'Community First', desc: 'Build connections with daily commuters heading your way. Ride with trusted people.', color: '#14B8A6', tagline: 'Social Network' },
+  { type: 'savings', title: 'Save up to 60%', desc: 'Split fuel costs with co-riders. Every shared ride means money saved for everyone.', color: '#F59E0B', tagline: 'Cost Effective' },
+  { type: 'green', title: 'Go Green', desc: 'Fewer cars on the road = reduced carbon emissions. Eco-friendly choice every ride.', color: '#22C55E', tagline: 'Eco Friendly' },
+  { type: 'shield', title: 'Verified & Safe', desc: 'Every rider is verified. Female-only ride options, real-time tracking, and smart alerts.', color: '#8B5CF6', tagline: 'Trust & Safety' },
 ];
 
 const steps = [
@@ -24,6 +41,10 @@ const testimonials = [
   { name: 'Rahul Mehra', role: 'Student', text: 'As a college student, this app is a lifesaver. I\'ve made great friends through shared rides!', rating: 5, avatar: 'RM' },
   { name: 'Anita Desai', role: 'Working Professional', text: 'The female-only ride option makes me feel so much safer. Brilliant feature!', rating: 5, avatar: 'AD' },
   { name: 'Vikram Patel', role: 'Freelancer', text: 'I offer rides when heading to meetings. It covers my fuel costs completely!', rating: 4, avatar: 'VP' },
+  { name: 'Sneha Reddy', role: 'IT Professional', text: 'The real-time tracking gives me peace of mind. My family can see when I reach safely!', rating: 5, avatar: 'SR' },
+  { name: 'Arjun Kapoor', role: 'Startup Founder', text: 'I use UrbanRide daily to reduce my carbon footprint. Great initiative and great execution!', rating: 5, avatar: 'AK' },
+  { name: 'Meera Joshi', role: 'Teacher', text: 'Affordable, safe, and reliable. The landmark-based matching is incredibly smart.', rating: 5, avatar: 'MJ' },
+  { name: 'Karthik Nair', role: 'Delivery Partner', text: 'Split the fuel cost and meet interesting people during my daily commute. Win-win!', rating: 4, avatar: 'KN' },
 ];
 
 const faqs = [
@@ -108,17 +129,11 @@ export default function LandingPage() {
   const { dark, toggle } = useTheme();
   const [openFaq, setOpenFaq] = useState(null);
   const [scrollY, setScrollY] = useState(0);
-  const [activeTestimonial, setActiveTestimonial] = useState(0);
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => setActiveTestimonial(i => (i + 1) % testimonials.length), 5000);
-    return () => clearInterval(timer);
   }, []);
 
   const parallax = (factor) => ({ transform: `translateY(${scrollY * factor}px)` });
@@ -285,16 +300,26 @@ export default function LandingPage() {
       </section>
 
       {/* ══════ STATS BAR ══════ */}
-      <section style={{ background: dark ? '#171717' : '#1C1917', padding: '48px 48px' }}>
+      <section style={{ background: dark ? 'linear-gradient(135deg, #1A1412 0%, #0F1A18 100%)' : 'linear-gradient(135deg, #1C1917 0%, #0F2623 100%)', padding: '52px 48px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: -60, right: -60, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(204,120,92,0.08) 0%, transparent 70%)' }} />
+        <div style={{ position: 'absolute', bottom: -80, left: -40, width: 250, height: 250, borderRadius: '50%', background: 'radial-gradient(circle, rgba(42,157,143,0.06) 0%, transparent 70%)' }} />
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
           {stats.map((s, i) => (
             <RevealOnScroll key={i} delay={i * 0.1}>
-              <div style={{ textAlign: 'center', padding: 20 }}>
+              <div style={{
+                textAlign: 'center', padding: '24px 16px',
+                background: 'rgba(255,255,255,0.04)', borderRadius: 16,
+                border: '1px solid rgba(255,255,255,0.06)',
+                backdropFilter: 'blur(8px)', transition: 'transform 0.3s, background 0.3s',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+              >
                 <span style={{ fontSize: 28, display: 'block', marginBottom: 8 }}>{s.icon}</span>
                 <p style={{ fontSize: 32, fontWeight: 800, color: 'white', margin: 0 }}>
                   <AnimatedCounter target={s.value} suffix={s.value.includes('+') ? '+' : s.value.includes('★') ? '★' : s.value.includes('Cr') ? 'Cr+' : ''} />
                 </p>
-                <p style={{ fontSize: 13, color: '#999', marginTop: 4 }}>{s.label}</p>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 6 }}>{s.label}</p>
               </div>
             </RevealOnScroll>
           ))}
@@ -320,11 +345,11 @@ export default function LandingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, maxWidth: 1100, margin: '0 auto' }}>
           {features.map((f, i) => (
             <RevealOnScroll key={i} delay={i * 0.08}>
-              <div className="feature-card" style={{ background: 'var(--card-bg)', borderRadius: 20, padding: 28, border: '1px solid var(--feature-border)' }}>
-                <div style={{
-                  width: 52, height: 52, background: `${f.color}15`, borderRadius: 14,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 18,
-                }}>{f.icon}</div>
+              <div className="feature-card" style={{ background: 'var(--card-bg)', borderRadius: 20, padding: 28, border: '1px solid var(--feature-border)', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 18, right: 18, background: `${f.color}18`, borderRadius: 8, padding: '3px 10px' }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: f.color, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{f.tagline}</span>
+                </div>
+                <FeatureIcon type={f.type} color={f.color} />
                 <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 10 }}>{f.title}</h3>
                 <p style={{ fontSize: 14, color: 'var(--text-tertiary)', lineHeight: 1.65 }}>{f.desc}</p>
               </div>
@@ -437,10 +462,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══════ TESTIMONIALS ══════ */}
-      <section id="testimonials" style={{ background: 'var(--section-bg)', padding: '100px 48px' }}>
+      {/* ══════ TESTIMONIALS — INFINITE CAROUSEL ══════ */}
+      <section id="testimonials" style={{ background: 'var(--section-bg)', padding: '100px 0', overflow: 'hidden' }}>
         <RevealOnScroll>
-          <div style={{ textAlign: 'center', marginBottom: 60 }}>
+          <div style={{ textAlign: 'center', marginBottom: 48, padding: '0 48px' }}>
             <div className="section-badge" style={{ background: 'var(--coral-pale)' }}>
               <span style={{ fontSize: 13, color: 'var(--coral)', fontWeight: 600 }}>💬 What Riders Say</span>
             </div>
@@ -450,30 +475,32 @@ export default function LandingPage() {
           </div>
         </RevealOnScroll>
 
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-          {testimonials.map((t, i) => (
-            <RevealOnScroll key={i} delay={i * 0.1}>
-              <div className="testimonial-card" style={{
-                background: 'var(--card-bg)', borderRadius: 20, padding: 24,
-                border: activeTestimonial === i ? '2px solid var(--coral)' : '1px solid var(--feature-border)',
-                transition: 'all 0.4s',
-              }}>
-                <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
-                  {Array.from({ length: 5 }, (_, j) => (
-                    <span key={j} style={{ color: j < t.rating ? '#F59E0B' : 'var(--border)', fontSize: 16 }}>★</span>
-                  ))}
-                </div>
-                <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 20, fontStyle: 'italic' }}>"{t.text}"</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--coral-pale)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: 'var(--coral)' }}>{t.avatar}</div>
-                  <div>
-                    <p style={{ fontWeight: 600, fontSize: 14, margin: 0 }}>{t.name}</p>
-                    <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>{t.role}</p>
+        {/* Infinite scroll track */}
+        <div className="testimonial-carousel">
+          <div className="testimonial-track">
+            {[...testimonials, ...testimonials].map((t, i) => (
+              <div key={i} className="testimonial-slide">
+                <div className="testimonial-card" style={{
+                  background: 'var(--card-bg)', borderRadius: 20, padding: 24,
+                  border: '1px solid var(--feature-border)', minWidth: 300, maxWidth: 300,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--coral-pale)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, color: 'var(--coral)', flexShrink: 0 }}>{t.avatar}</div>
+                    <div>
+                      <p style={{ fontWeight: 600, fontSize: 14, margin: 0 }}>{t.name}</p>
+                      <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>{t.role}</p>
+                    </div>
                   </div>
+                  <div style={{ display: 'flex', gap: 3, marginBottom: 12 }}>
+                    {Array.from({ length: 5 }, (_, j) => (
+                      <span key={j} style={{ color: j < t.rating ? '#F59E0B' : 'var(--border)', fontSize: 14 }}>★</span>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, fontStyle: 'italic', margin: 0 }}>"{t.text}"</p>
                 </div>
               </div>
-            </RevealOnScroll>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
