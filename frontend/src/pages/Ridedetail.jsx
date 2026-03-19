@@ -218,7 +218,7 @@ export default function RideDetail() {
           <div style={{ height: 6, background: 'var(--cream-dark)', borderRadius: 3, overflow: 'hidden' }}>
             <div style={{
               height: '100%', width: `${seatPct}%`,
-              background: seatPct === 100 ? '#dc2626' : 'var(--coral)',
+              background: seatPct === 100 ? 'var(--error)' : 'var(--coral)',
               borderRadius: 3, transition: 'width 0.4s'
             }} />
           </div>
@@ -236,7 +236,7 @@ export default function RideDetail() {
         )}
 
         {!isDriver && ride.status === 'open' && ride.availableSeats === 0 && (
-          <p style={{ textAlign: 'center', color: '#dc2626', fontSize: 14 }}>
+          <p style={{ textAlign: 'center', color: 'var(--error)', fontSize: 14 }}>
             All seats are filled
           </p>
         )}
@@ -260,8 +260,8 @@ export default function RideDetail() {
                 </button>
               )}
               <button onClick={() => updateStatus('cancelled')} style={{
-                padding: '9px 18px', background: '#FEE2E2', color: '#991B1B',
-                border: '1.5px solid #FECACA', borderRadius: 'var(--radius-sm)',
+                padding: '9px 18px', background: 'var(--coral-pale)', color: 'var(--error)',
+                border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)',
                 fontSize: 13, fontWeight: 500, cursor: 'pointer'
               }}>
                 Cancel Ride

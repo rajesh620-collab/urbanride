@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
 
 /* ── Light theme (default) ── */
 :root,
@@ -17,6 +17,15 @@
   --error: #C0392B;
   --card-bg: #FFFFFF;
   --input-bg: #FAF9F7;
+  --hero-bg: linear-gradient(135deg, #FAF6F2 0%, #F5EDE4 50%, #EDF5F3 100%);
+  --section-bg: #FAF6F2;
+  --section-alt-bg: #FFFFFF;
+  --text-secondary: #555555;
+  --text-tertiary: #666666;
+  --text-hint: #888888;
+  --floating-bg: #FFFFFF;
+  --feature-border: #F0E8E0;
+  --stat-divider: #E0D4CC;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 20px;
@@ -31,42 +40,48 @@
   --coral-light: #D4A07E;
   --coral-pale: #3A2A22;
   --coral-dark: #F0A888;
-  --cream: #1A1A1A;
-  --cream-dark: #252525;
+  --cream: #121212;
+  --cream-dark: #1E1E1E;
   --charcoal: #E8E4E0;
   --muted: #9A948F;
-  --border: #333333;
-  --white: #222222;
+  --border: #2E2E2E;
+  --white: #1A1A1A;
   --success: #6ABF7B;
   --error: #E8685A;
-  --card-bg: #252525;
-  --input-bg: #1E1E1E;
+  --card-bg: #1E1E1E;
+  --input-bg: #161616;
+  --hero-bg: linear-gradient(135deg, #1A1816 0%, #1E1A16 50%, #161A18 100%);
+  --section-bg: #161616;
+  --section-alt-bg: #1A1A1A;
+  --text-secondary: #B0AEA8;
+  --text-tertiary: #9A948F;
+  --text-hint: #777;
+  --floating-bg: #252525;
+  --feature-border: #2A2A2A;
+  --stat-divider: #333;
   --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   background: var(--cream);
   color: var(--charcoal);
   min-height: 100vh;
   transition: background 0.3s, color 0.3s;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3 {
-  font-family: 'Playfair Display', serif;
-  font-weight: 500;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
 }
 
 input, select, button {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .page-wrapper {
@@ -89,7 +104,7 @@ input, select, button {
 .field label {
   display: block;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
@@ -110,6 +125,11 @@ input, select, button {
   appearance: none;
 }
 
+.field input::placeholder {
+  color: var(--muted);
+  opacity: 0.6;
+}
+
 .field input:focus,
 .field select:focus {
   border-color: var(--coral);
@@ -125,13 +145,12 @@ input, select, button {
   border: none;
   border-radius: var(--radius-sm);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.02em;
   cursor: pointer;
   transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
   box-shadow: 0 2px 8px rgba(204, 120, 92, 0.3);
 }
-
 .btn-primary:hover {
   background: var(--coral-dark);
   box-shadow: 0 4px 12px rgba(204, 120, 92, 0.35);
@@ -146,7 +165,7 @@ input, select, button {
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
 }
@@ -159,7 +178,7 @@ input, select, button {
   border: 1.5px solid var(--coral);
   border-radius: var(--radius-sm);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -197,7 +216,7 @@ input, select, button {
   background: #FDE8F0;
   color: #9D174D;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   padding: 3px 10px;
   border-radius: 20px;
   letter-spacing: 0.03em;
@@ -209,7 +228,7 @@ input, select, button {
 
 .badge-status {
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   padding: 3px 10px;
   border-radius: 20px;
   letter-spacing: 0.03em;
@@ -240,11 +259,11 @@ input, select, button {
   color: var(--coral);
   cursor: pointer;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
 }
 .link-text:hover { text-decoration: underline; }
 
-/* ── Theme toggle button ── */
+/* ── Theme toggle ── */
 .theme-toggle {
   background: var(--cream-dark);
   border: 1.5px solid var(--border);
@@ -258,9 +277,7 @@ input, select, button {
 .theme-toggle:hover { background: var(--border); }
 
 /* ── Star rating ── */
-.star-rating {
-  display: flex; gap: 4px;
-}
+.star-rating { display: flex; gap: 4px; }
 .star-rating button {
   background: none; border: none; cursor: pointer;
   font-size: 24px; color: var(--border);
@@ -281,7 +298,7 @@ input, select, button {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Skeleton shimmer ── */
+/* ── Skeleton ── */
 .skeleton {
   background: linear-gradient(90deg, var(--cream-dark) 25%, var(--border) 50%, var(--cream-dark) 75%);
   background-size: 200% 100%;
@@ -290,4 +307,20 @@ input, select, button {
 @keyframes shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* ── Landing page animations ── */
+@keyframes floatA {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes floatB {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .page-wrapper { padding: 24px 16px; }
+  .card { padding: 24px; }
 }
