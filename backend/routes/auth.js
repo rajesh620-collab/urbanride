@@ -3,8 +3,9 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const auth = require('../middleware/auth');
+const { ok, created, fail } = require('../utils/response');
 
-// Helper: generate JWT token
 const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, name: user.name, gender: user.gender },
@@ -18,32 +19,35 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password, gender, phone } = req.body;
 
-    // Check if user already exists
-    const existing = await User.findOne({ email });
-    if (existing) {
-      return res.status(400).json({ message: 'Email already registered' });
+    if (!name || !email || !password || !gender) {
+      return fail(res, 400, 'Name, email, password, and gender are required');
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
+    if (password.length < 6) {
+      return fail(res, 400, 'Password must be at least 6 characters');
+    }
 
-    // Create user
+    const existing = await User.findOne({ email });
+    if (existing) return fail(res, 400, 'Email already registered');
+
+    const passwordHash = await bcrypt.hash(password, 10);
     const user = await User.create({ name, email, passwordHash, gender, phone });
 
-    // Return token
     const token = generateToken(user);
-    res.status(201).json({
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        gender: user.gender
+    return created(res, {
+      message: 'Account created successfully',
+      data: {
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          gender: user.gender
+        }
       }
     });
-
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    return fail(res, 500, 'Server error', { error: err.message });
   }
 });
 
@@ -52,32 +56,50 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid email or password' });
-    }
+    if (!user) return fail(res, 400, 'Invalid email or password');
 
-    // Check password
     const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid email or password' });
-    }
+    if (!isMatch) return fail(res, 400, 'Invalid email or password');
 
-    // Return token
     const token = generateToken(user);
-    res.status(200).json({
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        gender: user.gender
+    return ok(res, {
+      message: 'Login successful',
+      data: {
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          gender: user.gender
+        }
       }
     });
-
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    return fail(res, 500, 'Server error', { error: err.message });
+  }
+});
+
+// GET /api/auth/me — verify token & return user profile
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-passwordHash');
+    if (!user) return fail(res, 404, 'User not found');
+
+    return ok(res, {
+      message: 'Authenticated',
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          gender: user.gender,
+          phone: user.phone
+        }
+      }
+    });
+  } catch (err) {
+    return fail(res, 500, 'Server error', { error: err.message });
   }
 });
 

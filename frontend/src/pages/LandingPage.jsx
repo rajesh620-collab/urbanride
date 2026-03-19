@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { dark, toggle } = useTheme();
 
   const features = [
     {
@@ -76,13 +78,13 @@ export default function LandingPage() {
   ];
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#1C1917', overflowX: 'hidden' }}>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", color: 'var(--charcoal)', overflowX: 'hidden' }}>
 
       {/* ── NAVBAR ── */}
       <nav style={{
         position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #F0E8E0',
+        background: dark ? 'rgba(30,30,30,0.95)' : 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid var(--border)',
         padding: '0 48px', height: 64,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between'
       }}>
@@ -105,14 +107,18 @@ export default function LandingPage() {
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button className="theme-toggle" onClick={toggle}
+            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}>
+            {dark ? '☀️' : '🌙'}
+          </button>
           <button onClick={() => navigate('/login')} style={{
             padding: '9px 20px', background: 'transparent',
-            border: '1.5px solid #E0D4CC', borderRadius: 10,
-            fontSize: 14, fontWeight: 500, cursor: 'pointer', color: '#555'
+            border: '1.5px solid var(--border)', borderRadius: 10,
+            fontSize: 14, fontWeight: 500, cursor: 'pointer', color: 'var(--muted)'
           }}>Log in</button>
           <button onClick={() => navigate('/register')} style={{
-            padding: '9px 22px', background: '#CC785C',
+            padding: '9px 22px', background: 'var(--coral)',
             border: 'none', borderRadius: 10,
             fontSize: 14, fontWeight: 500, cursor: 'pointer', color: 'white',
             boxShadow: '0 2px 10px rgba(204,120,92,0.35)'

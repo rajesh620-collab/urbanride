@@ -20,8 +20,8 @@ export default function MyRides() {
   useEffect(() => {
     Promise.all([api.get('/rides/my'), api.get('/bookings/my')])
       .then(([p, b]) => {
-        setPostedRides(p.data.rides);
-        setBookedRides(b.data.bookings);
+        setPostedRides(p.data.data?.rides || p.data.rides || []);
+        setBookedRides(b.data.data?.bookings || b.data.bookings || []);
       })
       .finally(() => setLoading(false));
   }, []);

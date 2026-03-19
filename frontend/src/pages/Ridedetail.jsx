@@ -16,11 +16,7 @@ const STATUS_LABELS = {
 function StatusTimeline({ status }) {
   if (status === 'cancelled') {
     return (
-      <div style={{
-        background: '#FEE2E2', borderRadius: 'var(--radius-sm)',
-        padding: '10px 14px', fontSize: 13, color: '#991B1B',
-        fontWeight: 500, textAlign: 'center', marginBottom: 20
-      }}>
+      <div className="alert-error" style={{ textAlign: 'center', marginBottom: 20 }}>
         🚫 This ride has been cancelled
       </div>
     );
@@ -51,7 +47,7 @@ function StatusTimeline({ status }) {
                   {done && !current ? '✓' : i + 1}
                 </div>
                 <span style={{
-                  fontSize: 10, color: done ? 'var(--coral-dark)' : 'var(--muted)',
+                  fontSize: 10, color: done ? 'var(--coral)' : 'var(--muted)',
                   fontWeight: current ? 600 : 400, whiteSpace: 'nowrap'
                 }}>
                   {STATUS_LABELS[step]}
@@ -92,7 +88,7 @@ export default function RideDetail() {
 
   useEffect(() => {
     api.get(`/rides/${id}`)
-      .then(res => setRide(res.data.ride))
+      .then(res => setRide(res.data.data?.ride || res.data.ride))
       .catch(() => setError('Ride not found'))
       .finally(() => setLoading(false));
   }, [id]);
@@ -118,7 +114,7 @@ export default function RideDetail() {
       await api.post('/bookings', { rideId: id });
       setMessage('Seat booked successfully!');
       const res = await api.get(`/rides/${id}`);
-      setRide(res.data.ride);
+      setRide(res.data.data?.ride || res.data.ride);
     } catch (err) {
       setError(err.response?.data?.message || 'Booking failed');
     } finally {
@@ -127,9 +123,10 @@ export default function RideDetail() {
   };
 
   const updateStatus = async status => {
+    setError('');
     try {
       const res = await api.patch(`/rides/${id}/status`, { status });
-      setRide(res.data.ride);
+      setRide(res.data.data?.ride || res.data.ride);
       setMessage(`Ride marked as ${STATUS_LABELS[status] || status}`);
     } catch (err) {
       setError(err.response?.data?.message || 'Update failed');
@@ -158,9 +155,7 @@ export default function RideDetail() {
         background: 'none', border: 'none', cursor: 'pointer',
         color: 'var(--muted)', fontSize: 13, display: 'flex',
         alignItems: 'center', gap: 4, padding: 0, marginBottom: 20
-      }}>
-        ← Back
-      </button>
+      }}>← Back</button>
 
       <div className="card">
 
@@ -190,12 +185,11 @@ export default function RideDetail() {
         {/* Status timeline */}
         <StatusTimeline status={ride.status} />
 
-        {/* Details grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 20 }}>
+        {/* Details grid — no time fields since rides are instant */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
           {[
-            { label: 'Departure', value: new Date(ride.departureTime).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) },
-            { label: 'Time', value: new Date(ride.departureTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) },
             { label: 'Fare / Seat', value: `₹${ride.farePerSeat}` },
+            { label: 'Driver', value: ride.driverName },
           ].map(({ label, value }) => (
             <div key={label} style={{
               background: 'var(--cream)', borderRadius: 'var(--radius-sm)',
@@ -227,27 +221,6 @@ export default function RideDetail() {
               background: seatPct === 100 ? '#dc2626' : 'var(--coral)',
               borderRadius: 3, transition: 'width 0.4s'
             }} />
-          </div>
-        </div>
-
-        {/* Driver */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12,
-          padding: '12px 14px', background: 'var(--cream)',
-          borderRadius: 'var(--radius-sm)', marginBottom: 20
-        }}>
-          <div style={{
-            width: 36, height: 36, background: 'var(--coral-pale)',
-            borderRadius: '50%', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            fontWeight: 600, color: 'var(--coral)', fontSize: 15
-          }}>
-            {ride.driverName?.[0]?.toUpperCase()}
-          </div>
-          <div>
-            <p style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 500,
-              textTransform: 'uppercase', letterSpacing: '0.06em' }}>Driver</p>
-            <p style={{ fontWeight: 500, fontSize: 14 }}>{ride.driverName}</p>
           </div>
         </div>
 
@@ -294,6 +267,26 @@ export default function RideDetail() {
                 Cancel Ride
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Rating prompt for completed rides */}
+        {ride.status === 'completed' && (
+          <div style={{
+            marginTop: 20, padding: '16px', background: 'var(--coral-pale)',
+            borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--coral-light)',
+            textAlign: 'center'
+          }}>
+            <p style={{ fontWeight: 500, fontSize: 15, marginBottom: 4 }}>
+              ⭐ Ride completed!
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
+              Please rate your experience
+            </p>
+            <button className="btn-primary" onClick={() => navigate(`/rate/${id}`)}
+              style={{ maxWidth: 200 }}>
+              Rate Now
+            </button>
           </div>
         )}
       </div>

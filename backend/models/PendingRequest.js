@@ -6,11 +6,11 @@ const pendingRequestSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  sourceLandmark: { type: String, required: true },
+  sourceLandmark:      { type: String, required: true },
   destinationLandmark: { type: String, required: true },
-  preferredTime: { type: Date, required: true },
-  timeWindowMinutes: { type: Number, default: 60 },
-  femaleOnly: { type: Boolean, default: false },
+  preferredTime:       { type: Date, required: true },
+  timeWindowMinutes:   { type: Number, default: 10 },   // ±10 min match window
+  femaleOnly:          { type: Boolean, default: false },
   status: {
     type: String,
     enum: ['active', 'matched', 'expired'],
@@ -20,18 +20,18 @@ const pendingRequestSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   expiresAt: {
     type: Date,
-    default: () => new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+    default: () => new Date(Date.now() + 5 * 60 * 1000) // 5-minute urgent TTL
   }
 });
 
-// MongoDB automatically deletes expired records
+// MongoDB TTL index: automatically deletes expired documents
 pendingRequestSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-// Faster search index
+// Compound index for fast matching queries
 pendingRequestSchema.index({
   status: 1,
-  sourceLandmark: 1,
-  destinationLandmark: 1
+  destinationLandmark: 1,
+  sourceLandmark: 1
 });
 
 module.exports = mongoose.model('PendingRequest', pendingRequestSchema);

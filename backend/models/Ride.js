@@ -9,7 +9,7 @@ const rideSchema = new mongoose.Schema({
   driverName: { type: String, required: true },
   sourceLandmark: { type: String, required: true },
   destinationLandmark: { type: String, required: true },
-  departureTime: { type: Date, required: true },
+  departureTime: { type: Date, default: Date.now },
   totalSeats: { type: Number, required: true, min: 1, max: 4 },
   availableSeats: { type: Number, required: true },
   femaleOnly: { type: Boolean, default: false },

@@ -7,34 +7,69 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const { setupWebSocket } = require("./services/websocketService");
 
+// Initialize re-notification cron (side-effect: registers cron job)
+require("./services/reNotificationEngine");
+
 const app = express();
 const server = http.createServer(app);
 
-// CORS configuration
+// ── CORS ────────────────────────────────────────────────────────
 app.use(cors({
   origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE"]
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 }));
 
-// Middleware
+// ── Body parsers ────────────────────────────────────────────────
 app.use(express.json());
 
-// Connect Database
+// ── Database ────────────────────────────────────────────────────
 connectDB();
 
-// Routes
-app.use("/api/auth", require("./routes/auth"));
-app.use("/api/rides", require("./routes/rides"));
-app.use("/api/bookings", require("./routes/bookings"));
-app.use("/api/pending", require("./routes/pending"));
-app.use("/api/landmarks", require("./routes/landmarks"));
+// ── Health check ────────────────────────────────────────────────
+app.get("/api/health", (req, res) => {
+  res.json({
+    success: true,
+    message: "UrbanRide API is running",
+    timestamp: new Date().toISOString()
+  });
+});
 
-// WebSocket setup
+// ── Routes ──────────────────────────────────────────────────────
+app.use("/api/auth",      require("./routes/auth"));
+app.use("/api/rides",     require("./routes/rides"));
+app.use("/api/bookings",  require("./routes/bookings"));
+app.use("/api/pending",   require("./routes/pending"));
+app.use("/api/landmarks", require("./routes/landmarks"));
+app.use("/api/ratings",   require("./routes/ratings"));
+
+// ── 404 handler ─────────────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route not found: ${req.method} ${req.originalUrl}`
+  });
+});
+
+// ── Global error handler ────────────────────────────────────────
+app.use((err, req, res, _next) => {
+  console.error("[Server Error]", err.stack);
+  res.status(500).json({
+    success: false,
+    message: "Internal server error"
+  });
+});
+
+// ── WebSocket ───────────────────────────────────────────────────
 setupWebSocket(server);
 
-// Server start
+// ── Start ───────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5001;
 
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`
+  ╔═══════════════════════════════════════╗
+  ║  UrbanRide API · port ${PORT}           ║
+  ║  Health: http://localhost:${PORT}/api/health  ║
+  ╚═══════════════════════════════════════╝
+  `);
 });

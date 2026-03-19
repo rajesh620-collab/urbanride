@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { useWebSocket } from './hooks/useWebSocket';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
@@ -9,6 +10,7 @@ import SearchRide from './pages/SearchRide';
 import RideDetail from './pages/Ridedetail';
 import MyRides from './pages/MyRides';
 import LandingPage from './pages/LandingPage';
+import RateRide from './pages/RateRide';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -34,6 +36,7 @@ function AppContent() {
         <Route path="/post-ride" element={<ProtectedRoute><PostRide /></ProtectedRoute>} />
         <Route path="/ride/:id"  element={<ProtectedRoute><RideDetail /></ProtectedRoute>} />
         <Route path="/my-rides"  element={<ProtectedRoute><MyRides /></ProtectedRoute>} />
+        <Route path="/rate/:id"  element={<ProtectedRoute><RateRide /></ProtectedRoute>} />
         <Route path="*"          element={<Navigate to="/" replace />} />
       </Routes>
     </>
@@ -42,11 +45,13 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

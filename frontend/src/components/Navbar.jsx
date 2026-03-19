@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { getSocket } from '../hooks/useWebSocket';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { dark, toggle } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [notifications, setNotifications] = useState([]);
@@ -21,19 +23,19 @@ export default function Navbar() {
     socket.on('ride_match_found',    add);
     socket.on('new_booking',         add);
     socket.on('ride_status_updated', add);
+    socket.on('ride_cancelled',      add);
     return () => {
       socket.off('ride_match_found');
       socket.off('new_booking');
       socket.off('ride_status_updated');
+      socket.off('ride_cancelled');
     };
   }, []);
 
-  /* Close dropdown when clicking outside */
   useEffect(() => {
     const handleClick = e => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target))
         setShowDropdown(false);
-      }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -49,17 +51,14 @@ export default function Navbar() {
 
   return (
     <nav style={{
-      background: 'var(--white)', borderBottom: '1px solid var(--border)',
+      background: 'var(--card-bg)', borderBottom: '1px solid var(--border)',
       padding: '0 24px', display: 'flex',
       justifyContent: 'space-between', alignItems: 'center',
       height: 58, position: 'sticky', top: 0, zIndex: 50,
-      boxShadow: '0 1px 4px rgba(28,25,23,0.06)'
+      boxShadow: 'var(--shadow-sm)', transition: 'background 0.3s'
     }}>
-
-      {/* Logo */}
       <div onClick={() => navigate('/search')} style={{
-        display: 'flex', alignItems: 'center',
-        gap: 10, cursor: 'pointer'
+        display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer'
       }}>
         <div style={{
           width: 32, height: 32, background: 'var(--coral)',
@@ -74,19 +73,16 @@ export default function Navbar() {
         <span style={{
           fontFamily: "'Playfair Display', serif",
           fontWeight: 500, fontSize: 17, color: 'var(--charcoal)'
-        }}>
-          UrbanRide
-        </span>
+        }}>UrbanRide</span>
       </div>
 
-      {/* Nav links */}
       <div style={{ display: 'flex', gap: 4 }}>
         {navItems.map(item => (
           <button key={item.path} onClick={() => navigate(item.path)} style={{
             padding: '6px 14px', border: 'none', cursor: 'pointer',
             borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 500,
             background: location.pathname === item.path ? 'var(--coral-pale)' : 'transparent',
-            color: location.pathname === item.path ? 'var(--coral-dark)' : 'var(--muted)',
+            color: location.pathname === item.path ? 'var(--coral)' : 'var(--muted)',
             transition: 'all 0.15s'
           }}>
             {item.label}
@@ -94,21 +90,23 @@ export default function Navbar() {
         ))}
       </div>
 
-      {/* Right side */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+
+        {/* Theme toggle */}
+        <button className="theme-toggle" onClick={toggle}
+          aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}>
+          {dark ? '☀️' : '🌙'}
+        </button>
 
         {/* Bell */}
         <div style={{ position: 'relative' }} ref={dropdownRef}>
-          <button
-            onClick={() => setShowDropdown(s => !s)}
-            style={{
-              background: notifications.length > 0 ? 'var(--coral-pale)' : 'var(--cream)',
-              border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)',
-              width: 36, height: 36, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              position: 'relative', fontSize: 16, transition: 'background 0.2s'
-            }}
-          >
+          <button onClick={() => setShowDropdown(s => !s)} style={{
+            background: notifications.length > 0 ? 'var(--coral-pale)' : 'var(--cream-dark)',
+            border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)',
+            width: 36, height: 36, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative', fontSize: 16, transition: 'background 0.2s'
+          }}>
             🔔
             {notifications.length > 0 && (
               <span style={{
@@ -117,16 +115,14 @@ export default function Navbar() {
                 borderRadius: '50%', width: 17, height: 17,
                 fontSize: 10, display: 'flex',
                 alignItems: 'center', justifyContent: 'center', fontWeight: 700
-              }}>
-                {notifications.length}
-              </span>
+              }}>{notifications.length}</span>
             )}
           </button>
 
           {showDropdown && (
             <div style={{
               position: 'absolute', right: 0, top: 44,
-              background: 'var(--white)', borderRadius: 'var(--radius-md)',
+              background: 'var(--card-bg)', borderRadius: 'var(--radius-md)',
               width: 300, boxShadow: 'var(--shadow-lg)',
               border: '1px solid var(--border)', zIndex: 100, overflow: 'hidden'
             }}>
@@ -136,48 +132,36 @@ export default function Navbar() {
               }}>
                 <span style={{ fontWeight: 500, fontSize: 13 }}>Notifications</span>
                 {notifications.length > 0 && (
-                  <button
-                    onClick={() => setNotifications([])}
-                    style={{
-                      fontSize: 11, color: 'var(--muted)', background: 'none',
-                      border: 'none', cursor: 'pointer', padding: 0
-                    }}
-                  >
-                    Clear all
-                  </button>
+                  <button onClick={() => setNotifications([])} style={{
+                    fontSize: 11, color: 'var(--muted)', background: 'none',
+                    border: 'none', cursor: 'pointer', padding: 0
+                  }}>Clear all</button>
                 )}
               </div>
               {notifications.length === 0 ? (
                 <p style={{ padding: 20, color: 'var(--muted)', fontSize: 13, textAlign: 'center' }}>
                   All caught up! 🎉
                 </p>
-              ) : (
-                notifications.map(n => (
-                  <div key={n.id} style={{
-                    padding: '12px 16px', borderBottom: '1px solid var(--cream-dark)'
-                  }}>
-                    <p style={{ fontSize: 13, color: 'var(--charcoal)' }}>{n.message}</p>
-                    <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>{n.time}</p>
-                  </div>
-                ))
-              )}
+              ) : notifications.map(n => (
+                <div key={n.id} style={{
+                  padding: '12px 16px', borderBottom: '1px solid var(--border)'
+                }}>
+                  <p style={{ fontSize: 13, color: 'var(--charcoal)' }}>{n.message}</p>
+                  <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>{n.time}</p>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        {/* User + logout */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{
-            width: 32, height: 32, background: 'var(--coral-pale)',
-            borderRadius: '50%', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            fontWeight: 600, color: 'var(--coral)', fontSize: 13
-          }}>
-            {user.name?.[0]?.toUpperCase()}
-          </div>
-          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--charcoal)' }}>
-            {user.name.split(' ')[0]}
-          </span>
+        {/* User avatar */}
+        <div style={{
+          width: 32, height: 32, background: 'var(--coral-pale)',
+          borderRadius: '50%', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          fontWeight: 600, color: 'var(--coral)', fontSize: 13
+        }}>
+          {user.name?.[0]?.toUpperCase()}
         </div>
 
         <button onClick={() => { logout(); navigate('/'); }} style={{
@@ -185,9 +169,7 @@ export default function Navbar() {
           border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)',
           fontSize: 12, fontWeight: 500, cursor: 'pointer', color: 'var(--muted)',
           transition: 'all 0.15s'
-        }}>
-          Logout
-        </button>
+        }}>Logout</button>
       </div>
     </nav>
   );
