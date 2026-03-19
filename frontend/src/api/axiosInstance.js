@@ -1,10 +1,8 @@
 import axios from "axios";
 
-// Ensure the base URL always ends with /api regardless of how the env var is set
-const rawBase = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
-const baseURL = rawBase.endsWith("/api") ? rawBase : `${rawBase.replace(/\/$/, "")}/api`;
-
-const api = axios.create({ baseURL });
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5001/api"
+});
 
 // attach JWT token automatically
 api.interceptors.request.use((config) => {

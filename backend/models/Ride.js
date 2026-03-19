@@ -9,11 +9,23 @@ const rideSchema = new mongoose.Schema({
   driverName: { type: String, required: true },
   sourceLandmark: { type: String, required: true },
   destinationLandmark: { type: String, required: true },
+  // Coordinates for map display
+  sourceCoords: {
+    lat: { type: Number },
+    lng: { type: Number }
+  },
+  destCoords: {
+    lat: { type: Number },
+    lng: { type: Number }
+  },
   departureTime: { type: Date, default: Date.now },
   totalSeats: { type: Number, required: true, min: 1, max: 4 },
   availableSeats: { type: Number, required: true },
   femaleOnly: { type: Boolean, default: false },
   farePerSeat: { type: Number, required: true },
+  suggestedFare: { type: Number }, // AI-suggested fare for reference
+  distanceMeters: { type: Number },
+  estimatedDurationMin: { type: Number },
   status: {
     type: String,
     enum: ['open', 'full', 'in_progress', 'completed', 'cancelled'],

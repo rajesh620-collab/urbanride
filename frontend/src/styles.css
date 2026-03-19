@@ -322,5 +322,244 @@ input, select, button {
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .page-wrapper { padding: 24px 16px; }
-  .card { padding: 24px; }
+  .card { padding: 20px 16px; }
+  .nav-label { display: none; }
+}
+
+/* ── Leaflet map overrides ── */
+.leaflet-container {
+  font-family: 'Montserrat', sans-serif;
+  border-radius: inherit;
+}
+.leaflet-control-attribution {
+  font-size: 9px !important;
+  opacity: 0.65;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 10px !important;
+  box-shadow: var(--shadow-md) !important;
+  font-family: 'Montserrat', sans-serif;
+  padding: 2px;
+}
+.leaflet-popup-content {
+  font-size: 13px;
+  margin: 10px 14px;
+}
+[data-theme="dark"] .leaflet-popup-content-wrapper {
+  background: #1e1e1e;
+  color: #e8e4e0;
+}
+[data-theme="dark"] .leaflet-popup-tip {
+  background: #1e1e1e;
+}
+.leaflet-control-zoom {
+  border: 1.5px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  overflow: hidden;
+}
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  background: var(--card-bg) !important;
+  color: var(--charcoal) !important;
+  border: none !important;
+  font-size: 18px !important;
+  line-height: 30px !important;
+  transition: background 0.15s;
+}
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+  background: var(--cream-dark) !important;
+}
+
+/* ── Logo dropdown menu animation ── */
+@keyframes menuSlideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Tab bar ── */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  background: var(--cream-dark);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  width: fit-content;
+  margin-bottom: 16px;
+}
+.tab-btn {
+  padding: 6px 14px;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--muted);
+  transition: all 0.2s;
+  font-family: 'Montserrat', sans-serif;
+}
+.tab-btn.active {
+  background: var(--white);
+  color: var(--charcoal);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Fare range slider ── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--cream-dark);
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--coral);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(204,120,92,0.4);
+  transition: transform 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--coral);
+  cursor: pointer;
+  border: none;
+}
+
+/* ── Live tracking pulse ── */
+@keyframes liveTrackPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(76,175,80,0.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(76,175,80,0); }
+  100% { box-shadow: 0 0 0 0 rgba(76,175,80,0); }
+}
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4CAF50;
+  animation: liveTrackPulse 2s infinite;
+  display: inline-block;
+}
+
+/* ── Driver navigation (full screen) ── */
+.driver-nav-map {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+}
+
+/* ── Ride card hover ── */
+.ride-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.ride-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* ── Location picker ── */
+.location-search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.location-search-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.location-search-item:hover {
+  background: var(--cream);
+}
+
+/* ── Toggle switch ── */
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  transition: background 0.2s;
+}
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: left 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* ── Page slide-in animation ── */
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-wrapper {
+  animation: pageFadeIn 0.25s ease-out;
+}
+
+/* ── Map loading overlay ── */
+.map-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  backdrop-filter: blur(2px);
+}
+
+/* ── ETA Chip ── */
+.eta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--coral);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ── Mobile: hide map on very small screens unless explicitly shown ── */
+@media (max-width: 480px) {
+  .leaflet-container {
+    min-height: 200px;
+  }
+  .driver-nav-top-bar {
+    padding: 10px 14px;
+  }
+  .driver-nav-eta {
+    font-size: 22px;
+  }
 }

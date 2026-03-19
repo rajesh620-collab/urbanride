@@ -11,6 +11,7 @@ import RideDetail from './pages/Ridedetail';
 import MyRides from './pages/MyRides';
 import LandingPage from './pages/LandingPage';
 import RateRide from './pages/RateRide';
+import DriverNavigation from './pages/DriverNavigation';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -22,22 +23,27 @@ function GuestRoute({ children }) {
   return user ? <Navigate to="/search" replace /> : children;
 }
 
+// Full-screen pages that hide the Navbar
+const FULLSCREEN_PATHS = ['/navigate/'];
+
 function AppContent() {
   useWebSocket();
+  const isFullscreen = FULLSCREEN_PATHS.some(p => window.location.pathname.startsWith(p));
 
   return (
     <>
-      <Navbar />
+      {!isFullscreen && <Navbar />}
       <Routes>
-        <Route path="/"          element={<GuestRoute><LandingPage /></GuestRoute>} />
-        <Route path="/login"     element={<GuestRoute><Login /></GuestRoute>} />
-        <Route path="/register"  element={<GuestRoute><Register /></GuestRoute>} />
-        <Route path="/search"    element={<ProtectedRoute><SearchRide /></ProtectedRoute>} />
-        <Route path="/post-ride" element={<ProtectedRoute><PostRide /></ProtectedRoute>} />
-        <Route path="/ride/:id"  element={<ProtectedRoute><RideDetail /></ProtectedRoute>} />
-        <Route path="/my-rides"  element={<ProtectedRoute><MyRides /></ProtectedRoute>} />
-        <Route path="/rate/:id"  element={<ProtectedRoute><RateRide /></ProtectedRoute>} />
-        <Route path="*"          element={<Navigate to="/" replace />} />
+        <Route path="/"              element={<GuestRoute><LandingPage /></GuestRoute>} />
+        <Route path="/login"         element={<GuestRoute><Login /></GuestRoute>} />
+        <Route path="/register"      element={<GuestRoute><Register /></GuestRoute>} />
+        <Route path="/search"        element={<ProtectedRoute><SearchRide /></ProtectedRoute>} />
+        <Route path="/post-ride"     element={<ProtectedRoute><PostRide /></ProtectedRoute>} />
+        <Route path="/ride/:id"      element={<ProtectedRoute><RideDetail /></ProtectedRoute>} />
+        <Route path="/my-rides"      element={<ProtectedRoute><MyRides /></ProtectedRoute>} />
+        <Route path="/rate/:id"      element={<ProtectedRoute><RateRide /></ProtectedRoute>} />
+        <Route path="/navigate/:id"  element={<ProtectedRoute><DriverNavigation /></ProtectedRoute>} />
+        <Route path="*"              element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );

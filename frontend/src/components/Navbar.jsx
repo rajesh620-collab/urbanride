@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getSocket } from '../hooks/useWebSocket';
+import LogoMenu from './LogoMenu';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -44,9 +45,9 @@ export default function Navbar() {
   if (!user) return null;
 
   const navItems = [
-    { label: 'Search',    path: '/search'    },
-    { label: 'Post Ride', path: '/post-ride' },
-    { label: 'My Rides',  path: '/my-rides'  },
+    { label: 'Search',    path: '/search',    icon: '🔍' },
+    { label: 'Post Ride', path: '/post-ride',  icon: '➕' },
+    { label: 'My Rides',  path: '/my-rides',   icon: '🚗' },
   ];
 
   return (
@@ -57,25 +58,10 @@ export default function Navbar() {
       height: 58, position: 'sticky', top: 0, zIndex: 50,
       boxShadow: 'var(--shadow-sm)', transition: 'background 0.3s'
     }}>
-      <div onClick={() => navigate('/search')} style={{
-        display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer'
-      }}>
-        <div style={{
-          width: 32, height: 32, background: 'var(--coral)',
-          borderRadius: 10, display: 'flex',
-          alignItems: 'center', justifyContent: 'center'
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L4 7v10l8 5 8-5V7L12 2z" stroke="white" strokeWidth="2" strokeLinejoin="round"/>
-            <circle cx="12" cy="12" r="2.5" fill="white"/>
-          </svg>
-        </div>
-        <span style={{
-          fontFamily: "'Playfair Display', serif",
-          fontWeight: 500, fontSize: 17, color: 'var(--charcoal)'
-        }}>UrbanRide</span>
-      </div>
+      {/* Logo with dropdown menu */}
+      <LogoMenu />
 
+      {/* Nav links */}
       <div style={{ display: 'flex', gap: 4 }}>
         {navItems.map(item => (
           <button key={item.path} onClick={() => navigate(item.path)} style={{
@@ -83,13 +69,15 @@ export default function Navbar() {
             borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 500,
             background: location.pathname === item.path ? 'var(--coral-pale)' : 'transparent',
             color: location.pathname === item.path ? 'var(--coral)' : 'var(--muted)',
-            transition: 'all 0.15s'
+            transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6
           }}>
-            {item.label}
+            <span style={{ fontSize: 14 }}>{item.icon}</span>
+            <span className="nav-label">{item.label}</span>
           </button>
         ))}
       </div>
 
+      {/* Right side: theme + notifications + avatar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 
         {/* Theme toggle */}
@@ -163,13 +151,6 @@ export default function Navbar() {
         }}>
           {user.name?.[0]?.toUpperCase()}
         </div>
-
-        <button onClick={() => { logout(); navigate('/'); }} style={{
-          padding: '6px 14px', background: 'var(--cream-dark)',
-          border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)',
-          fontSize: 12, fontWeight: 500, cursor: 'pointer', color: 'var(--muted)',
-          transition: 'all 0.15s'
-        }}>Logout</button>
       </div>
     </nav>
   );

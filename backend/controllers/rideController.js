@@ -18,7 +18,8 @@ async function postRide(req, res) {
   try {
     const {
       sourceLandmark, destinationLandmark,
-      totalSeats, femaleOnly, farePerSeat
+      totalSeats, femaleOnly, farePerSeat,
+      sourceCoords, destCoords, distanceMeters, estimatedDurationMin, suggestedFare
     } = req.body;
 
     if (!sourceLandmark || !destinationLandmark) {
@@ -29,18 +30,27 @@ async function postRide(req, res) {
       return fail(res, 403, 'Only female users can post female-only rides');
     }
 
-    const ride = await Ride.create({
+    const rideData = {
       driverId: req.user.id,
       driverName: req.user.name,
       sourceLandmark,
       destinationLandmark,
-      departureTime: new Date(), // instant ride — departure is now
+      departureTime: new Date(),
       totalSeats: totalSeats || 1,
       availableSeats: totalSeats || 1,
       femaleOnly: femaleOnly || false,
       farePerSeat: farePerSeat || 0,
       status: 'open'
-    });
+    };
+
+    // Store coordinates if provided
+    if (sourceCoords?.lat) rideData.sourceCoords = sourceCoords;
+    if (destCoords?.lat) rideData.destCoords = destCoords;
+    if (distanceMeters) rideData.distanceMeters = distanceMeters;
+    if (estimatedDurationMin) rideData.estimatedDurationMin = estimatedDurationMin;
+    if (suggestedFare) rideData.suggestedFare = suggestedFare;
+
+    const ride = await Ride.create(rideData);
 
     // Smart re-notification — notify waiting users instantly
     checkPendingForNewRide(ride);

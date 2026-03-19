@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
 import { getSocket } from '../hooks/useWebSocket';
+import LocationPicker from '../components/LocationPicker';
+import RouteMap from '../components/RouteMap';
 
 function RideCardSkeleton() {
   return (
@@ -23,12 +25,15 @@ export default function SearchRide() {
   const navigate = useNavigate();
   const [landmarks, setLandmarks]       = useState([]);
   const [filters, setFilters]           = useState({ source: '', destination: '', femaleOnly: false });
+  const [sourceCoords, setSourceCoords] = useState(null);
+  const [destCoords, setDestCoords]     = useState(null);
   const [rides, setRides]               = useState([]);
   const [searched, setSearched]         = useState(false);
   const [loading, setLoading]           = useState(false);
   const [pendingSaved, setPendingSaved] = useState(false);
   const [liveAlert, setLiveAlert]       = useState(null);
-  const [nearestInfo, setNearestInfo]   = useState(null);
+  const [searchMode, setSearchMode]     = useState('quick'); // 'quick' or 'map'
+  const [showResultsMap, setShowResultsMap] = useState(false);
 
   useEffect(() => {
     api.get('/landmarks').then(res => {
@@ -53,10 +58,9 @@ export default function SearchRide() {
           params: { lat: pos.coords.latitude, lng: pos.coords.longitude }
         });
         const lm = res.data.data?.landmark || res.data.landmark;
-        const dist = res.data.data?.distanceMeters || res.data.distanceMeters;
         if (lm) {
           setFilters(f => ({ ...f, source: lm.name }));
-          setNearestInfo(`📍 ${lm.name} (${dist}m away)`);
+          setSourceCoords({ lat: lm.lat, lng: lm.lng, address: lm.name });
         }
       } catch { /* silent */ }
     });
@@ -65,6 +69,18 @@ export default function SearchRide() {
   const handleChange = e => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setFilters({ ...filters, [e.target.name]: value });
+
+    // Set coordinates from landmark selection
+    if (e.target.name === 'source' || e.target.name === 'destination') {
+      const lm = landmarks.find(l => l.name === value);
+      if (lm) {
+        if (e.target.name === 'source') {
+          setSourceCoords({ lat: lm.lat, lng: lm.lng, address: lm.name });
+        } else {
+          setDestCoords({ lat: lm.lat, lng: lm.lng, address: lm.name });
+        }
+      }
+    }
   };
 
   const handleSearch = async e => {
@@ -102,7 +118,7 @@ export default function SearchRide() {
   };
 
   return (
-    <div className="page-wrapper" style={{ maxWidth: 620 }}>
+    <div className="page-wrapper" style={{ maxWidth: 640 }}>
 
       <div style={{ marginBottom: 28 }}>
         <h2 style={{ fontSize: 26, letterSpacing: '-0.02em' }}>Find a Ride</h2>
@@ -130,37 +146,86 @@ export default function SearchRide() {
 
       {/* Search form */}
       <div className="card" style={{ marginBottom: 24 }}>
+        {/* Mode toggle */}
+        <div style={{
+          display: 'flex', gap: 4, marginBottom: 16,
+          background: 'var(--cream-dark)', padding: 3,
+          borderRadius: 'var(--radius-sm)', width: 'fit-content'
+        }}>
+          {[
+            { key: 'quick', label: '⚡ Quick' },
+            { key: 'map', label: '🗺️ Map' }
+          ].map(tab => (
+            <button key={tab.key} type="button" onClick={() => setSearchMode(tab.key)} style={{
+              padding: '6px 14px', border: 'none', cursor: 'pointer',
+              borderRadius: 6, fontSize: 12, fontWeight: 500,
+              background: searchMode === tab.key ? 'var(--white)' : 'transparent',
+              color: searchMode === tab.key ? 'var(--charcoal)' : 'var(--muted)',
+              boxShadow: searchMode === tab.key ? 'var(--shadow-sm)' : 'none',
+              transition: 'all 0.2s'
+            }}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         <form onSubmit={handleSearch}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <div className="field" style={{ marginBottom: 0 }}>
-              <label>From</label>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <select name="source" value={filters.source} onChange={handleChange} style={{ flex: 1 }}>
-                  <option value="">Any source</option>
+          {searchMode === 'map' ? (
+            <>
+              <LocationPicker
+                value={sourceCoords}
+                onChange={(loc) => {
+                  setSourceCoords(loc);
+                  if (loc.address) {
+                    const nearest = landmarks.find(l => loc.address.toLowerCase().includes(l.name.toLowerCase()));
+                    setFilters(f => ({ ...f, source: nearest?.name || loc.address }));
+                  }
+                }}
+                label="From"
+                mode="pickup"
+              />
+              <LocationPicker
+                value={destCoords}
+                onChange={(loc) => {
+                  setDestCoords(loc);
+                  if (loc.address) {
+                    const nearest = landmarks.find(l => loc.address.toLowerCase().includes(l.name.toLowerCase()));
+                    setFilters(f => ({ ...f, destination: nearest?.name || loc.address }));
+                  }
+                }}
+                label="To"
+                mode="dropoff"
+              />
+            </>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label>From</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <select name="source" value={filters.source} onChange={handleChange} style={{ flex: 1 }}>
+                    <option value="">Any source</option>
+                    {landmarks && landmarks.map(lm => (
+                      <option key={lm._id} value={lm.name}>{lm.name}</option>
+                    ))}
+                  </select>
+                  <button type="button" onClick={detectNearestLandmark} style={{
+                    padding: '6px 10px', background: 'var(--coral-pale)',
+                    border: '1.5px solid var(--coral)', borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer', fontSize: 14, color: 'var(--coral)'
+                  }} title="Detect my location">📍</button>
+                </div>
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label>To</label>
+                <select name="destination" value={filters.destination} onChange={handleChange}>
+                  <option value="">Any destination</option>
                   {landmarks && landmarks.map(lm => (
                     <option key={lm._id} value={lm.name}>{lm.name}</option>
                   ))}
                 </select>
-                <button type="button" onClick={detectNearestLandmark} style={{
-                  padding: '6px 10px', background: 'var(--coral-pale)',
-                  border: '1.5px solid var(--coral)', borderRadius: 'var(--radius-sm)',
-                  cursor: 'pointer', fontSize: 14, color: 'var(--coral)'
-                }} title="Detect my location">📍</button>
               </div>
-              {nearestInfo && (
-                <p style={{ fontSize: 11, color: 'var(--success)', marginTop: 4 }}>{nearestInfo}</p>
-              )}
             </div>
-            <div className="field" style={{ marginBottom: 0 }}>
-              <label>To</label>
-              <select name="destination" value={filters.destination} onChange={handleChange}>
-                <option value="">Any destination</option>
-                {landmarks && landmarks.map(lm => (
-                  <option key={lm._id} value={lm.name}>{lm.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+          )}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
@@ -203,9 +268,33 @@ export default function SearchRide() {
       {/* Results */}
       {!loading && rides.length > 0 && (
         <div>
-          <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 14 }}>
-            {rides.length} ride{rides.length > 1 ? 's' : ''} available
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <p style={{ fontSize: 13, color: 'var(--muted)' }}>
+              {rides.length} ride{rides.length > 1 ? 's' : ''} available
+            </p>
+            {sourceCoords?.lat && destCoords?.lat && (
+              <button type="button" onClick={() => setShowResultsMap(s => !s)} style={{
+                padding: '5px 12px', background: showResultsMap ? 'var(--coral)' : 'var(--cream-dark)',
+                border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
+                cursor: 'pointer', fontSize: 12, color: showResultsMap ? 'white' : 'var(--muted)',
+                transition: 'all 0.2s'
+              }}>
+                {showResultsMap ? '📋 List' : '🗺️ Map'}
+              </button>
+            )}
+          </div>
+
+          {/* Route map for results */}
+          {showResultsMap && sourceCoords?.lat && destCoords?.lat && (
+            <div style={{ marginBottom: 16 }}>
+              <RouteMap
+                sourceCoords={sourceCoords}
+                destCoords={destCoords}
+                height={220}
+              />
+            </div>
+          )}
+
           {rides.map(ride => (
             <div key={ride._id} style={{
               background: 'var(--card-bg)', border: '1px solid var(--border)',
@@ -216,12 +305,12 @@ export default function SearchRide() {
               onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
               onClick={() => navigate(`/ride/${ride._id}`)}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   <span style={{ fontWeight: 600, fontSize: 15 }}>{ride.sourceLandmark}</span>
                   <span style={{ color: 'var(--coral)', fontSize: 18 }}>→</span>
                   <span style={{ fontWeight: 600, fontSize: 15 }}>{ride.destinationLandmark}</span>
                 </div>
-                <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                   {ride.femaleOnly && <span className="badge-female">Female only</span>}
                   <span className={`badge-status status-${ride.status}`}>{ride.status}</span>
                 </div>
@@ -230,6 +319,9 @@ export default function SearchRide() {
                 <div style={{ fontSize: 13, color: 'var(--muted)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   <span>💺 {ride.availableSeats} seat{ride.availableSeats !== 1 ? 's' : ''}</span>
                   <span>👤 {ride.driverName}</span>
+                  {ride.distanceMeters && (
+                    <span>📏 {(ride.distanceMeters / 1000).toFixed(1)} km</span>
+                  )}
                 </div>
                 <span style={{ fontWeight: 700, color: 'var(--coral)', fontSize: 16, whiteSpace: 'nowrap', marginLeft: 12 }}>
                   ₹{ride.farePerSeat}
