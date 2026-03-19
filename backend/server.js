@@ -34,13 +34,32 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// ── Routes ──────────────────────────────────────────────────────
-app.use("/api/auth",      require("./routes/auth"));
-app.use("/api/rides",     require("./routes/rides"));
-app.use("/api/bookings",  require("./routes/bookings"));
-app.use("/api/pending",   require("./routes/pending"));
-app.use("/api/landmarks", require("./routes/landmarks"));
-app.use("/api/ratings",   require("./routes/ratings"));
+// ── Routes (with error handling) ─────────────────────────────────
+const routeStatus = {};
+const safeRoute = (path, modulePath) => {
+  try {
+    const mod = require(modulePath);
+    app.use(path, mod);
+    routeStatus[path] = 'loaded';
+    console.log(`  ✅ ${path}`);
+  } catch (err) {
+    routeStatus[path] = `FAILED: ${err.message}`;
+    console.error(`  ❌ ${path} → ${err.message}`);
+  }
+};
+
+console.log('\n  Loading routes:');
+safeRoute("/api/auth",      "./routes/auth");
+safeRoute("/api/rides",     "./routes/rides");
+safeRoute("/api/bookings",  "./routes/bookings");
+safeRoute("/api/pending",   "./routes/pending");
+safeRoute("/api/landmarks", "./routes/landmarks");
+safeRoute("/api/ratings",   "./routes/ratings");
+
+// Debug endpoint to check route status
+app.get("/api/debug/routes", (req, res) => {
+  res.json({ success: true, routes: routeStatus });
+});
 
 // ── 404 handler ─────────────────────────────────────────────────
 app.use((req, res) => {
