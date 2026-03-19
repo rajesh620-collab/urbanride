@@ -1,122 +1,217 @@
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { RevealOnScroll } from '../hooks/useScrollReveal.jsx';
 
+/* ─── DATA ─── */
+const features = [
+  { icon: '📍', title: 'Smart Matching', desc: 'Landmark-based algorithm finds best ride matches based on route and preferences.', color: '#6366F1' },
+  { icon: '⏱', title: 'Rides in Minutes', desc: 'Find and book a pooled ride within minutes. Real-time availability.', color: '#EC4899' },
+  { icon: '👥', title: 'Community First', desc: 'Build connections with daily commuters heading your way.', color: '#14B8A6' },
+  { icon: '💰', title: 'Save up to 60%', desc: 'Split fuel costs with co-riders. Every shared ride saves money.', color: '#F59E0B' },
+  { icon: '🌿', title: 'Go Green', desc: 'Fewer cars = reduced emissions. Eco-friendly choice every ride.', color: '#22C55E' },
+  { icon: '🛡', title: 'Verified & Safe', desc: 'Verified riders, female-only options, real-time smart notifications.', color: '#8B5CF6' },
+];
+
+const steps = [
+  { num: '01', icon: '📍', title: 'Set Your Route', desc: 'Enter pickup and drop-off landmarks. Our system instantly shows available rides.' },
+  { num: '02', icon: '🤝', title: 'Match & Connect', desc: 'Choose a verified co-rider. Get notified instantly when a match is found.' },
+  { num: '03', icon: '🚗', title: 'Ride & Save', desc: 'Share the journey, split costs automatically. Rate and build reputation.' },
+];
+
+const testimonials = [
+  { name: 'Priya Sharma', role: 'Daily Commuter', text: 'UrbanRide saves me ₹2000 every month on my office commute. The matching is incredibly accurate!', rating: 5, avatar: 'PS' },
+  { name: 'Rahul Mehra', role: 'Student', text: 'As a college student, this app is a lifesaver. I\'ve made great friends through shared rides!', rating: 5, avatar: 'RM' },
+  { name: 'Anita Desai', role: 'Working Professional', text: 'The female-only ride option makes me feel so much safer. Brilliant feature!', rating: 5, avatar: 'AD' },
+  { name: 'Vikram Patel', role: 'Freelancer', text: 'I offer rides when heading to meetings. It covers my fuel costs completely!', rating: 4, avatar: 'VP' },
+];
+
+const faqs = [
+  { q: 'How does ride matching work?', a: 'Our smart algorithm matches riders based on pickup/drop landmarks, route overlap, and timing preferences for optimal matches.' },
+  { q: 'Is UrbanRide safe for women?', a: 'Absolutely! We offer female-only ride options, verified profiles, real-time tracking, and emergency SOS features.' },
+  { q: 'How is the fare calculated?', a: 'Fares are dynamically calculated based on distance, time, demand, and split among co-riders for maximum savings.' },
+  { q: 'Can I offer rides as a driver?', a: 'Yes! Simply post your route with available seats. Riders heading your way can request to join, and you earn from shared costs.' },
+  { q: 'Is the app available in my city?', a: 'UrbanRide is expanding rapidly across major Indian cities. Check the app for availability in your area.' },
+];
+
+const stats = [
+  { value: '50K+', label: 'Rides Completed', icon: '🚗' },
+  { value: '10K+', label: 'Active Riders', icon: '👥' },
+  { value: '₹2Cr+', label: 'Money Saved', icon: '💰' },
+  { value: '4.9★', label: 'App Rating', icon: '⭐' },
+];
+
+/* ─── COUNTER ANIMATION ─── */
+function AnimatedCounter({ target, suffix = '' }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !started.current) {
+        started.current = true;
+        const num = parseInt(target.replace(/[^0-9]/g, ''));
+        const duration = 2000;
+        const step = Math.ceil(num / (duration / 16));
+        let current = 0;
+        const timer = setInterval(() => {
+          current += step;
+          if (current >= num) { setCount(num); clearInterval(timer); }
+          else setCount(current);
+        }, 16);
+      }
+    }, { threshold: 0.3 });
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [target]);
+
+  const prefix = target.includes('₹') ? '₹' : '';
+  return <span ref={ref}>{prefix}{count.toLocaleString()}{suffix}</span>;
+}
+
+/* ─── FAQ ACCORDION ─── */
+function FaqItem({ q, a, isOpen, onClick }) {
+  return (
+    <div style={{
+      background: 'var(--card-bg)', borderRadius: 16, border: '1px solid var(--border)',
+      marginBottom: 12, overflow: 'hidden', transition: 'box-shadow 0.3s',
+      boxShadow: isOpen ? 'var(--shadow-md)' : 'var(--shadow-sm)',
+    }}>
+      <button onClick={onClick} style={{
+        width: '100%', padding: '20px 24px', display: 'flex', justifyContent: 'space-between',
+        alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer',
+        fontFamily: "'Montserrat', sans-serif", textAlign: 'left',
+      }}>
+        <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--charcoal)', flex: 1 }}>{q}</span>
+        <span style={{
+          width: 32, height: 32, borderRadius: '50%', background: isOpen ? 'var(--coral)' : 'var(--coral-pale)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'all 0.3s', transform: isOpen ? 'rotate(45deg)' : 'rotate(0)',
+          color: isOpen ? 'white' : 'var(--coral)', fontSize: 20, fontWeight: 300, flexShrink: 0,
+        }}>+</span>
+      </button>
+      <div style={{
+        maxHeight: isOpen ? 200 : 0, overflow: 'hidden',
+        transition: 'max-height 0.4s ease, padding 0.3s',
+        padding: isOpen ? '0 24px 20px' : '0 24px 0',
+      }}>
+        <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.7 }}>{a}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MAIN COMPONENT ─── */
 export default function LandingPage() {
   const navigate = useNavigate();
   const { dark, toggle } = useTheme();
+  const [openFaq, setOpenFaq] = useState(null);
+  const [scrollY, setScrollY] = useState(0);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
 
-  const features = [
-    { icon: '📍', title: 'Smart Matching', desc: 'Our landmark-based algorithm finds the best ride matches based on route and your preferences automatically.' },
-    { icon: '⏱', title: 'Rides in Minutes', desc: 'No long waits. Find and book a pooled ride within minutes. Real-time availability at your fingertips.' },
-    { icon: '👥', title: 'Community First', desc: 'Build connections with your daily commuters. Ride with people heading your way every day.' },
-    { icon: '💰', title: 'Save up to 60%', desc: 'Split fuel and travel costs with co-riders heading your way. Every shared ride means money saved.' },
-    { icon: '🌿', title: 'Go Green', desc: 'Fewer cars on the road means reduced carbon emissions. Make an eco-friendly choice with every ride.' },
-    { icon: '🛡', title: 'Verified & Safe', desc: 'Every rider is verified. Female-only ride options, real-time status updates, and smart notifications.' },
-  ];
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
-  const steps = [
-    { num: '01', icon: '📍', title: 'Set Your Route', desc: 'Enter your pickup and drop-off landmarks. Our smart system instantly shows available rides heading your way.' },
-    { num: '02', icon: '🤝', title: 'Match & Connect', desc: 'Choose your co-rider from verified profiles. Get notified instantly when a matching ride is posted.' },
-    { num: '03', icon: '🚗', title: 'Ride & Save', desc: 'Share the journey, split the cost automatically. Rate your experience and build your rider reputation.' },
-  ];
+  useEffect(() => {
+    const timer = setInterval(() => setActiveTestimonial(i => (i + 1) % testimonials.length), 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const parallax = (factor) => ({ transform: `translateY(${scrollY * factor}px)` });
 
   return (
     <div style={{ fontFamily: "'Montserrat', sans-serif", color: 'var(--charcoal)', overflowX: 'hidden' }}>
 
-      {/* ── NAVBAR ── */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        background: dark ? 'rgba(18,18,18,0.95)' : 'rgba(255,255,255,0.95)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid var(--border)',
-        padding: '0 48px', height: 64,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+      {/* ══════ NAVBAR ══════ */}
+      <nav className="landing-nav" style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, height: 64,
+        background: scrollY > 50
+          ? (dark ? 'rgba(18,18,18,0.95)' : 'rgba(255,255,255,0.95)')
+          : 'transparent',
+        backdropFilter: scrollY > 50 ? 'blur(16px)' : 'none',
+        borderBottom: scrollY > 50 ? '1px solid var(--border)' : '1px solid transparent',
+        padding: '0 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        transition: 'all 0.3s ease',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
-            width: 36, height: 36, background: 'var(--coral)',
+            width: 36, height: 36, background: 'linear-gradient(135deg, var(--coral), var(--coral-light))',
             borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 18, boxShadow: '0 2px 8px rgba(204,120,92,0.4)'
-          }}>⚡</div>
-          <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--charcoal)' }}>
+            boxShadow: '0 2px 8px rgba(204,120,92,0.4)',
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L4 7v10l8 5 8-5V7L12 2z" stroke="white" strokeWidth="2.2" strokeLinejoin="round" />
+              <circle cx="12" cy="12" r="2.5" fill="white" />
+            </svg>
+          </div>
+          <span style={{ fontSize: 18, fontWeight: 700 }}>
             Urban<span style={{ color: 'var(--coral)' }}>Ride</span>
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-          {['Features', 'How It Works', 'Contact'].map(item => (
-            <a key={item} href={`#${item.toLowerCase().replace(' ', '-')}`} style={{
-              color: 'var(--muted)', textDecoration: 'none', fontSize: 14, fontWeight: 500
+        <div className="nav-links-landing" style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+          {['Features', 'How It Works', 'Testimonials', 'FAQ'].map(item => (
+            <a key={item} href={`#${item.toLowerCase().replace(/ /g, '-')}`} style={{
+              color: 'var(--muted)', textDecoration: 'none', fontSize: 14, fontWeight: 500,
+              transition: 'color 0.2s',
             }}>{item}</a>
           ))}
         </div>
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <button className="theme-toggle" onClick={toggle}
-            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}>
-            {dark ? '☀️' : '🌙'}
-          </button>
-          <button onClick={() => navigate('/login')} style={{
-            padding: '9px 20px', background: 'transparent',
-            border: '1.5px solid var(--border)', borderRadius: 10,
-            fontSize: 14, fontWeight: 500, cursor: 'pointer', color: 'var(--muted)'
-          }}>Log in</button>
-          <button onClick={() => navigate('/register')} style={{
-            padding: '9px 22px', background: 'var(--coral)',
-            border: 'none', borderRadius: 10,
-            fontSize: 14, fontWeight: 600, cursor: 'pointer', color: 'white',
-            boxShadow: '0 2px 10px rgba(204,120,92,0.35)'
-          }}>Get Started</button>
+          <button className="theme-toggle" onClick={toggle}>{dark ? '☀️' : '🌙'}</button>
+          <button onClick={() => navigate('/login')} className="landing-btn-ghost">Log in</button>
+          <button onClick={() => navigate('/register')} className="landing-btn-primary">Get Started</button>
         </div>
       </nav>
 
-      {/* ── HERO ── */}
+      {/* ══════ HERO ══════ */}
       <section style={{
-        background: 'var(--hero-bg)',
-        padding: '80px 48px 60px',
-        display: 'grid', gridTemplateColumns: '1fr 1fr',
-        gap: 60, alignItems: 'center',
-        minHeight: '88vh'
+        background: 'var(--hero-bg)', padding: '140px 48px 80px', minHeight: '100vh',
+        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center',
+        position: 'relative', overflow: 'hidden',
       }}>
-        <div>
+        {/* Parallax background shapes */}
+        <div style={{ ...parallax(-0.15), position: 'absolute', top: 100, right: -80, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(204,120,92,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ ...parallax(-0.1), position: 'absolute', bottom: -100, left: -100, width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(42,157,143,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+        <RevealOnScroll direction="left">
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             background: 'var(--coral-pale)', border: '1px solid var(--border)',
-            borderRadius: 20, padding: '6px 14px', marginBottom: 28
+            borderRadius: 20, padding: '6px 14px', marginBottom: 28,
           }}>
-            <span style={{ width: 7, height: 7, background: 'var(--coral)', borderRadius: '50%', display: 'inline-block' }} />
+            <span className="live-dot" />
             <span style={{ fontSize: 13, color: 'var(--coral)', fontWeight: 500 }}>Ride-pooling made easy</span>
           </div>
 
-          <h1 style={{
-            fontSize: 54, fontWeight: 800, lineHeight: 1.1,
-            letterSpacing: '-0.03em', marginBottom: 24,
-            color: 'var(--charcoal)'
-          }}>
+          <h1 style={{ fontSize: 56, fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.03em', marginBottom: 24 }}>
             Share the Ride,{' '}
-            <span style={{ color: 'var(--coral)' }}>Split<br />the Cost</span>
+            <span style={{ color: 'var(--coral)', position: 'relative' }}>
+              Split<br />the Cost
+              <svg style={{ position: 'absolute', bottom: -8, left: 0, width: '100%' }} height="8" viewBox="0 0 200 8" fill="none">
+                <path d="M2 6C50 2 150 2 198 6" stroke="var(--coral)" strokeWidth="3" strokeLinecap="round" opacity="0.4" />
+              </svg>
+            </span>
           </h1>
 
           <p style={{ fontSize: 17, color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 36, maxWidth: 440 }}>
-            Connect with commuters heading your way.{' '}
-            <strong style={{ color: 'var(--charcoal)' }}>Save money</strong>,{' '}
+            Connect with commuters heading your way. <strong style={{ color: 'var(--charcoal)' }}>Save money</strong>,{' '}
             <strong style={{ color: 'var(--charcoal)' }}>reduce emissions</strong>, and make every ride count.
           </p>
 
-          <div style={{ display: 'flex', gap: 14, marginBottom: 56 }}>
-            <button onClick={() => navigate('/search')} style={{
-              padding: '14px 28px', background: 'var(--coral)',
-              border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600,
-              cursor: 'pointer', color: 'white',
-              boxShadow: '0 4px 16px rgba(204,120,92,0.4)',
-              display: 'flex', alignItems: 'center', gap: 8
-            }}>Book a Ride →</button>
-            <button onClick={() => navigate('/post-ride')} style={{
-              padding: '14px 28px', background: 'transparent',
-              border: '2px solid var(--coral)', borderRadius: 12, fontSize: 15, fontWeight: 600,
-              cursor: 'pointer', color: 'var(--coral)',
-              display: 'flex', alignItems: 'center', gap: 8
-            }}>Offer a Ride →</button>
+          <div style={{ display: 'flex', gap: 14, marginBottom: 48 }}>
+            <button onClick={() => navigate('/register')} className="hero-cta-btn">
+              Download App
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5v14m0 0l-6-6m6 6l6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            </button>
+            <button onClick={() => navigate('/search')} className="hero-cta-outline">
+              Book a Ride →
+            </button>
           </div>
 
           {/* Stats */}
@@ -127,295 +222,339 @@ export default function LandingPage() {
               { val: '4.9★', label: 'User Rating', accent: true },
             ].map((s, i) => (
               <div key={i} style={{
-                paddingRight: 32,
-                borderRight: i < 2 ? '1px solid var(--stat-divider)' : 'none',
-                marginRight: i < 2 ? 32 : 0
+                paddingRight: 32, borderRight: i < 2 ? '1px solid var(--stat-divider)' : 'none',
+                marginRight: i < 2 ? 32 : 0,
               }}>
                 <p style={{ fontSize: 24, fontWeight: 800, margin: 0, color: s.accent ? '#2A9D8F' : 'var(--charcoal)' }}>{s.val}</p>
                 <p style={{ fontSize: 13, color: 'var(--text-hint)', margin: '2px 0 0' }}>{s.label}</p>
               </div>
             ))}
           </div>
-        </div>
+        </RevealOnScroll>
 
         {/* Right — illustration */}
-        <div style={{ position: 'relative' }}>
-          <div style={{
-            background: dark
-              ? 'linear-gradient(135deg, #1E2A28 0%, #2A2420 100%)'
-              : 'linear-gradient(135deg, #E8F4F2 0%, #EDE4DA 100%)',
-            borderRadius: 24, padding: '40px 32px', minHeight: 380,
-            position: 'relative', overflow: 'hidden',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.08)'
-          }}>
-            <svg viewBox="0 0 460 280" style={{ width: '100%' }}>
-              <rect x="0" y="220" width="460" height="60" fill={dark ? '#2A2622' : '#D4CEC8'} rx="4"/>
-              <rect x="0" y="230" width="460" height="40" fill={dark ? '#252220' : '#C8C2BC'}/>
-              {[40,100,160,220,280,340,400].map(x => (
-                <rect key={x} x={x} y="248" width="40" height="5" fill={dark ? '#3A3632' : '#E8E0D8'} rx="2"/>
-              ))}
-              <rect x="60" y="100" width="80" height="125" fill={dark ? '#3A3228' : '#D4C4B4'} rx="4"/>
-              <rect x="70" y="110" width="18" height="20" fill="#A8C8C0" rx="2" opacity="0.8"/>
-              <rect x="96" y="110" width="18" height="20" fill="#A8C8C0" rx="2" opacity="0.8"/>
-              <rect x="122" y="110" width="18" height="20" fill="#A8C8C0" rx="2" opacity="0.6"/>
-              <rect x="70" y="138" width="18" height="20" fill="#A8C8C0" rx="2" opacity="0.7"/>
-              <rect x="96" y="138" width="18" height="20" fill="#A8C8C0" rx="2" opacity="0.9"/>
-              <rect x="170" y="60" width="70" height="165" fill={dark ? '#2A3A38' : '#B8D4D0'} rx="4"/>
-              <rect x="180" y="72" width="14" height="18" fill="white" rx="2" opacity="0.5"/>
-              <rect x="200" y="72" width="14" height="18" fill="white" rx="2" opacity="0.4"/>
-              <rect x="180" y="98" width="14" height="18" fill="white" rx="2" opacity="0.5"/>
-              <rect x="200" y="98" width="14" height="18" fill="white" rx="2" opacity="0.6"/>
-              <rect x="270" y="90" width="65" height="135" fill={dark ? '#3A3228' : '#D4C4B4'} rx="4"/>
-              <rect x="280" y="102" width="14" height="18" fill="#A8C8C0" rx="2" opacity="0.7"/>
-              <rect x="300" y="102" width="14" height="18" fill="#A8C8C0" rx="2" opacity="0.5"/>
-              <rect x="360" y="110" width="75" height="115" fill={dark ? '#2A3A38' : '#B8D4D0'} rx="4"/>
-              <rect x="370" y="122" width="14" height="18" fill="white" rx="2" opacity="0.6"/>
-              <rect x="392" y="122" width="14" height="18" fill="white" rx="2" opacity="0.8"/>
-              <ellipse cx="255" cy="80" rx="8" ry="13" fill="#5BAD8F" opacity="0.7" transform="rotate(-15,255,80)"/>
-              <ellipse cx="345" cy="95" rx="6" ry="10" fill="#5BAD8F" opacity="0.6" transform="rotate(10,345,95)"/>
-              <circle cx="130" cy="215" r="10" fill="#2A9D8F" stroke="white" strokeWidth="3"/>
-              <circle cx="130" cy="215" r="4" fill="white"/>
-              <circle cx="340" cy="195" r="10" fill="var(--coral)" stroke="white" strokeWidth="3"/>
-              <circle cx="340" cy="195" r="4" fill="white"/>
-              <path d="M140 215 Q220 200 330 200" stroke="#2A9D8F" strokeWidth="2.5" strokeDasharray="8 5" fill="none"/>
-              <g transform="translate(195,196)">
-                <rect x="-30" y="-14" width="60" height="30" fill="var(--coral)" rx="8"/>
-                <rect x="-20" y="-22" width="40" height="18" fill="#E8956B" rx="5"/>
-                <rect x="-15" y="-19" width="14" height="12" fill="#A8D0CC" rx="3" opacity="0.9"/>
-                <rect x="3" y="-19" width="14" height="12" fill="#A8D0CC" rx="3" opacity="0.9"/>
-                <circle cx="-18" cy="16" r="8" fill="#1C1917"/>
-                <circle cx="-18" cy="16" r="4" fill="#888"/>
-                <circle cx="18" cy="16" r="8" fill="#1C1917"/>
-                <circle cx="18" cy="16" r="4" fill="#888"/>
-                <circle cx="-8" cy="-10" r="5" fill="#F5D0B0"/>
-                <circle cx="5" cy="-10" r="5" fill="#D4956B"/>
-                <circle cx="18" cy="-10" r="5" fill="var(--coral)"/>
-              </g>
-            </svg>
-          </div>
-
-          {/* Floating cards */}
-          <div style={{
-            position: 'absolute', top: -16, right: -16,
-            background: 'var(--floating-bg)', borderRadius: 14, padding: '12px 18px',
-            boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)',
-            display: 'flex', alignItems: 'center', gap: 12,
-            animation: 'floatA 3s ease-in-out infinite'
-          }}>
+        <RevealOnScroll direction="right" delay={0.2}>
+          <div style={{ position: 'relative' }}>
             <div style={{
-              width: 32, height: 32, background: dark ? '#1C2E22' : '#EDF5F3',
-              borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              background: dark ? 'linear-gradient(135deg, #1E2A28, #2A2420)' : 'linear-gradient(135deg, #E8F4F2, #EDE4DA)',
+              borderRadius: 24, padding: '40px 32px', minHeight: 380, position: 'relative', overflow: 'hidden',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.1)',
             }}>
-              <span style={{ color: '#2A9D8F', fontSize: 16 }}>✓</span>
+              <svg viewBox="0 0 460 280" style={{ width: '100%' }}>
+                <rect x="0" y="220" width="460" height="60" fill={dark ? '#2A2622' : '#D4CEC8'} rx="4"/>
+                <rect x="0" y="230" width="460" height="40" fill={dark ? '#252220' : '#C8C2BC'}/>
+                {[40,100,160,220,280,340,400].map(x => <rect key={x} x={x} y="248" width="40" height="5" fill={dark ? '#3A3632' : '#E8E0D8'} rx="2"/>)}
+                <rect x="60" y="100" width="80" height="125" fill={dark ? '#3A3228' : '#D4C4B4'} rx="4"/>
+                <rect x="70" y="110" width="18" height="20" fill="#A8C8C0" rx="2" opacity="0.8"/>
+                <rect x="96" y="110" width="18" height="20" fill="#A8C8C0" rx="2" opacity="0.8"/>
+                <rect x="170" y="60" width="70" height="165" fill={dark ? '#2A3A38' : '#B8D4D0'} rx="4"/>
+                <rect x="270" y="90" width="65" height="135" fill={dark ? '#3A3228' : '#D4C4B4'} rx="4"/>
+                <rect x="360" y="110" width="75" height="115" fill={dark ? '#2A3A38' : '#B8D4D0'} rx="4"/>
+                <circle cx="130" cy="215" r="10" fill="#2A9D8F" stroke="white" strokeWidth="3"/>
+                <circle cx="340" cy="195" r="10" fill="var(--coral)" stroke="white" strokeWidth="3"/>
+                <path d="M140 215 Q220 200 330 200" stroke="#2A9D8F" strokeWidth="2.5" strokeDasharray="8 5" fill="none"/>
+                <g transform="translate(195,196)">
+                  <rect x="-30" y="-14" width="60" height="30" fill="var(--coral)" rx="8"/>
+                  <rect x="-20" y="-22" width="40" height="18" fill="#E8956B" rx="5"/>
+                  <circle cx="-18" cy="16" r="8" fill="#1C1917"/>
+                  <circle cx="-18" cy="16" r="4" fill="#888"/>
+                  <circle cx="18" cy="16" r="8" fill="#1C1917"/>
+                  <circle cx="18" cy="16" r="4" fill="#888"/>
+                </g>
+              </svg>
             </div>
-            <div>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: 'var(--charcoal)' }}>Ride Matched!</p>
-              <p style={{ margin: 0, fontSize: 11, color: 'var(--text-hint)' }}>2 riders nearby</p>
+            {/* Floating cards */}
+            <div className="float-card float-a" style={{ position: 'absolute', top: -16, right: -16 }}>
+              <div style={{ width: 32, height: 32, background: dark ? '#1C2E22' : '#EDF5F3', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: '#2A9D8F', fontSize: 16 }}>✓</span>
+              </div>
+              <div>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>Ride Matched!</p>
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--text-hint)' }}>2 riders nearby</p>
+              </div>
+            </div>
+            <div className="float-card float-b" style={{ position: 'absolute', bottom: -16, left: -8 }}>
+              <div style={{ width: 32, height: 32, background: dark ? '#3A2A22' : '#FDE8D8', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>💰</div>
+              <div>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>You saved ₹120</p>
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--text-hint)' }}>On today's ride</p>
+              </div>
             </div>
           </div>
+        </RevealOnScroll>
+      </section>
 
-          <div style={{
-            position: 'absolute', bottom: -16, left: -8,
-            background: 'var(--floating-bg)', borderRadius: 14, padding: '12px 18px',
-            boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)',
-            display: 'flex', alignItems: 'center', gap: 12,
-            animation: 'floatB 3.5s ease-in-out infinite'
-          }}>
-            <div style={{
-              width: 32, height: 32, background: dark ? '#3A2A22' : '#FDE8D8',
-              borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 16
-            }}>💰</div>
-            <div>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: 'var(--charcoal)' }}>You saved ₹120</p>
-              <p style={{ margin: 0, fontSize: 11, color: 'var(--text-hint)' }}>On today's ride</p>
-            </div>
-          </div>
+      {/* ══════ STATS BAR ══════ */}
+      <section style={{ background: dark ? '#171717' : '#1C1917', padding: '48px 48px' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+          {stats.map((s, i) => (
+            <RevealOnScroll key={i} delay={i * 0.1}>
+              <div style={{ textAlign: 'center', padding: 20 }}>
+                <span style={{ fontSize: 28, display: 'block', marginBottom: 8 }}>{s.icon}</span>
+                <p style={{ fontSize: 32, fontWeight: 800, color: 'white', margin: 0 }}>
+                  <AnimatedCounter target={s.value} suffix={s.value.includes('+') ? '+' : s.value.includes('★') ? '★' : s.value.includes('Cr') ? 'Cr+' : ''} />
+                </p>
+                <p style={{ fontSize: 13, color: '#999', marginTop: 4 }}>{s.label}</p>
+              </div>
+            </RevealOnScroll>
+          ))}
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
+      {/* ══════ FEATURES ══════ */}
       <section id="features" style={{ background: 'var(--section-bg)', padding: '100px 48px' }}>
-        <div style={{ textAlign: 'center', marginBottom: 60 }}>
-          <div style={{
-            display: 'inline-block', background: 'var(--coral-pale)',
-            border: '1px solid var(--border)', borderRadius: 20,
-            padding: '5px 16px', marginBottom: 20
-          }}>
-            <span style={{ fontSize: 13, color: 'var(--coral)', fontWeight: 500 }}>Why UrbanRide?</span>
-          </div>
-          <h2 style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 16, color: 'var(--charcoal)' }}>
-            Everything you need for a{' '}
-            <span style={{ color: 'var(--coral)' }}>smarter commute</span>
-          </h2>
-          <p style={{ color: 'var(--text-tertiary)', fontSize: 16, maxWidth: 520, margin: '0 auto' }}>
-            UrbanRide combines smart technology with community spirit to transform how you travel.
-          </p>
-        </div>
-
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 24, maxWidth: 1100, margin: '0 auto'
-        }}>
-          {features.map((f, i) => (
-            <div key={i} style={{
-              background: 'var(--card-bg)', borderRadius: 20, padding: 28,
-              border: '1px solid var(--feature-border)',
-              boxShadow: 'var(--shadow-sm)',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              cursor: 'default'
-            }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}>
-              <div style={{
-                width: 48, height: 48, background: 'var(--coral-pale)',
-                borderRadius: 14, display: 'flex',
-                alignItems: 'center', justifyContent: 'center',
-                fontSize: 22, marginBottom: 18
-              }}>{f.icon}</div>
-              <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 10, color: 'var(--charcoal)' }}>{f.title}</h3>
-              <p style={{ fontSize: 14, color: 'var(--text-tertiary)', lineHeight: 1.65 }}>{f.desc}</p>
+        <RevealOnScroll>
+          <div style={{ textAlign: 'center', marginBottom: 60 }}>
+            <div className="section-badge" style={{ background: 'var(--coral-pale)' }}>
+              <span style={{ fontSize: 13, color: 'var(--coral)', fontWeight: 600 }}>✨ Why UrbanRide?</span>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" style={{ background: 'var(--section-alt-bg)', padding: '100px 48px' }}>
-        <div style={{ textAlign: 'center', marginBottom: 60 }}>
-          <div style={{
-            display: 'inline-block', background: dark ? '#1C2E22' : '#EDF5F3',
-            border: '1px solid var(--border)', borderRadius: 20,
-            padding: '5px 16px', marginBottom: 20
-          }}>
-            <span style={{ fontSize: 13, color: '#2A9D8F', fontWeight: 500 }}>Simple as 1-2-3</span>
-          </div>
-          <h2 style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 16, color: 'var(--charcoal)' }}>
-            How <span style={{ color: '#2A9D8F' }}>UrbanRide</span> works
-          </h2>
-          <p style={{ color: 'var(--text-tertiary)', fontSize: 16 }}>
-            Getting started takes less than a minute. Here's how it works.
-          </p>
-        </div>
-
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 28, maxWidth: 1000, margin: '0 auto',
-          position: 'relative'
-        }}>
-          <div style={{
-            position: 'absolute', top: 56, left: '18%', right: '18%',
-            height: 2, background: 'linear-gradient(90deg, var(--border), var(--border))',
-            zIndex: 0
-          }} />
-
-          {steps.map((s, i) => (
-            <div key={i} style={{
-              background: 'var(--card-bg)', borderRadius: 20, padding: 32,
-              border: '1px solid var(--feature-border)',
-              position: 'relative', zIndex: 1,
-              boxShadow: i === 1 ? '0 8px 32px rgba(42,157,143,0.12)' : 'var(--shadow-sm)',
-              transform: i === 1 ? 'translateY(-8px)' : 'none',
-              transition: 'transform 0.2s, box-shadow 0.2s'
-            }}>
-              <div style={{
-                position: 'absolute', top: -14, left: 28,
-                background: 'var(--coral)', color: 'white',
-                borderRadius: 8, padding: '4px 10px',
-                fontSize: 12, fontWeight: 700, letterSpacing: '0.05em'
-              }}>{s.num}</div>
-
-              <div style={{
-                width: 56, height: 56, background: dark ? '#1C2E22' : '#E8F5F3',
-                borderRadius: 16, display: 'flex',
-                alignItems: 'center', justifyContent: 'center',
-                fontSize: 26, marginBottom: 20, marginTop: 8
-              }}>{s.icon}</div>
-
-              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12, color: 'var(--charcoal)' }}>{s.title}</h3>
-              <p style={{ fontSize: 14, color: 'var(--text-tertiary)', lineHeight: 1.65 }}>{s.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── CTA BANNER ── */}
-      <section style={{ background: dark ? '#0E0E0E' : '#1C1917', padding: '80px 48px' }}>
-        <div style={{
-          background: 'linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%)',
-          borderRadius: 24, padding: '48px 56px',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          maxWidth: 1100, margin: '0 auto',
-          position: 'relative', overflow: 'hidden'
-        }}>
-          <div style={{ position: 'absolute', right: -40, top: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
-          <div style={{ position: 'absolute', right: 60, bottom: -60, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
-          <div>
-            <h2 style={{ fontSize: 32, fontWeight: 800, color: 'white', marginBottom: 10 }}>
-              Ready to share the ride?
+            <h2 style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 16 }}>
+              Everything for a <span style={{ color: 'var(--coral)' }}>smarter commute</span>
             </h2>
-            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 16 }}>
-              Join thousands of riders saving money every day.
+            <p style={{ color: 'var(--text-tertiary)', fontSize: 16, maxWidth: 520, margin: '0 auto' }}>
+              Smart technology combined with community spirit to transform how you travel.
             </p>
           </div>
-          <button onClick={() => navigate('/register')} style={{
-            padding: '16px 32px', background: 'white',
-            border: 'none', borderRadius: 14, fontSize: 15,
-            fontWeight: 700, cursor: 'pointer', color: 'var(--coral)',
-            whiteSpace: 'nowrap', boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-            transition: 'transform 0.15s'
-          }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.03)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-            Start Riding Now →
-          </button>
+        </RevealOnScroll>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, maxWidth: 1100, margin: '0 auto' }}>
+          {features.map((f, i) => (
+            <RevealOnScroll key={i} delay={i * 0.08}>
+              <div className="feature-card" style={{ background: 'var(--card-bg)', borderRadius: 20, padding: 28, border: '1px solid var(--feature-border)' }}>
+                <div style={{
+                  width: 52, height: 52, background: `${f.color}15`, borderRadius: 14,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 18,
+                }}>{f.icon}</div>
+                <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 10 }}>{f.title}</h3>
+                <p style={{ fontSize: 14, color: 'var(--text-tertiary)', lineHeight: 1.65 }}>{f.desc}</p>
+              </div>
+            </RevealOnScroll>
+          ))}
         </div>
+      </section>
+
+      {/* ══════ HOW IT WORKS ══════ */}
+      <section id="how-it-works" style={{ background: 'var(--section-alt-bg)', padding: '100px 48px' }}>
+        <RevealOnScroll>
+          <div style={{ textAlign: 'center', marginBottom: 60 }}>
+            <div className="section-badge" style={{ background: dark ? '#1C2E22' : '#EDF5F3' }}>
+              <span style={{ fontSize: 13, color: '#2A9D8F', fontWeight: 600 }}>🔄 Simple as 1-2-3</span>
+            </div>
+            <h2 style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 16 }}>
+              How <span style={{ color: '#2A9D8F' }}>UrbanRide</span> works
+            </h2>
+            <p style={{ color: 'var(--text-tertiary)', fontSize: 16 }}>Getting started takes less than a minute.</p>
+          </div>
+        </RevealOnScroll>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28, maxWidth: 1000, margin: '0 auto', position: 'relative' }}>
+          <div style={{ position: 'absolute', top: 56, left: '18%', right: '18%', height: 2, background: 'var(--border)', zIndex: 0 }} />
+          {steps.map((s, i) => (
+            <RevealOnScroll key={i} delay={i * 0.15}>
+              <div className="step-card" style={{
+                background: 'var(--card-bg)', borderRadius: 20, padding: 32,
+                border: '1px solid var(--feature-border)', position: 'relative', zIndex: 1,
+                boxShadow: i === 1 ? '0 8px 32px rgba(42,157,143,0.12)' : 'var(--shadow-sm)',
+                transform: i === 1 ? 'translateY(-8px)' : 'none',
+              }}>
+                <div style={{ position: 'absolute', top: -14, left: 28, background: 'var(--coral)', color: 'white', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 700, letterSpacing: '0.05em' }}>{s.num}</div>
+                <div style={{ width: 56, height: 56, background: dark ? '#1C2E22' : '#E8F5F3', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, marginBottom: 20, marginTop: 8 }}>{s.icon}</div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>{s.title}</h3>
+                <p style={{ fontSize: 14, color: 'var(--text-tertiary)', lineHeight: 1.65 }}>{s.desc}</p>
+              </div>
+            </RevealOnScroll>
+          ))}
+        </div>
+
+        {/* Video Section */}
+        <RevealOnScroll delay={0.2}>
+          <div style={{ maxWidth: 800, margin: '80px auto 0', borderRadius: 20, overflow: 'hidden', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)', background: dark ? '#111' : '#000', position: 'relative' }}>
+            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+              <iframe
+                src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1"
+                title="How UrbanRide Works"
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        </RevealOnScroll>
+      </section>
+
+      {/* ══════ DOWNLOAD APP ══════ */}
+      <section style={{
+        background: 'linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%)',
+        padding: '80px 48px', position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{ position: 'absolute', right: -100, top: -100, width: 400, height: 400, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
+        <div style={{ position: 'absolute', left: -50, bottom: -150, width: 350, height: 350, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+          <RevealOnScroll direction="left">
+            <h2 style={{ fontSize: 38, fontWeight: 800, color: 'white', marginBottom: 16 }}>Download the App</h2>
+            <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 16, lineHeight: 1.7, marginBottom: 32 }}>
+              Get UrbanRide on your phone and start sharing rides today. Available on both platforms.
+            </p>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <button className="store-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M3 20.5V3.5C3 2.91 3.34 2.39 3.84 2.15L13.69 12L3.84 21.85C3.34 21.6 3 21.09 3 20.5ZM16.81 15.12L6.05 21.34L14.54 12.85L16.81 15.12ZM20.16 10.81C20.5 11.08 20.75 11.5 20.75 12C20.75 12.5 20.53 12.9 20.18 13.18L17.89 14.5L15.39 12L17.89 9.5L20.16 10.81ZM6.05 2.66L16.81 8.88L14.54 11.15L6.05 2.66Z"/></svg>
+                <div><span style={{ fontSize: 10, opacity: 0.8 }}>GET IT ON</span><br /><span style={{ fontSize: 15, fontWeight: 700 }}>Google Play</span></div>
+              </button>
+              <button className="store-btn">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 16.56 2.93 11.3 4.7 7.72C5.57 5.94 7.36 4.86 9.28 4.84C10.56 4.82 11.78 5.72 12.56 5.72C13.34 5.72 14.81 4.62 16.39 4.8C17.07 4.83 18.94 5.09 20.13 6.85C20.03 6.92 17.58 8.35 17.61 11.31C17.65 14.84 20.68 16 20.71 16C20.69 16.08 20.17 17.84 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/></svg>
+                <div><span style={{ fontSize: 10, opacity: 0.8 }}>Download on the</span><br /><span style={{ fontSize: 15, fontWeight: 700 }}>App Store</span></div>
+              </button>
+            </div>
+          </RevealOnScroll>
+
+          <RevealOnScroll direction="right" delay={0.2}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 20 }}>
+              {/* Phone mockup */}
+              <div className="phone-mockup">
+                <div style={{ background: dark ? '#1a1a1a' : '#f5f5f5', borderRadius: 20, padding: 16, height: 280 }}>
+                  <div style={{ height: 24, background: 'var(--coral-pale)', borderRadius: 8, marginBottom: 12 }} />
+                  <div style={{ height: 80, background: 'var(--coral)', borderRadius: 12, marginBottom: 12, opacity: 0.7 }} />
+                  <div style={{ height: 12, background: 'var(--border)', borderRadius: 4, marginBottom: 8, width: '80%' }} />
+                  <div style={{ height: 12, background: 'var(--border)', borderRadius: 4, marginBottom: 8, width: '60%' }} />
+                  <div style={{ height: 40, background: 'var(--coral)', borderRadius: 10, marginTop: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ color: 'white', fontSize: 12, fontWeight: 600 }}>Book Ride</span>
+                  </div>
+                </div>
+              </div>
+              <div className="phone-mockup" style={{ marginTop: 40 }}>
+                <div style={{ background: dark ? '#1a1a1a' : '#f5f5f5', borderRadius: 20, padding: 16, height: 280 }}>
+                  <div style={{ height: 120, background: '#2A9D8F', borderRadius: 12, marginBottom: 12, opacity: 0.5 }} />
+                  <div style={{ height: 12, background: 'var(--border)', borderRadius: 4, marginBottom: 8, width: '70%' }} />
+                  <div style={{ height: 12, background: 'var(--border)', borderRadius: 4, marginBottom: 8, width: '50%' }} />
+                  <div style={{ height: 40, background: '#2A9D8F', borderRadius: 10, marginTop: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ color: 'white', fontSize: 12, fontWeight: 600 }}>Track Ride</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </RevealOnScroll>
+        </div>
+      </section>
+
+      {/* ══════ TESTIMONIALS ══════ */}
+      <section id="testimonials" style={{ background: 'var(--section-bg)', padding: '100px 48px' }}>
+        <RevealOnScroll>
+          <div style={{ textAlign: 'center', marginBottom: 60 }}>
+            <div className="section-badge" style={{ background: 'var(--coral-pale)' }}>
+              <span style={{ fontSize: 13, color: 'var(--coral)', fontWeight: 600 }}>💬 What Riders Say</span>
+            </div>
+            <h2 style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 16 }}>
+              Loved by <span style={{ color: 'var(--coral)' }}>thousands</span>
+            </h2>
+          </div>
+        </RevealOnScroll>
+
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+          {testimonials.map((t, i) => (
+            <RevealOnScroll key={i} delay={i * 0.1}>
+              <div className="testimonial-card" style={{
+                background: 'var(--card-bg)', borderRadius: 20, padding: 24,
+                border: activeTestimonial === i ? '2px solid var(--coral)' : '1px solid var(--feature-border)',
+                transition: 'all 0.4s',
+              }}>
+                <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
+                  {Array.from({ length: 5 }, (_, j) => (
+                    <span key={j} style={{ color: j < t.rating ? '#F59E0B' : 'var(--border)', fontSize: 16 }}>★</span>
+                  ))}
+                </div>
+                <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 20, fontStyle: 'italic' }}>"{t.text}"</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--coral-pale)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: 'var(--coral)' }}>{t.avatar}</div>
+                  <div>
+                    <p style={{ fontWeight: 600, fontSize: 14, margin: 0 }}>{t.name}</p>
+                    <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>{t.role}</p>
+                  </div>
+                </div>
+              </div>
+            </RevealOnScroll>
+          ))}
+        </div>
+      </section>
+
+      {/* ══════ FAQ ══════ */}
+      <section id="faq" style={{ background: 'var(--section-alt-bg)', padding: '100px 48px' }}>
+        <RevealOnScroll>
+          <div style={{ textAlign: 'center', marginBottom: 60 }}>
+            <div className="section-badge" style={{ background: 'var(--coral-pale)' }}>
+              <span style={{ fontSize: 13, color: 'var(--coral)', fontWeight: 600 }}>❓ Got Questions?</span>
+            </div>
+            <h2 style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 16 }}>
+              Frequently Asked <span style={{ color: 'var(--coral)' }}>Questions</span>
+            </h2>
+          </div>
+        </RevealOnScroll>
+
+        <div style={{ maxWidth: 700, margin: '0 auto' }}>
+          {faqs.map((f, i) => (
+            <RevealOnScroll key={i} delay={i * 0.08}>
+              <FaqItem q={f.q} a={f.a} isOpen={openFaq === i} onClick={() => setOpenFaq(openFaq === i ? null : i)} />
+            </RevealOnScroll>
+          ))}
+        </div>
+      </section>
+
+      {/* ══════ SOCIAL + CTA ══════ */}
+      <section style={{ background: dark ? '#0E0E0E' : '#1C1917', padding: '80px 48px' }}>
+        <RevealOnScroll>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <h2 style={{ fontSize: 36, fontWeight: 800, color: 'white', marginBottom: 16 }}>Ready to share the ride?</h2>
+            <p style={{ color: '#999', fontSize: 16, marginBottom: 32 }}>Join thousands of riders saving money every day.</p>
+            <button onClick={() => navigate('/register')} className="hero-cta-btn" style={{ margin: '0 auto' }}>
+              Start Riding Now →
+            </button>
+          </div>
+
+          {/* Social Icons */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, margin: '48px 0' }}>
+            {[
+              { name: 'Instagram', color: '#E4405F', path: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z' },
+              { name: 'X', color: '#fff', path: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z' },
+              { name: 'LinkedIn', color: '#0077B5', path: 'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z' },
+              { name: 'Facebook', color: '#1877F2', path: 'M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z' },
+            ].map(s => (
+              <a key={s.name} href="#" className="social-icon" style={{ '--brand-color': s.color }} title={s.name}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={s.path} /></svg>
+              </a>
+            ))}
+          </div>
+        </RevealOnScroll>
 
         {/* Footer */}
-        <div style={{ maxWidth: 1100, margin: '64px auto 0', display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr', gap: 40 }}>
+        <div style={{ maxWidth: 1100, margin: '48px auto 0', display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr', gap: 40 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <div style={{
-                width: 34, height: 34, background: 'var(--coral)',
-                borderRadius: 10, display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: 16
-              }}>⚡</div>
-              <span style={{ fontSize: 17, fontWeight: 700, color: 'white' }}>
-                Urban<span style={{ color: 'var(--coral-light)' }}>Ride</span>
-              </span>
+              <div style={{ width: 34, height: 34, background: 'var(--coral)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 7v10l8 5 8-5V7L12 2z" stroke="white" strokeWidth="2" strokeLinejoin="round" /><circle cx="12" cy="12" r="2.5" fill="white" /></svg>
+              </div>
+              <span style={{ fontSize: 17, fontWeight: 700, color: 'white' }}>Urban<span style={{ color: 'var(--coral-light)' }}>Ride</span></span>
             </div>
-            <p style={{ color: '#888', fontSize: 13, lineHeight: 1.7, maxWidth: 220 }}>
-              Making urban commutes affordable, social, and sustainable — one shared ride at a time.
-            </p>
+            <p style={{ color: '#888', fontSize: 13, lineHeight: 1.7, maxWidth: 220 }}>Making urban commutes affordable, social, and sustainable — one shared ride at a time.</p>
           </div>
-
           {[
             { heading: 'PRODUCT', links: ['Features', 'How It Works', 'Pricing', 'FAQ'] },
             { heading: 'COMPANY', links: ['About Us', 'Careers', 'Blog', 'Press'] },
             { heading: 'LEGAL', links: ['Privacy Policy', 'Terms of Service', 'Cookie Policy'] },
           ].map(col => (
             <div key={col.heading}>
-              <p style={{ color: '#777', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 18 }}>
-                {col.heading}
-              </p>
+              <p style={{ color: '#777', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 18 }}>{col.heading}</p>
               {col.links.map(link => (
                 <p key={link} style={{ marginBottom: 12 }}>
                   <a href="#" style={{ color: '#999', fontSize: 14, textDecoration: 'none', transition: 'color 0.2s' }}
                     onMouseEnter={e => e.target.style.color = 'var(--coral)'}
-                    onMouseLeave={e => e.target.style.color = '#999'}>
-                    {link}
-                  </a>
+                    onMouseLeave={e => e.target.style.color = '#999'}>{link}</a>
                 </p>
               ))}
             </div>
           ))}
         </div>
 
-        <div style={{
-          maxWidth: 1100, margin: '40px auto 0',
-          borderTop: '1px solid #2A2622', paddingTop: 28,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-        }}>
+        <div style={{ maxWidth: 1100, margin: '40px auto 0', borderTop: '1px solid #2A2622', paddingTop: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <p style={{ color: '#666', fontSize: 13 }}>© 2026 UrbanRide. All rights reserved.</p>
           <p style={{ color: '#666', fontSize: 13 }}>Made with 🧡 for a greener planet</p>
         </div>

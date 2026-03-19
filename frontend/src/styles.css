@@ -563,3 +563,232 @@ input[type="range"]::-moz-range-thumb {
     font-size: 22px;
   }
 }
+
+/* ═══════════════════════════════════════════ */
+/* ── LANDING PAGE STYLES                  ── */
+/* ═══════════════════════════════════════════ */
+
+html { scroll-behavior: smooth; }
+
+/* ── Section badge ── */
+.section-badge {
+  display: inline-block;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 16px;
+  margin-bottom: 20px;
+}
+
+/* ── Hero CTA buttons ── */
+.hero-cta-btn {
+  padding: 14px 28px;
+  background: var(--coral);
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  color: white;
+  box-shadow: 0 4px 16px rgba(204,120,92,0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Montserrat', sans-serif;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.hero-cta-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 24px rgba(204,120,92,0.5);
+}
+.hero-cta-btn:active {
+  transform: scale(0.97);
+}
+
+.hero-cta-outline {
+  padding: 14px 28px;
+  background: transparent;
+  border: 2px solid var(--coral);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--coral);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Montserrat', sans-serif;
+  transition: transform 0.2s, background 0.2s;
+}
+.hero-cta-outline:hover {
+  transform: scale(1.05);
+  background: var(--coral-pale);
+}
+.hero-cta-outline:active {
+  transform: scale(0.97);
+}
+
+/* ── Landing nav buttons ── */
+.landing-btn-ghost {
+  padding: 9px 20px;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--muted);
+  font-family: 'Montserrat', sans-serif;
+  transition: all 0.2s;
+}
+.landing-btn-ghost:hover {
+  border-color: var(--coral);
+  color: var(--coral);
+}
+
+.landing-btn-primary {
+  padding: 9px 22px;
+  background: var(--coral);
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: white;
+  box-shadow: 0 2px 10px rgba(204,120,92,0.35);
+  font-family: 'Montserrat', sans-serif;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.landing-btn-primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(204,120,92,0.45);
+}
+
+/* ── Floating cards ── */
+.float-card {
+  background: var(--floating-bg);
+  border-radius: 14px;
+  padding: 12px 18px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.float-a { animation: floatA 3s ease-in-out infinite; }
+.float-b { animation: floatB 3.5s ease-in-out infinite; }
+
+/* ── Feature cards ── */
+.feature-card {
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: default;
+}
+.feature-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ── Step cards ── */
+.step-card {
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.step-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* ── Testimonial cards ── */
+.testimonial-card {
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s;
+  cursor: default;
+}
+.testimonial-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ── Store buttons ── */
+.store-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  background: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.3);
+  border-radius: 14px;
+  cursor: pointer;
+  color: white;
+  font-family: 'Montserrat', sans-serif;
+  text-align: left;
+  transition: transform 0.2s, background 0.2s;
+  backdrop-filter: blur(8px);
+}
+.store-btn:hover {
+  transform: scale(1.05);
+  background: rgba(255,255,255,0.25);
+}
+.store-btn:active {
+  transform: scale(0.97);
+}
+
+/* ── Phone mockup ── */
+.phone-mockup {
+  width: 160px;
+  background: var(--card-bg);
+  border-radius: 28px;
+  padding: 8px;
+  border: 3px solid var(--border);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  transition: transform 0.3s;
+}
+.phone-mockup:hover {
+  transform: translateY(-8px);
+}
+
+/* ── Social icons ── */
+.social-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #2A2622;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  text-decoration: none;
+  transition: all 0.3s;
+  border: 1.5px solid #3A3632;
+}
+.social-icon:hover {
+  background: var(--brand-color, var(--coral));
+  color: white;
+  transform: translateY(-4px) scale(1.1);
+  border-color: transparent;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+/* ── Landing responsive ── */
+@media (max-width: 1024px) {
+  .nav-links-landing { display: none !important; }
+}
+
+@media (max-width: 768px) {
+  .landing-nav { padding: 0 20px !important; }
+  .landing-btn-ghost { display: none; }
+
+  section { padding-left: 20px !important; padding-right: 20px !important; }
+
+  section[style*="gridTemplateColumns: '1fr 1fr'"],
+  section > div[style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .feature-card,
+  .step-card,
+  .testimonial-card {
+    margin-bottom: 0;
+  }
+}
