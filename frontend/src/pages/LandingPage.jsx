@@ -3,41 +3,42 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { RevealOnScroll } from '../hooks/useScrollReveal.jsx';
 
-/* ─── FEATURE SVG ICONS ─── */
-const FeatureIcon = ({ type, color }) => {
-  const icons = {
-    matching: <><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="none" stroke="white" strokeWidth="1.5"/><circle cx="12" cy="9" r="2.5" fill="white"/><path d="M2 20h4l1.5-3L10 22l2-5 2 5 2.5-5L18 20h4" stroke="white" strokeWidth="1.2" fill="none" opacity="0.7"/></>,
-    speed: <><circle cx="12" cy="12" r="9" fill="none" stroke="white" strokeWidth="1.5"/><path d="M12 7v5l3 3" stroke="white" strokeWidth="1.8" strokeLinecap="round"/><path d="M5 4l2 2M19 4l-2 2" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.6"/></>,
-    community: <><circle cx="9" cy="7" r="3" fill="none" stroke="white" strokeWidth="1.5"/><circle cx="15" cy="7" r="3" fill="none" stroke="white" strokeWidth="1.5"/><path d="M3 21c0-4 2.7-6 6-6s6 2 6 6" fill="none" stroke="white" strokeWidth="1.5"/><path d="M15 15c3.3 0 6 2 6 6" fill="none" stroke="white" strokeWidth="1.5" opacity="0.7"/></>,
-    savings: <><circle cx="12" cy="12" r="8" fill="none" stroke="white" strokeWidth="1.5"/><path d="M12 8v8M9 11h6M9 14h6" stroke="white" strokeWidth="1.5" strokeLinecap="round"/><path d="M4 18l3-4 3 2 4-5 4 3" stroke="white" strokeWidth="1" fill="none" opacity="0.5"/></>,
-    green: <><path d="M17 8C12 8 8 12 8 17" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round"/><path d="M8 17c0-5 4-9 9-9" fill="none" stroke="white" strokeWidth="1.5"/><path d="M12 12c-2 2-3 4-3 6" stroke="white" strokeWidth="1" opacity="0.6"/><circle cx="6" cy="6" r="2" fill="none" stroke="white" strokeWidth="1" opacity="0.4"/><path d="M4 20L20 4" stroke="white" strokeWidth="0.5" opacity="0.2"/></>,
-    shield: <><path d="M12 3l7 4v5c0 5.25-3 8.25-7 10-4-1.75-7-4.75-7-10V7l7-4z" fill="none" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/><path d="M9 12l2 2 4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></>,
-  };
-  return (
-    <div style={{ width: 64, height: 64, borderRadius: 16, background: `linear-gradient(135deg, ${color}, ${color}CC)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 4px 16px ${color}33`, marginBottom: 18 }}>
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">{icons[type]}</svg>
-    </div>
-  );
-};
+/* ─── FEATURE IMAGES ─── */
+import imgSmartMatch from '../assets/feature_smart_matching.png';
+import imgQuickRides from '../assets/feature_quick_rides.png';
+import imgCommunity from '../assets/feature_community.png';
+import imgCostSaving from '../assets/feature_cost_saving.png';
+import imgEcoFriendly from '../assets/feature_eco_friendly.png';
+import imgFemaleSafety from '../assets/feature_female_safety.png';
 
 /* ─── DATA ─── */
 const features = [
-  { type: 'matching', title: 'Smart Matching', desc: 'Landmark-based algorithm finds best ride matches based on route, time, and preferences automatically.', color: '#6366F1', tagline: 'AI-Powered' },
-  { type: 'speed', title: 'Rides in Minutes', desc: 'Find and book a pooled ride within minutes. Real-time availability at your fingertips.', color: '#EC4899', tagline: 'Lightning Fast' },
-  { type: 'community', title: 'Community First', desc: 'Build connections with daily commuters heading your way. Ride with trusted people.', color: '#14B8A6', tagline: 'Social Network' },
-  { type: 'savings', title: 'Save up to 60%', desc: 'Split fuel costs with co-riders. Every shared ride means money saved for everyone.', color: '#F59E0B', tagline: 'Cost Effective' },
-  { type: 'green', title: 'Go Green', desc: 'Fewer cars on the road = reduced carbon emissions. Eco-friendly choice every ride.', color: '#22C55E', tagline: 'Eco Friendly' },
-  { type: 'shield', title: 'Verified & Safe', desc: 'Every rider is verified. Female-only ride options, real-time tracking, and smart alerts.', color: '#8B5CF6', tagline: 'Trust & Safety' },
+  { img: imgSmartMatch, title: 'Smart Matching', desc: 'Landmark-based algorithm finds the best ride matches based on route, time, and preferences automatically.', tagline: 'AI-Powered', color: '#6366F1' },
+  { img: imgQuickRides, title: 'Rides in Minutes', desc: 'Find and book a pooled ride within minutes. Real-time availability at your fingertips.', tagline: 'Lightning Fast', color: '#EC4899' },
+  { img: imgCommunity, title: 'Community First', desc: 'Build connections with daily commuters heading your way. Ride with trusted people.', tagline: 'Social Network', color: '#14B8A6' },
+  { img: imgCostSaving, title: 'Save up to 60%', desc: 'Split fuel costs with co-riders. Every shared ride means money saved for everyone.', tagline: 'Cost Effective', color: '#F59E0B' },
+  { img: imgEcoFriendly, title: 'Go Green', desc: 'Fewer cars on the road means reduced carbon emissions. An eco-friendly choice every ride.', tagline: 'Eco Friendly', color: '#22C55E' },
+  { img: imgFemaleSafety, title: 'Verified and Safe', desc: 'Every rider is verified. Female-only ride options, real-time tracking, and smart alerts.', tagline: 'Trust and Safety', color: '#8B5CF6' },
 ];
 
+/* SVG icons for steps (no emojis) */
+const StepIcon = ({ type }) => {
+  const icons = {
+    route: <><circle cx="12" cy="5" r="3" stroke="#2A9D8F" strokeWidth="1.5" fill="none"/><circle cx="12" cy="19" r="3" stroke="var(--coral)" strokeWidth="1.5" fill="none"/><path d="M12 8v8" stroke="#2A9D8F" strokeWidth="1.5" strokeDasharray="3 2"/></>,
+    match: <><path d="M16 4l4 4-4 4" stroke="#2A9D8F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/><path d="M20 8H9a4 4 0 000 8h2" stroke="#2A9D8F" strokeWidth="1.5" strokeLinecap="round" fill="none"/></>,
+    ride: <><rect x="2" y="12" width="20" height="8" rx="3" stroke="#2A9D8F" strokeWidth="1.5" fill="none"/><path d="M6 12V9a6 6 0 0112 0v3" stroke="#2A9D8F" strokeWidth="1.5" fill="none"/><circle cx="7" cy="20" r="2" fill="#2A9D8F"/><circle cx="17" cy="20" r="2" fill="#2A9D8F"/></>,
+  };
+  return <svg width="26" height="26" viewBox="0 0 24 24" fill="none">{icons[type]}</svg>;
+};
+
 const steps = [
-  { num: '01', icon: '📍', title: 'Set Your Route', desc: 'Enter pickup and drop-off landmarks. Our system instantly shows available rides.' },
-  { num: '02', icon: '🤝', title: 'Match & Connect', desc: 'Choose a verified co-rider. Get notified instantly when a match is found.' },
-  { num: '03', icon: '🚗', title: 'Ride & Save', desc: 'Share the journey, split costs automatically. Rate and build reputation.' },
+  { num: '01', type: 'route', title: 'Set Your Route', desc: 'Enter pickup and drop-off landmarks. Our system instantly shows available rides.' },
+  { num: '02', type: 'match', title: 'Match and Connect', desc: 'Choose a verified co-rider. Get notified instantly when a match is found.' },
+  { num: '03', type: 'ride', title: 'Ride and Save', desc: 'Share the journey, split costs automatically. Rate and build reputation.' },
 ];
 
 const testimonials = [
-  { name: 'Priya Sharma', role: 'Daily Commuter', text: 'UrbanRide saves me ₹2000 every month on my office commute. The matching is incredibly accurate!', rating: 5, avatar: 'PS' },
+  { name: 'Priya Sharma', role: 'Daily Commuter', text: 'UrbanRide saves me \u20b92000 every month on my office commute. The matching is incredibly accurate!', rating: 5, avatar: 'PS' },
   { name: 'Rahul Mehra', role: 'Student', text: 'As a college student, this app is a lifesaver. I\'ve made great friends through shared rides!', rating: 5, avatar: 'RM' },
   { name: 'Anita Desai', role: 'Working Professional', text: 'The female-only ride option makes me feel so much safer. Brilliant feature!', rating: 5, avatar: 'AD' },
   { name: 'Vikram Patel', role: 'Freelancer', text: 'I offer rides when heading to meetings. It covers my fuel costs completely!', rating: 4, avatar: 'VP' },
@@ -55,11 +56,22 @@ const faqs = [
   { q: 'Is the app available in my city?', a: 'UrbanRide is expanding rapidly across major Indian cities. Check the app for availability in your area.' },
 ];
 
+/* SVG stat icons (no emojis) */
+const StatIcon = ({ type }) => {
+  const icons = {
+    rides: <><rect x="2" y="12" width="20" height="8" rx="3" stroke="white" strokeWidth="1.5" fill="none"/><path d="M6 12V9a6 6 0 0112 0v3" stroke="white" strokeWidth="1.5" fill="none"/><circle cx="7" cy="20" r="1.5" fill="white"/><circle cx="17" cy="20" r="1.5" fill="white"/></>,
+    riders: <><circle cx="9" cy="7" r="3" stroke="white" strokeWidth="1.5" fill="none"/><circle cx="15" cy="7" r="3" stroke="white" strokeWidth="1.5" fill="none"/><path d="M3 21c0-4 2.7-6 6-6s6 2 6 6" stroke="white" strokeWidth="1.5" fill="none"/><path d="M15 15c3.3 0 6 2 6 6" stroke="white" strokeWidth="1.5" fill="none" opacity="0.7"/></>,
+    money: <><circle cx="12" cy="12" r="9" stroke="white" strokeWidth="1.5" fill="none"/><path d="M12 7v10M9 10h6M9 14h6" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></>,
+    star: <><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z" stroke="white" strokeWidth="1.5" fill="none" strokeLinejoin="round"/></>,
+  };
+  return <svg width="24" height="24" viewBox="0 0 24 24" fill="none">{icons[type]}</svg>;
+};
+
 const stats = [
-  { value: '50K+', label: 'Rides Completed', icon: '🚗' },
-  { value: '10K+', label: 'Active Riders', icon: '👥' },
-  { value: '₹2Cr+', label: 'Money Saved', icon: '💰' },
-  { value: '4.9★', label: 'App Rating', icon: '⭐' },
+  { value: '50K+', label: 'Rides Completed', iconType: 'rides' },
+  { value: '10K+', label: 'Active Riders', iconType: 'riders' },
+  { value: '\u20b92Cr+', label: 'Money Saved', iconType: 'money' },
+  { value: '4.9', label: 'App Rating', iconType: 'star' },
 ];
 
 /* ─── COUNTER ANIMATION ─── */
@@ -178,7 +190,13 @@ export default function LandingPage() {
         </div>
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <button className="theme-toggle" onClick={toggle}>{dark ? '☀️' : '🌙'}</button>
+          <button className="theme-toggle" onClick={toggle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {dark ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            )}
+          </button>
           <button onClick={() => navigate('/login')} className="landing-btn-ghost">Log in</button>
           <button onClick={() => navigate('/register')} className="landing-btn-primary">Get Started</button>
         </div>
@@ -289,7 +307,9 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="float-card float-b" style={{ position: 'absolute', bottom: -16, left: -8 }}>
-              <div style={{ width: 32, height: 32, background: dark ? '#3A2A22' : '#FDE8D8', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>💰</div>
+              <div style={{ width: 32, height: 32, background: dark ? '#3A2A22' : '#FDE8D8', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="var(--coral)" strokeWidth="1.5" fill="none"/><path d="M12 7v10M9 10h6M9 14h6" stroke="var(--coral)" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              </div>
               <div>
                 <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>You saved ₹120</p>
                 <p style={{ margin: 0, fontSize: 11, color: 'var(--text-hint)' }}>On today's ride</p>
@@ -315,9 +335,9 @@ export default function LandingPage() {
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
               >
-                <span style={{ fontSize: 28, display: 'block', marginBottom: 8 }}>{s.icon}</span>
+                <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><StatIcon type={s.iconType} /></div>
                 <p style={{ fontSize: 32, fontWeight: 800, color: 'white', margin: 0 }}>
-                  <AnimatedCounter target={s.value} suffix={s.value.includes('+') ? '+' : s.value.includes('★') ? '★' : s.value.includes('Cr') ? 'Cr+' : ''} />
+                  <AnimatedCounter target={s.value} suffix={s.value.includes('+') ? '+' : s.value.includes('Cr') ? 'Cr+' : ''} />
                 </p>
                 <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 6 }}>{s.label}</p>
               </div>
@@ -331,7 +351,7 @@ export default function LandingPage() {
         <RevealOnScroll>
           <div style={{ textAlign: 'center', marginBottom: 60 }}>
             <div className="section-badge" style={{ background: 'var(--coral-pale)' }}>
-              <span style={{ fontSize: 13, color: 'var(--coral)', fontWeight: 600 }}>✨ Why UrbanRide?</span>
+              <span style={{ fontSize: 13, color: 'var(--coral)', fontWeight: 600 }}>Why UrbanRide?</span>
             </div>
             <h2 style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 16 }}>
               Everything for a <span style={{ color: 'var(--coral)' }}>smarter commute</span>
@@ -345,13 +365,17 @@ export default function LandingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, maxWidth: 1100, margin: '0 auto' }}>
           {features.map((f, i) => (
             <RevealOnScroll key={i} delay={i * 0.08}>
-              <div className="feature-card" style={{ background: 'var(--card-bg)', borderRadius: 20, padding: 28, border: '1px solid var(--feature-border)', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 18, right: 18, background: `${f.color}18`, borderRadius: 8, padding: '3px 10px' }}>
+              <div className="feature-card" style={{ background: 'var(--card-bg)', borderRadius: 20, border: '1px solid var(--feature-border)', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 18, right: 18, background: `${f.color}18`, borderRadius: 8, padding: '3px 10px', zIndex: 2 }}>
                   <span style={{ fontSize: 10, fontWeight: 700, color: f.color, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{f.tagline}</span>
                 </div>
-                <FeatureIcon type={f.type} color={f.color} />
-                <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 10 }}>{f.title}</h3>
-                <p style={{ fontSize: 14, color: 'var(--text-tertiary)', lineHeight: 1.65 }}>{f.desc}</p>
+                <div style={{ width: '100%', height: 180, overflow: 'hidden', borderRadius: '20px 20px 0 0' }}>
+                  <img src={f.img} alt={f.title} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s ease' }} className="feature-img" />
+                </div>
+                <div style={{ padding: '20px 24px 24px' }}>
+                  <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 10 }}>{f.title}</h3>
+                  <p style={{ fontSize: 14, color: 'var(--text-tertiary)', lineHeight: 1.65 }}>{f.desc}</p>
+                </div>
               </div>
             </RevealOnScroll>
           ))}
@@ -363,7 +387,7 @@ export default function LandingPage() {
         <RevealOnScroll>
           <div style={{ textAlign: 'center', marginBottom: 60 }}>
             <div className="section-badge" style={{ background: dark ? '#1C2E22' : '#EDF5F3' }}>
-              <span style={{ fontSize: 13, color: '#2A9D8F', fontWeight: 600 }}>🔄 Simple as 1-2-3</span>
+              <span style={{ fontSize: 13, color: '#2A9D8F', fontWeight: 600 }}>Simple as 1-2-3</span>
             </div>
             <h2 style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 16 }}>
               How <span style={{ color: '#2A9D8F' }}>UrbanRide</span> works
@@ -383,7 +407,7 @@ export default function LandingPage() {
                 transform: i === 1 ? 'translateY(-8px)' : 'none',
               }}>
                 <div style={{ position: 'absolute', top: -14, left: 28, background: 'var(--coral)', color: 'white', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 700, letterSpacing: '0.05em' }}>{s.num}</div>
-                <div style={{ width: 56, height: 56, background: dark ? '#1C2E22' : '#E8F5F3', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, marginBottom: 20, marginTop: 8 }}>{s.icon}</div>
+                <div style={{ width: 56, height: 56, background: dark ? '#1C2E22' : '#E8F5F3', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, marginTop: 8 }}><StepIcon type={s.type} /></div>
                 <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>{s.title}</h3>
                 <p style={{ fontSize: 14, color: 'var(--text-tertiary)', lineHeight: 1.65 }}>{s.desc}</p>
               </div>
@@ -467,7 +491,7 @@ export default function LandingPage() {
         <RevealOnScroll>
           <div style={{ textAlign: 'center', marginBottom: 48, padding: '0 48px' }}>
             <div className="section-badge" style={{ background: 'var(--coral-pale)' }}>
-              <span style={{ fontSize: 13, color: 'var(--coral)', fontWeight: 600 }}>💬 What Riders Say</span>
+              <span style={{ fontSize: 13, color: 'var(--coral)', fontWeight: 600 }}>What Riders Say</span>
             </div>
             <h2 style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 16 }}>
               Loved by <span style={{ color: 'var(--coral)' }}>thousands</span>
@@ -509,7 +533,7 @@ export default function LandingPage() {
         <RevealOnScroll>
           <div style={{ textAlign: 'center', marginBottom: 60 }}>
             <div className="section-badge" style={{ background: 'var(--coral-pale)' }}>
-              <span style={{ fontSize: 13, color: 'var(--coral)', fontWeight: 600 }}>❓ Got Questions?</span>
+              <span style={{ fontSize: 13, color: 'var(--coral)', fontWeight: 600 }}>Got Questions?</span>
             </div>
             <h2 style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 16 }}>
               Frequently Asked <span style={{ color: 'var(--coral)' }}>Questions</span>

@@ -824,3 +824,66 @@ html { scroll-behavior: smooth; }
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
+
+/* ═══════════════════════════════════════════ */
+/* ── FEATURE IMAGE HOVER                  ── */
+/* ═══════════════════════════════════════════ */
+
+.feature-card:hover .feature-img {
+  transform: scale(1.08);
+}
+
+/* ═══════════════════════════════════════════ */
+/* ── MOBILE RESPONSIVE                    ── */
+/* ═══════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+  /* Features: 2 columns on tablet */
+  #features > div:last-child {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  /* Steps: 2 columns */
+  #how-it-works > div:nth-child(2) {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  /* Stats: 2x2 grid */
+  section > div[style*="repeat(4"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Features: single column on mobile */
+  #features > div:last-child {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  /* Steps: single column */
+  #how-it-works > div:nth-child(2) {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  /* Stats: single column */
+  section > div[style*="repeat(4"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  /* Hero single column */
+  section[style*="gridTemplateColumns: '1fr 1fr'"] {
+    grid-template-columns: 1fr !important;
+  }
+  /* Testimonial cards smaller */
+  .testimonial-slide .testimonial-card {
+    min-width: 260px !important;
+    max-width: 260px !important;
+  }
+  .feature-card,
+  .step-card,
+  .testimonial-card {
+    margin-bottom: 0;
+  }
+  /* Section headers smaller */
+  h2 {
+    font-size: 28px !important;
+  }
+}
