@@ -238,6 +238,77 @@ export default function SearchRide() {
               {loading ? 'Searching...' : 'Search'}
             </button>
           </div>
+
+          <div style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 20 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Ride Pooling Options</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <button 
+                type="button" 
+                onClick={async () => {
+                  const code = prompt('Enter 6-digit Pool Code:');
+                  if (!code) return;
+                  try {
+                    const res = await api.post('/api/pools/join', { poolCode: code.toUpperCase() });
+                    navigate(`/pool/${res.data.data?._id || res.data._id}`);
+                  } catch (err) {
+                    alert(err.response?.data?.message || 'Failed to join pool');
+                  }
+                }}
+                className="btn-outline" 
+                style={{ fontSize: 13, padding: '10px' }}
+              >
+                Join by Code
+              </button>
+              <button 
+                type="button"
+                onClick={async () => {
+                  if (!filters.source || !filters.destination) return alert('Select source and destination first');
+                  try {
+                    setLoading(true);
+                    const res = await api.post('/api/pools/auto-match', {
+                      sourceLandmark: filters.source,
+                      destinationLandmark: filters.destination,
+                      sourceCoords,
+                      destCoords
+                    });
+                    navigate(`/pool/${res.data.data?._id || res.data._id}`);
+                  } catch (err) {
+                    alert('Auto-match failed');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className="btn-outline" 
+                style={{ fontSize: 13, borderColor: 'var(--coral)', color: 'var(--coral)', padding: '10px' }}
+              >
+                Auto Match Pool
+              </button>
+            </div>
+            <button 
+                type="button"
+                onClick={async () => {
+                  if (!filters.source || !filters.destination) return alert('Select source and destination first');
+                  try {
+                    setLoading(true);
+                    const res = await api.post('/api/pools/create', {
+                      sourceLandmark: filters.source,
+                      destinationLandmark: filters.destination,
+                      sourceCoords,
+                      destCoords
+                    });
+                    navigate(`/pool/${res.data.data?._id || res.data._id}`);
+                  } catch (err) {
+                    alert('Create pool failed');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className="btn-primary" 
+                style={{ marginTop: 10, width: '100%', padding: '12px', background: 'var(--charcoal)', fontSize: 14 }}
+              >
+                Create New Ride Pool
+              </button>
+          </div>
         </form>
       </div>
 

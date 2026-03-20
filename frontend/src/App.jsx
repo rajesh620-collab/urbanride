@@ -12,6 +12,8 @@ import MyRides from './pages/MyRides';
 import LandingPage from './pages/LandingPage';
 import RateRide from './pages/RateRide';
 import DriverNavigation from './pages/DriverNavigation';
+import PoolDetail from './pages/PoolDetail';
+import DriverPools from './pages/DriverPools';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -44,6 +46,8 @@ function AppContent() {
         <Route path="/my-rides"      element={<ProtectedRoute><MyRides /></ProtectedRoute>} />
         <Route path="/rate/:id"      element={<ProtectedRoute><RateRide /></ProtectedRoute>} />
         <Route path="/navigate/:id"  element={<ProtectedRoute><DriverNavigation /></ProtectedRoute>} />
+        <Route path="/pool/:id"      element={<ProtectedRoute><PoolDetail /></ProtectedRoute>} />
+        <Route path="/driver/pools"  element={<ProtectedRoute><DriverPools /></ProtectedRoute>} />
         <Route path="*"              element={<Navigate to="/" replace />} />
       </Routes>
     </>
