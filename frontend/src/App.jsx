@@ -15,7 +15,7 @@ import DriverNavigation from './pages/DriverNavigation';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
-  return user ? children : <Navigate to="/" replace />;
+  return user ? children : <Navigate to="/login" replace />;
 }
 
 function GuestRoute({ children }) {

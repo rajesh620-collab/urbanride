@@ -428,10 +428,9 @@ export default function LogoMenu() {
                   {/* Divider */}
                   <div style={{ borderTop: '1px solid var(--border)', margin: '6px 16px' }} />
 
-                  {/* Logout */}
                   <button
                     role="menuitem"
-                    onClick={() => { logout(); navigate('/'); close(); }}
+                    onClick={() => { logout(); close(); window.location.href = '/'; }}
                     style={menuItemStyle(true)}
                     onMouseEnter={e => {
                       e.currentTarget.style.background = '#FEE2E2';

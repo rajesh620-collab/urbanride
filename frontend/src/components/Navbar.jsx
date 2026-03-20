@@ -275,8 +275,8 @@ export default function Navbar() {
   const handleLogoutConfirm = useCallback(() => {
     setShowLogoutModal(false);
     logout();
-    navigate('/');
-  }, [logout, navigate]);
+    window.location.href = '/';
+  }, [logout]);
 
   if (!user) return null;
 
