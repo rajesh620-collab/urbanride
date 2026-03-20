@@ -272,6 +272,7 @@ input, select, button {
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   font-size: 16px;
+  color: var(--charcoal);
   transition: background 0.2s, border-color 0.2s;
 }
 .theme-toggle:hover { background: var(--border); }
