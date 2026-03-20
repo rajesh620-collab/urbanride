@@ -131,14 +131,16 @@ export default function PostRide() {
       {/* Driver Pool CTA */}
       <div className="card" style={{ 
         marginBottom: 24, padding: 16, background: 'var(--charcoal)', 
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: 'none' 
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+        border: 'none', flexWrap: 'wrap', gap: 16 
       }}>
-        <div>
+        <div style={{ flex: '1 1 200px' }}>
             <p style={{ color: 'white', fontWeight: 600, fontSize: 14 }}>Accept Group Pool</p>
             <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 }}>Ready groups of 1-4 people waiting for pickup</p>
         </div>
         <button onClick={() => navigate('/driver/pools')} className="btn-primary" style={{ 
-            width: 'auto', padding: '8px 16px', background: 'var(--coral)', fontSize: 13 
+            width: 'auto', padding: '8px 24px', background: 'var(--coral)', fontSize: 13,
+            minWidth: 'fit-content'
         }}>
             Open Dashboard
         </button>

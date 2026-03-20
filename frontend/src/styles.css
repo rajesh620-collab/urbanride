@@ -320,6 +320,17 @@ input, select, button {
   50% { transform: translateY(-6px); }
 }
 
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 540px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .page-wrapper { padding: 24px 16px; }

@@ -68,7 +68,7 @@ export default function DriverPools() {
                 <div style={{ display: 'grid', gap: 14 }}>
                     {pools.map(pool => (
                         <div key={pool._id} className="card" style={{ padding: '20px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
                                 <div>
                                     <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--coral)', textTransform: 'uppercase' }}>Group Ride · {pool.members.length} People</span>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
@@ -77,7 +77,7 @@ export default function DriverPools() {
                                         <span style={{ fontWeight: 600 }}>{pool.destinationLandmark}</span>
                                     </div>
                                 </div>
-                                <div style={{ textAlign: 'right' }}>
+                                <div style={{ textAlign: 'left' }}>
                                     <p style={{ fontSize: 12, color: 'var(--muted)' }}>Lead by</p>
                                     <p style={{ fontWeight: 600, fontSize: 14 }}>{pool.leader?.name}</p>
                                 </div>

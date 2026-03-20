@@ -198,7 +198,7 @@ export default function SearchRide() {
               />
             </>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="grid-2">
               <div className="field" style={{ marginBottom: 0 }}>
                 <label>From</label>
                 <div style={{ display: 'flex', gap: 6 }}>
@@ -241,7 +241,7 @@ export default function SearchRide() {
 
           <div style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 20 }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Ride Pooling Options</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="grid-2" style={{ gap: 10 }}>
               <button 
                 type="button" 
                 onClick={async () => {

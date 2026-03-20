@@ -50,14 +50,14 @@ export default function PoolDetail() {
     <div className="page-wrapper" style={{ maxWidth: 540 }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
           <div>
             <h2 style={{ fontSize: 26, letterSpacing: '-0.02em' }}>Ride Pool</h2>
             <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
               Status: <span style={{ fontWeight: 600, color: 'var(--coral)', textTransform: 'capitalize' }}>{pool.status}</span>
             </p>
           </div>
-          <div style={{ textAlign: 'right' }}>
+          <div style={{ textAlign: 'left' }}>
             <p style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>Pool Code</p>
             <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--charcoal)', letterSpacing: 2 }}>{pool.poolCode}</p>
           </div>
@@ -66,12 +66,11 @@ export default function PoolDetail() {
 
       {/* Info Card */}
       <div className="card" style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+        <div className="grid-2" style={{ marginBottom: 20, alignItems: 'center' }}>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600, marginBottom: 4 }}>Pickup</p>
             <p style={{ fontWeight: 600 }}>{pool.sourceLandmark}</p>
           </div>
-          <div style={{ color: 'var(--coral)', fontSize: 20 }}>→</div>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600, marginBottom: 4 }}>Destination</p>
             <p style={{ fontWeight: 600 }}>{pool.destinationLandmark}</p>
