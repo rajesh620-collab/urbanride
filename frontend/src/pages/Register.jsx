@@ -6,16 +6,38 @@ import { useAuth } from '../context/AuthContext';
 export default function Register() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [form, setForm]       = useState({ name: '', email: '', password: '', gender: '', phone: '' });
-  const [error, setError]     = useState('');
+  const [form, setForm] = useState({ name: '', address: '', email: '', gender: '', phone: '', otp: '' });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPwd, setShowPwd] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
+  const handleSendOtp = async () => {
+    if (!form.phone) {
+      setError('Please enter your mobile number first');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      const res = await api.post('/auth/send-otp', { phone: form.phone });
+      setSuccess(res.data.message || 'OTP sent successfully. Please check your messages.');
+      setOtpSent(true);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
+    if (!otpSent) return handleSendOtp();
+
     setError('');
+    setSuccess('');
     setLoading(true);
     try {
       const res = await api.post('/auth/register', form);
@@ -28,8 +50,6 @@ export default function Register() {
       setLoading(false);
     }
   };
-
-  const pwdStrength = form.password.length === 0 ? null : form.password.length >= 6 ? 'good' : 'weak';
 
   return (
     <div style={{
@@ -63,77 +83,56 @@ export default function Register() {
           </p>
 
           {error && <div className="alert-error">{error}</div>}
+          {success && <div className="alert-success">{success}</div>}
 
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div className="field" style={{ marginBottom: 0 }}>
                 <label>Full name</label>
                 <input name="name" value={form.name} onChange={handleChange}
-                  placeholder="Rajesh Kumar" required />
+                  placeholder="Rajesh Kumar" required disabled={otpSent} />
               </div>
               <div className="field" style={{ marginBottom: 0 }}>
-                <label>Phone (optional)</label>
-                <input name="phone" value={form.phone} onChange={handleChange}
-                  placeholder="9876543210" />
+                <label>Address</label>
+                <input name="address" value={form.address} onChange={handleChange}
+                  placeholder="Street, City" required disabled={otpSent} />
               </div>
             </div>
 
             <div className="field" style={{ marginTop: 18 }}>
               <label>Email address</label>
               <input name="email" type="email" value={form.email}
-                onChange={handleChange} placeholder="you@example.com" required />
+                onChange={handleChange} placeholder="you@example.com" required disabled={otpSent} />
             </div>
 
-            <div className="field">
-              <label>Password</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  name="password"
-                  type={showPwd ? 'text' : 'password'}
-                  value={form.password}
-                  onChange={handleChange}
-                  placeholder="Min. 6 characters"
-                  required
-                  style={{ paddingRight: 44 }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPwd(p => !p)}
-                  style={{
-                    position: 'absolute', right: 12, top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    color: 'var(--muted)', fontSize: 16, padding: 0, lineHeight: 1
-                  }}
-                  aria-label={showPwd ? 'Hide password' : 'Show password'}
-                >
-                  {showPwd ? '🙈' : '👁️'}
-                </button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label>Gender</label>
+                <select name="gender" value={form.gender} onChange={handleChange} required disabled={otpSent}>
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
-              {/* Password strength hint */}
-              {pwdStrength && (
-                <p style={{
-                  fontSize: 12, marginTop: 6,
-                  color: pwdStrength === 'good' ? 'var(--success)' : '#C0392B'
-                }}>
-                  {pwdStrength === 'good' ? '✓ Password looks good' : '✗ Password must be at least 6 characters'}
-                </p>
-              )}
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label>Mobile Number</label>
+                <input name="phone" value={form.phone} onChange={handleChange}
+                  placeholder="9876543210" required disabled={otpSent} />
+              </div>
             </div>
 
-            <div className="field">
-              <label>Gender</label>
-              <select name="gender" value={form.gender} onChange={handleChange} required>
-                <option value="">Select your gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
+            {otpSent && (
+              <div className="field" style={{ marginTop: 18 }}>
+                <label>Enter OTP</label>
+                <input name="otp" value={form.otp} onChange={handleChange}
+                  placeholder="123456" autoComplete="one-time-code" required autoFocus />
+              </div>
+            )}
 
             <button type="submit" className="btn-primary" disabled={loading}
-              style={{ marginTop: 4 }}>
-              {loading ? 'Creating account...' : 'Create Account'}
+              style={{ marginTop: 24 }}>
+              {loading ? 'Processing...' : (otpSent ? 'Verify & Create Account' : 'Send OTP')}
             </button>
           </form>
 
