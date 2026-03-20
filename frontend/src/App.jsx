@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useWebSocket } from './hooks/useWebSocket';
@@ -15,7 +15,7 @@ import DriverNavigation from './pages/DriverNavigation';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
-  return user ? children : <Navigate to="/login" replace />;
+  return user ? children : <Navigate to="/" replace />;
 }
 
 function GuestRoute({ children }) {
@@ -28,13 +28,14 @@ const FULLSCREEN_PATHS = ['/navigate/'];
 
 function AppContent() {
   useWebSocket();
-  const isFullscreen = FULLSCREEN_PATHS.some(p => window.location.pathname.startsWith(p));
+  const location = useLocation();
+  const isFullscreen = FULLSCREEN_PATHS.some(p => location.pathname.startsWith(p)) || location.pathname === '/';
 
   return (
     <>
       {!isFullscreen && <Navbar />}
       <Routes>
-        <Route path="/"              element={<GuestRoute><LandingPage /></GuestRoute>} />
+        <Route path="/"              element={<LandingPage />} />
         <Route path="/login"         element={<GuestRoute><Login /></GuestRoute>} />
         <Route path="/register"      element={<GuestRoute><Register /></GuestRoute>} />
         <Route path="/search"        element={<ProtectedRoute><SearchRide /></ProtectedRoute>} />

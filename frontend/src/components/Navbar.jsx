@@ -297,9 +297,9 @@ export default function Navbar() {
         height: 58, position: 'sticky', top: 0, zIndex: 50,
         boxShadow: 'var(--shadow-sm)', transition: 'background 0.3s',
       }}>
-        {/* Logo → navigates to dashboard/search */}
+        {/* Logo → navigates to home landing page */}
         <button
-          onClick={() => navigate('/search')}
+          onClick={() => navigate('/')}
           style={{
             display: 'flex', alignItems: 'center', gap: 10,
             cursor: 'pointer', background: 'none', border: 'none',

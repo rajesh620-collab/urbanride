@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { RevealOnScroll } from '../hooks/useScrollReveal.jsx';
 
@@ -138,6 +139,7 @@ function FaqItem({ q, a, isOpen, onClick }) {
 /* ─── MAIN COMPONENT ─── */
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { dark, toggle } = useTheme();
   const [openFaq, setOpenFaq] = useState(null);
   const [scrollY, setScrollY] = useState(0);
@@ -197,8 +199,14 @@ export default function LandingPage() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             )}
           </button>
-          <button onClick={() => navigate('/login')} className="landing-btn-ghost">Log in</button>
-          <button onClick={() => navigate('/register')} className="landing-btn-primary">Get Started</button>
+          {user ? (
+            <button onClick={() => navigate('/search')} className="landing-btn-primary">Dashboard</button>
+          ) : (
+            <>
+              <button onClick={() => navigate('/login')} className="landing-btn-ghost">Log in</button>
+              <button onClick={() => navigate('/register')} className="landing-btn-primary">Get Started</button>
+            </>
+          )}
         </div>
       </nav>
 
@@ -238,7 +246,7 @@ export default function LandingPage() {
           </p>
 
           <div style={{ display: 'flex', gap: 14, marginBottom: 48 }}>
-            <button onClick={() => navigate('/register')} className="hero-cta-btn">
+            <button onClick={() => navigate(user ? '/search' : '/register')} className="hero-cta-btn">
               Download App
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5v14m0 0l-6-6m6 6l6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
             </button>
@@ -556,7 +564,7 @@ export default function LandingPage() {
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: 36, fontWeight: 800, color: 'white', marginBottom: 16 }}>Ready to share the ride?</h2>
             <p style={{ color: '#999', fontSize: 16, marginBottom: 32 }}>Join thousands of riders saving money every day.</p>
-            <button onClick={() => navigate('/register')} className="hero-cta-btn" style={{ margin: '0 auto' }}>
+            <button onClick={() => navigate(user ? '/search' : '/register')} className="hero-cta-btn" style={{ margin: '0 auto' }}>
               Start Riding Now →
             </button>
           </div>
