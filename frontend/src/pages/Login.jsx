@@ -6,16 +6,38 @@ import { useAuth } from '../context/AuthContext';
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [form, setForm]       = useState({ email: '', password: '' });
-  const [error, setError]     = useState('');
+  const [form, setForm] = useState({ phone: '', otp: '' });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPwd, setShowPwd] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
+  const handleSendOtp = async () => {
+    if (!form.phone) {
+      setError('Please enter your mobile number first');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      const res = await api.post('/auth/send-otp', { phone: form.phone });
+      setSuccess(res.data.message || 'OTP sent successfully. Please check your messages.');
+      setOtpSent(true);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
+    if (!otpSent) return handleSendOtp();
+
     setError('');
+    setSuccess('');
     setLoading(true);
     try {
       const res = await api.post('/auth/login', form);
@@ -61,47 +83,30 @@ export default function Login() {
         <div className="card">
           <h3 style={{ fontSize: 20, marginBottom: 6 }}>Welcome back</h3>
           <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 24 }}>
-            Sign in to your account to continue
+            Sign in to your account with your mobile number
           </p>
 
           {error && <div className="alert-error">{error}</div>}
+          {success && <div className="alert-success">{success}</div>}
 
           <form onSubmit={handleSubmit}>
             <div className="field">
-              <label>Email address</label>
-              <input name="email" type="email" value={form.email}
-                onChange={handleChange} placeholder="you@example.com" required />
+              <label>Mobile Number</label>
+              <input name="phone" type="text" value={form.phone}
+                onChange={handleChange} placeholder="9876543210" required disabled={otpSent} />
             </div>
-            <div className="field">
-              <label>Password</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  name="password"
-                  type={showPwd ? 'text' : 'password'}
-                  value={form.password}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                  required
-                  style={{ paddingRight: 44 }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPwd(p => !p)}
-                  style={{
-                    position: 'absolute', right: 12, top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    color: 'var(--muted)', fontSize: 16, padding: 0, lineHeight: 1
-                  }}
-                  aria-label={showPwd ? 'Hide password' : 'Show password'}
-                >
-                  {showPwd ? '🙈' : '👁️'}
-                </button>
+
+            {otpSent && (
+              <div className="field">
+                <label>Enter OTP</label>
+                <input name="otp" type="text" value={form.otp}
+                  onChange={handleChange} placeholder="123456" autoComplete="one-time-code" required autoFocus />
               </div>
-            </div>
+            )}
+
             <button type="submit" className="btn-primary" disabled={loading}
               style={{ marginTop: 8 }}>
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Processing...' : (otpSent ? 'Sign In' : 'Send OTP')}
             </button>
           </form>
 
