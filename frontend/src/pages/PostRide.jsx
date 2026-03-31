@@ -189,7 +189,7 @@ export default function PostRide() {
                 <LocationPicker
                   value={destCoords}
                   onChange={handleDestChange}
-                  label="Where are you heading?"
+                  label="To (Destination)"
                   mode="dropoff"
                 />
               </div>
