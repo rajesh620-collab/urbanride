@@ -19,7 +19,6 @@ export default function PostRide() {
   const [error, setError]   = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [gpsInfo, setGpsInfo] = useState('');
 
   useEffect(() => {
     api.get('/landmarks').then(res =>
@@ -94,7 +93,14 @@ export default function PostRide() {
 
   // Called when GPS button detects current location in source picker
   const handleGpsSourceDetected = (loc) => {
-    setGpsInfo('GPS location locked — set destination and your ride will post automatically');
+    // If destination is already set, auto-submit after a tiny delay for state to sync
+    if (form.destinationLandmark) {
+      setSuccess('📍 Live location detected! Posting ride...');
+      setTimeout(() => {
+        const btn = document.getElementById('post-ride-submit-btn');
+        if (btn) btn.click();
+      }, 600);
+    }
   };
 
   const handleSubmit = async e => {
@@ -170,15 +176,6 @@ export default function PostRide() {
       <div className="card">
         {error   && <div className="alert-error">{error}</div>}
         {success && <div className="alert-success">{success}</div>}
-        {gpsInfo && (
-          <div style={{
-            background: 'rgba(72,187,120,0.1)', border: '1px solid var(--success)',
-            borderRadius: 'var(--radius-sm)', padding: '10px 14px', marginBottom: 16,
-            fontSize: 13, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: 8
-          }}>
-            📡 {gpsInfo}
-          </div>
-        )}
 
         {/* Mode toggle */}
         <div style={{
@@ -362,7 +359,7 @@ export default function PostRide() {
             </label>
           </div>
 
-          <button type="submit" className="btn-primary"
+          <button id="post-ride-submit-btn" type="submit" className="btn-primary"
             disabled={loading || !!success} style={{ marginTop: 24 }}>
             {loading ? 'Posting...' : 'Post Ride Now'}
           </button>

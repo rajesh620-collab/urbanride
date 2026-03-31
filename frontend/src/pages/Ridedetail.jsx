@@ -256,17 +256,23 @@ export default function RideDetail() {
                     ['full', 'in_progress', 'completed'].includes(ride.status)
                   )
                     ? `₹${confirmedFare ?? ride.farePerSeat}`
-                    : 'Shown when ride is full'
+                    : 'Wait for full ride'
                 },
               ].map(({ label, value }) => (
                 <div key={label} style={{
-                  background: 'var(--cream)', borderRadius: 'var(--radius-sm)', padding: '12px 14px'
+                  background: 'var(--input-bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '16px 18px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4
                 }}>
-                  <p style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 500,
-                    textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+                  <p style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600,
+                    textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                     {label}
                   </p>
-                  <p style={{ fontWeight: 500, fontSize: 14 }}>{value}</p>
+                  <p style={{ fontWeight: 600, fontSize: 16, color: 'var(--charcoal)' }}>{value}</p>
                 </div>
               ))}
             </div>

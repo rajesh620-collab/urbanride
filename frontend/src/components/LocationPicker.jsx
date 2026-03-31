@@ -135,8 +135,8 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
     );
   };
 
-  // The displayed value in the input: searching → show query; otherwise show address
-  const inputDisplayValue = inputFocused ? searchQuery : (address || searchQuery);
+  // The displayed value in the input
+  const inputDisplayValue = inputFocused ? searchQuery : (address || searchQuery || '');
 
   return (
     <div style={{ marginBottom: 18 }}>
@@ -151,7 +151,8 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
         <div style={{ flex: 1, position: 'relative' }}>
           <input
             type="text"
-            placeholder="Search a location or drop a pin..."
+            autoComplete="off"
+            placeholder={inputFocused ? "Start typing..." : "Search a location or drop a pin..."}
             value={inputDisplayValue}
             onChange={e => handleSearch(e.target.value)}
             onFocus={() => { setInputFocused(true); setShowMap(true); setSearchQuery(''); }}
@@ -160,7 +161,7 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
               width: '100%', padding: '11px 14px',
               border: `1.5px solid ${value?.lat ? color : 'var(--border)'}`,
               borderRadius: 'var(--radius-sm)', fontSize: 14,
-              color: address && !inputFocused ? 'var(--charcoal)' : 'var(--charcoal)',
+              color: 'var(--charcoal)',
               background: 'var(--input-bg)',
               outline: 'none', transition: 'border-color 0.2s',
               boxSizing: 'border-box'
