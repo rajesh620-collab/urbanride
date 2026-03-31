@@ -4,7 +4,7 @@ import api from '../api/axiosInstance';
 import { getSocket } from '../hooks/useWebSocket';
 import LocationPicker from '../components/LocationPicker';
 import RouteMap from '../components/RouteMap';
-import FareEstimator from '../components/FareEstimator';
+
 
 // ── Create Pool Modal ──────────────────────────────────────────────────────
 function CreatePoolModal({ landmarks, onClose }) {
@@ -186,7 +186,8 @@ export default function SearchRide() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal]   = useState(false);
   const [isDiscovering, setIsDiscovering]   = useState(false);
-  const [estimatedFare, setEstimatedFare]   = useState(0);
+  const [fareData, setFareData]             = useState(null);
+  const [fareLoading, setFareLoading]       = useState(false);
   const [selectedCabType, setSelectedCabType] = useState('Cab XL');
 
   useEffect(() => {
@@ -195,6 +196,26 @@ export default function SearchRide() {
       setLandmarks(lm || []);
     });
   }, []);
+
+  // Fetch fare estimate whenever both coords are available
+  useEffect(() => {
+    if (!sourceCoords?.lat || !destCoords?.lat) { setFareData(null); return; }
+    setFareLoading(true);
+    const body = {};
+    if (filters.source && filters.destination) {
+      body.sourceLandmark = filters.source;
+      body.destinationLandmark = filters.destination;
+    } else {
+      body.sourceLat = sourceCoords.lat;
+      body.sourceLng = sourceCoords.lng;
+      body.destLat   = destCoords.lat;
+      body.destLng   = destCoords.lng;
+    }
+    api.post('/fare/estimate', body)
+      .then(res => setFareData(res.data.data))
+      .catch(() => setFareData(null))
+      .finally(() => setFareLoading(false));
+  }, [sourceCoords?.lat, sourceCoords?.lng, destCoords?.lat, destCoords?.lng]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -356,54 +377,53 @@ export default function SearchRide() {
               <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
                 Select Service
               </p>
-              <FareEstimator 
-                sourceLandmark={filters.source}
-                destinationLandmark={filters.destination}
-                sourceCoords={sourceCoords}
-                destCoords={destCoords}
-                onFareSelect={setEstimatedFare}
-              />
 
-              {/* Cab Type List */}
-              {estimatedFare > 0 && (() => {
-                const base = estimatedFare;
+              {(() => {
                 const cabTypes = [
-                  { name: 'Cab XL', emoji: '🚐', minMult: 1.20, maxMult: 1.45, desc: '6-seater SUV' },
-                  { name: 'Auto',   emoji: '🛺', minMult: 0.55, maxMult: 0.70, desc: '3-wheeler' },
-                  { name: 'Cab Non AC', emoji: '🚕', minMult: 0.75, maxMult: 0.90, desc: 'Budget sedan' },
+                  { name: 'Cab XL',      emoji: '🚐', minMult: 1.20, maxMult: 1.45, desc: '6-seater SUV' },
+                  { name: 'Auto',        emoji: '🛺', minMult: 0.55, maxMult: 0.70, desc: '3-wheeler · Open' },
+                  { name: 'Cab Non AC',  emoji: '🚕', minMult: 0.75, maxMult: 0.90, desc: 'Budget sedan' },
                   { name: 'Cab Premium', emoji: '🚘', minMult: 1.00, maxMult: 1.20, desc: 'AC sedan' },
                 ];
+                const base = fareData?.suggestedFare || 0;
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 0, borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1.5px solid var(--border)' }}>
+                  <div style={{
+                    borderRadius: 'var(--radius-md)', overflow: 'hidden',
+                    border: '1.5px solid var(--border)'
+                  }}>
                     {cabTypes.map((cab, idx) => {
                       const isSelected = selectedCabType === cab.name;
-                      const minFare = Math.round(base * cab.minMult);
-                      const maxFare = Math.round(base * cab.maxMult);
+                      const minFare = base > 0 ? Math.round(base * cab.minMult) : null;
+                      const maxFare = base > 0 ? Math.round(base * cab.maxMult) : null;
                       return (
                         <div
                           key={cab.name}
                           onClick={() => { setSelectedCabType(cab.name); handleSearch(); }}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 14,
-                            padding: '14px 16px',
-                            background: isSelected ? 'rgba(var(--coral-rgb,229,90,63),0.07)' : 'var(--card-bg)',
+                            padding: '15px 16px',
+                            background: isSelected ? 'rgba(229,90,63,0.07)' : 'var(--card-bg)',
                             borderLeft: isSelected ? '3px solid var(--coral)' : '3px solid transparent',
                             borderBottom: idx < cabTypes.length - 1 ? '1px solid var(--border)' : 'none',
                             cursor: 'pointer',
-                            transition: 'background 0.18s, border-left 0.18s',
+                            transition: 'background 0.15s',
                           }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'var(--cream)'}
-                          onMouseLeave={e => e.currentTarget.style.background = isSelected ? 'rgba(var(--coral-rgb,229,90,63),0.07)' : 'var(--card-bg)'}
                         >
-                          <span style={{ fontSize: 26, lineHeight: 1 }}>{cab.emoji}</span>
+                          <span style={{ fontSize: 28, lineHeight: 1, minWidth: 32, textAlign: 'center' }}>{cab.emoji}</span>
                           <div style={{ flex: 1 }}>
-                            <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{cab.name}</p>
+                            <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 2, color: 'var(--charcoal)' }}>{cab.name}</p>
                             <p style={{ fontSize: 11, color: 'var(--muted)' }}>{cab.desc}</p>
                           </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <p style={{ fontWeight: 700, fontSize: 14, color: isSelected ? 'var(--coral)' : 'var(--charcoal)' }}>
-                              ₹{minFare} – ₹{maxFare}
-                            </p>
+                          <div style={{ textAlign: 'right', minWidth: 90 }}>
+                            {fareLoading ? (
+                              <div style={{ display: 'inline-block', width: 70, height: 14, borderRadius: 6, background: 'var(--border)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                            ) : minFare ? (
+                              <p style={{ fontWeight: 700, fontSize: 14, color: isSelected ? 'var(--coral)' : 'var(--charcoal)' }}>
+                                ₹{minFare} – ₹{maxFare}
+                              </p>
+                            ) : (
+                              <p style={{ fontSize: 13, color: 'var(--muted)' }}>–</p>
+                            )}
                           </div>
                         </div>
                       );
