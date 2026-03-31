@@ -58,9 +58,17 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
   const [detecting, setDetecting] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const [landmarks, setLandmarks] = useState([]);
   const searchTimeout = useRef(null);
 
   const color = mode === 'pickup' ? '#4CAF50' : '#E74C3C';
+
+  useEffect(() => {
+    api.get('/landmarks').then(res => {
+      const data = res.data.data?.landmarks || res.data.landmarks || [];
+      setLandmarks(data);
+    });
+  }, []);
 
   // Reverse geocode when value changes
   useEffect(() => {
@@ -197,7 +205,7 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
                   <div onMouseDown={() => { setShowMap(true); setInputFocused(false); }} style={{
                     padding: '12px 14px', cursor: 'pointer', fontSize: 13,
                     display: 'flex', alignItems: 'center', gap: 10,
-                    borderBottom: searchResults.length > 0 ? '1px solid var(--border)' : 'none',
+                    borderBottom: '1px solid var(--border)',
                     transition: 'background 0.15s'
                   }}
                     onMouseEnter={e => e.currentTarget.style.background = 'var(--cream)'}
@@ -209,6 +217,35 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
                       <span style={{ display: 'block', fontSize: 11, color: 'var(--muted)' }}>Drop a pin manually</span>
                     </div>
                   </div>
+
+                  {/* Landmarks / Suggested Locations */}
+                  {landmarks.length > 0 && (
+                    <>
+                      <div style={{
+                        padding: '8px 14px', background: 'var(--cream-dark)',
+                        fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+                        color: 'var(--muted)', letterSpacing: '0.05em'
+                      }}>Suggested Locations</div>
+                      {landmarks.map((lm) => (
+                        <div key={lm._id} onMouseDown={() => selectResult({
+                          lat: lm.lat, lng: lm.lng, shortName: lm.name, displayName: lm.name
+                        })} style={{
+                          padding: '12px 14px', cursor: 'pointer', fontSize: 13,
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          borderBottom: '1px solid var(--border)', transition: 'background 0.15s'
+                        }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--cream)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <span style={{ fontSize: 16 }}>🏢</span>
+                          <div>
+                            <span style={{ fontWeight: 600 }}>{lm.name}</span>
+                            <span style={{ display: 'block', fontSize: 11, color: 'var(--muted)' }}>Popular landmark</span>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </>
               )}
 
