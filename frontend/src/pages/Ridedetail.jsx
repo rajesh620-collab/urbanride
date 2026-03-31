@@ -91,6 +91,7 @@ export default function RideDetail() {
   const [routeCoords, setRouteCoords] = useState(null);
   const [activeTab, setActiveTab] = useState('details'); // 'details' | 'map' | 'track'
   const [requests, setRequests]   = useState([]);
+  const [myBooking, setMyBooking] = useState(null);
   const [actingOn, setActingOn]   = useState(null); // id of booking being accepted/rejected
 
   useEffect(() => {
@@ -103,11 +104,21 @@ export default function RideDetail() {
           api.get(`/bookings/ride/${id}`).then(res2 => {
             setRequests(res2.data.data?.bookings || res2.data.bookings || []);
           });
+        } else if (user) {
+          // If passenger, check my booking status
+          api.get('/bookings/my').then(res2 => {
+            const bookings = res2.data.data?.bookings || res2.data.bookings || [];
+            const mine = bookings.find(b => String(b.rideId?._id || b.rideId) === String(id));
+            if (mine) {
+                setMyBooking(mine);
+                setBooked(true);
+            }
+          });
         }
       })
       .catch(() => setError('Ride not found'))
       .finally(() => setLoading(false));
-  }, [id, user?.id]);
+  }, [id, user]);
 
   // Fetch route once coords available
   useEffect(() => {
@@ -137,19 +148,60 @@ export default function RideDetail() {
       setRide(prev => prev ? { ...prev, status: data.newStatus } : prev);
       setMessage(data.message);
     });
-    return () => { socket.off('seat_booked'); socket.off('ride_status_updated'); };
+    socket.on('price_updated', data => {
+        setRide(r => ({ ...r, farePerSeat: data.newFare }));
+        setMessage(data.message);
+    });
+    return () => { 
+        socket.off('seat_booked'); 
+        socket.off('ride_status_updated'); 
+        socket.off('price_updated');
+    };
   }, [id]);
 
   const handleBook = async () => {
     setError(''); setBooking(true);
     try {
-      await api.post('/bookings', { rideId: id });
+      const res = await api.post('/bookings', { rideId: id });
       setBooked(true);
+      setMyBooking(res.data.data.booking);
       setMessage('Join request sent! Waiting for driver acceptance.');
     } catch (err) {
       setError(err.response?.data?.message || 'Request failed');
     } finally {
       setBooking(false);
+    }
+  };
+
+  const handleConfirmBooking = async () => {
+    setError('');
+    setBooking(true);
+    try {
+        await api.patch(`/bookings/${myBooking._id}/confirm`);
+        setMessage('Ride confirmed! Final price applied.');
+        // Refresh
+        const res = await api.get(`/rides/${id}`);
+        setRide(res.data.data?.ride || res.data.ride);
+        setMyBooking(b => ({ ...b, status: 'confirmed' }));
+    } catch (err) {
+        setError(err.response?.data?.message || 'Confirmation failed');
+    } finally {
+        setBooking(false);
+    }
+  };
+
+  const handleCancelBooking = async () => {
+    if (!window.confirm('Are you sure you want to cancel your request?')) return;
+    setError('');
+    try {
+        await api.patch(`/bookings/${myBooking._id}/cancel`);
+        setBooked(false);
+        setMyBooking(null);
+        setMessage('Ride cancelled.');
+        const res = await api.get(`/rides/${id}`);
+        setRide(res.data.data?.ride || res.data.ride);
+    } catch (err) {
+        setError(err.response?.data?.message || 'Cancellation failed');
     }
   };
 
@@ -323,15 +375,58 @@ export default function RideDetail() {
             {message && !booked && <div className="alert-success">{message}</div>}
             {error   && <div className="alert-error">{error}</div>}
 
-            {/* Join status for passenger */}
-            {booked && (
+            {/* Join stage 1: Request Pending */}
+            {booked && myBooking?.status === 'pending' && (
               <div style={{
                 background: 'rgba(236,102,82,0.05)', border: '1.5px dashed var(--coral)',
                 borderRadius: 'var(--radius-md)', padding: '16px 20px', marginBottom: 12
               }}>
                 <p style={{ fontWeight: 700, color: 'var(--coral)', fontSize: 15, marginBottom: 4 }}>Request Pending</p>
                 <p style={{ fontSize: 13, color: 'var(--charcoal)' }}>
-                  Your request to join has been sent to the driver. You'll be notified once they accept.
+                  Your request has been sent to the driver. You'll be notified once they accept the match.
+                </p>
+                <button 
+                  onClick={handleCancelBooking}
+                  style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 11, cursor: 'pointer', padding: 0, marginTop: 10, textDecoration: 'underline' }}>
+                  Cancel Request
+                </button>
+              </div>
+            )}
+
+            {/* Join stage 2: Driver Accepted, Passenger must confirm price */}
+            {booked && myBooking?.status === 'accepted_by_driver' && (
+              <div style={{
+                background: 'var(--floating-bg)', border: '1.5px solid var(--coral)',
+                borderRadius: 'var(--radius-md)', padding: '20px', marginBottom: 16,
+                boxShadow: 'var(--shadow-md)'
+              }}>
+                <p style={{ fontWeight: 700, color: 'var(--coral)', fontSize: 16, marginBottom: 8 }}>Driver Ready!</p>
+                <p style={{ fontSize: 13, color: 'var(--charcoal)', marginBottom: 16 }}>
+                  Driver is ready to pick you up. Based on the current shared pool, your final fare is:
+                </p>
+                <div style={{ padding: '12px 16px', background: 'var(--cream)', borderRadius: 8, textAlign: 'center', marginBottom: 20 }}>
+                  <span style={{ fontSize: 32, fontWeight: 800, color: 'var(--coral)' }}>₹{ride.farePerSeat}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button className="btn-primary" onClick={handleConfirmBooking} disabled={booking} style={{ flex: 2 }}>
+                    {booking ? '...' : 'Confirm & Join Ride'}
+                  </button>
+                  <button className="btn-outline" onClick={handleCancelBooking} style={{ flex: 1, borderColor: 'var(--border)', color: 'var(--muted)' }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Join stage 3: Confirmed */}
+            {booked && myBooking?.status === 'confirmed' && (
+              <div style={{
+                background: 'rgba(74,124,89,0.1)', border: '1.5px solid var(--success)',
+                borderRadius: 'var(--radius-md)', padding: '16px 20px', marginBottom: 16
+              }}>
+                <p style={{ fontWeight: 700, color: 'var(--success)', fontSize: 15, marginBottom: 4 }}>Ride Confirmed!</p>
+                <p style={{ fontSize: 13, color: 'var(--charcoal)' }}>
+                  Your seat is reserved. Pay <strong>₹{ride.farePerSeat}</strong> to the driver.
                 </p>
               </div>
             )}
@@ -339,7 +434,7 @@ export default function RideDetail() {
             {/* Request button — only if not yet booked */}
             {canBook && !booked && (
               <button className="btn-primary" onClick={handleBook} disabled={booking}>
-                {booking ? 'Sending request...' : 'Join Ride'}
+                {booking ? 'Sending request...' : `Request Ride (Est ₹${ride.farePerSeat})`}
               </button>
             )}
 

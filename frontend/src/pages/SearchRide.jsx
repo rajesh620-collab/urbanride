@@ -4,6 +4,7 @@ import api from '../api/axiosInstance';
 import { getSocket } from '../hooks/useWebSocket';
 import LocationPicker from '../components/LocationPicker';
 import RouteMap from '../components/RouteMap';
+import FareEstimator from '../components/FareEstimator';
 
 // ── Create Pool Modal ──────────────────────────────────────────────────────
 function CreatePoolModal({ landmarks, onClose }) {
@@ -184,6 +185,8 @@ export default function SearchRide() {
   const [showResultsMap, setShowResultsMap] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal]   = useState(false);
+  const [isDiscovering, setIsDiscovering]   = useState(false);
+  const [estimatedFare, setEstimatedFare]   = useState(0);
 
   useEffect(() => {
     api.get('/landmarks').then(res => {
@@ -228,37 +231,42 @@ export default function SearchRide() {
   };
 
   const handleSearch = async e => {
-    e.preventDefault();
+    if (e) e.preventDefault();
+    if (!filters.source || !filters.destination) return;
+    
     setLoading(true);
     setSearched(true);
-    setPendingSaved(false);
+    setIsDiscovering(true); // Pulse effect
     setLiveAlert(null);
-    try {
-      const params = {};
-      if (filters.source)      params.source      = filters.source;
-      if (filters.destination) params.destination = filters.destination;
-      if (filters.femaleOnly)  params.femaleOnly  = 'true';
 
-      const res = await api.get('/rides/search', { params });
-      const foundRides = res.data.data?.rides || res.data.rides || [];
-      setRides(foundRides);
+    // Simulate "Finding Drivers" phase for UX
+    setTimeout(async () => {
+      try {
+        const params = {};
+        if (filters.source)      params.source      = filters.source;
+        if (filters.destination) params.destination = filters.destination;
+        if (filters.femaleOnly)  params.femaleOnly  = 'true';
 
-      if (foundRides.length === 0 && filters.source && filters.destination) {
-        try {
-          await api.post('/pending', {
+        const res = await api.get('/rides/search', { params });
+        const foundRides = res.data.data?.rides || res.data.rides || [];
+        setRides(foundRides);
+
+        if (foundRides.length === 0) {
+          // Auto-save interest
+          api.post('/pending', {
             sourceLandmark:      filters.source,
             destinationLandmark: filters.destination,
             preferredTime:       new Date().toISOString(),
             femaleOnly:          filters.femaleOnly
-          });
-          setPendingSaved(true);
-        } catch { /* silent */ }
+          }).catch(() => {});
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+        setIsDiscovering(false);
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    }, 1500); 
   };
 
   return (
@@ -340,11 +348,47 @@ export default function SearchRide() {
                 onChange={handleChange} style={{ accentColor: 'var(--coral)', width: 15, height: 15 }} />
               <span style={{ color: 'var(--charcoal)' }}>Female-only rides</span>
             </label>
-            <button type="submit" className="btn-primary"
-              disabled={loading} style={{ width: 'auto', padding: '10px 32px' }}>
-              {loading ? 'Searching...' : 'Search'}
-            </button>
           </div>
+
+          {sourceCoords && destCoords && (
+            <div style={{ marginTop: 24 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+                Fare Estimates
+              </p>
+              <FareEstimator 
+                sourceLandmark={filters.source}
+                destinationLandmark={filters.destination}
+                sourceCoords={sourceCoords}
+                destCoords={destCoords}
+                onFareSelect={setEstimatedFare}
+              />
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 16 }}>
+                <div 
+                  onClick={() => handleSearch()}
+                  style={{
+                    padding: 16, background: 'var(--card-bg)', border: '1.5px solid var(--coral)', 
+                    borderRadius: 'var(--radius-md)', cursor: 'pointer', textAlign: 'center',
+                    transition: 'transform 0.2s'
+                  }}>
+                  <p style={{ fontSize: 24, marginBottom: 4 }}>🚗</p>
+                  <p style={{ fontWeight: 700, fontSize: 13 }}>Shared Mini</p>
+                  <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--coral)' }}>₹{estimatedFare || '...'}</p>
+                </div>
+                <div 
+                  onClick={() => handleSearch()}
+                  style={{
+                    padding: 16, background: 'var(--card-bg)', border: '1.5px solid var(--border)', 
+                    borderRadius: 'var(--radius-md)', cursor: 'pointer', textAlign: 'center',
+                    opacity: 0.7
+                  }}>
+                  <p style={{ fontSize: 24, marginBottom: 4 }}>🚙</p>
+                  <p style={{ fontWeight: 700, fontSize: 13 }}>Shared Prime</p>
+                  <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--muted)' }}>₹{Math.round(estimatedFare * 1.3) || '...'}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </form>
 
         {/* ── Ride Pool Section ── */}
@@ -373,8 +417,21 @@ export default function SearchRide() {
         </div>
       </div>
 
+      {/* Discovery State */}
+      {isDiscovering && (
+        <div style={{
+          padding: '40px 20px', textAlign: 'center', 
+          background: 'var(--card-bg)', borderRadius: 'var(--radius-lg)', 
+          border: '1.5px dashed var(--coral)', marginBottom: 20
+        }}>
+          <div className="spinner" style={{ marginBottom: 16 }} />
+          <p style={{ fontWeight: 600, fontSize: 16 }}>Searching for available drivers...</p>
+          <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>Connecting with nearby ride-pools</p>
+        </div>
+      )}
+
       {/* Loading skeletons */}
-      {loading && [1, 2, 3].map(i => <RideCardSkeleton key={i} />)}
+      {!isDiscovering && loading && [1, 2, 3].map(i => <RideCardSkeleton key={i} />)}
 
       {/* No results */}
       {searched && !loading && rides.length === 0 && (

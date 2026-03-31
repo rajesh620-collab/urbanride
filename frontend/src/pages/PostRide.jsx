@@ -10,8 +10,12 @@ export default function PostRide() {
   const [activeOption, setActiveOption] = useState(null); // null, 'quick', 'manual'
   const [landmarks, setLandmarks] = useState([]);
   const [form, setForm] = useState({
-    sourceLandmark: '', destinationLandmark: '',
-    totalSeats: 1, femaleOnly: false, farePerSeat: ''
+    sourceLandmark: '',
+    destinationLandmark: '',
+    totalSeats: 4,
+    farePerSeat: 0,
+    baseTotalRideFare: 0,
+    femaleOnly: false
   });
   const [sourceCoords, setSourceCoords] = useState(null);
   const [destCoords, setDestCoords] = useState(null);
@@ -30,7 +34,7 @@ export default function PostRide() {
     setActiveOption(null);
     setSourceCoords(null);
     setDestCoords(null);
-    setForm({ sourceLandmark: '', destinationLandmark: '', totalSeats: 1, femaleOnly: false, farePerSeat: '' });
+    setForm({ sourceLandmark: '', destinationLandmark: '', totalSeats: 4, farePerSeat: 0, baseTotalRideFare: 0, femaleOnly: false });
   };
 
   const handleQuickOption = () => {
@@ -74,24 +78,35 @@ export default function PostRide() {
   const handleDestChange = (loc) => {
     setDestCoords(loc);
     setForm(f => ({ ...f, destinationLandmark: loc.address }));
-    // If it's quick mode, we might want to auto-scroll to the bottom
   };
 
   const handleSubmit = async e => {
     if (e) e.preventDefault();
     if (activeOption === 'manual' && form.sourceLandmark === form.destinationLandmark)
       return setError('Source and destination cannot be the same');
-    if (activeOption === 'manual' && (!form.farePerSeat || form.farePerSeat <= 0))
-      return setError('Please set a fare per seat');
-    setError('');
+    if (activeOption === 'manual' && (!sourceCoords || !destCoords)) {
+      return setError('Please select both pickup and destination');
+    }
+
+    if (!form.baseTotalRideFare && activeOption === 'manual') {
+      return setError('Please set the trip fare');
+    }
+
     setLoading(true);
+    setError('');
+    setSuccess('');
+
     try {
       const payload = {
         ...form,
-        destinationLandmark: activeOption === 'quick' ? 'Nearby / Broadcast' : form.destinationLandmark,
-        sourceCoords: sourceCoords ? { lat: sourceCoords.lat, lng: sourceCoords.lng } : undefined,
-        destCoords: destCoords ? { lat: destCoords.lat, lng: destCoords.lng } : undefined
+        sourceCoords: sourceCoords ? { lat: sourceCoords.lat, lng: sourceCoords.lng, address: sourceCoords.address } : undefined,
+        destCoords:   destCoords   ? { lat: destCoords.lat,   lng: destCoords.lng,   address: destCoords.address   } : undefined,
+        sourceLandmark:      sourceCoords?.address || 'Current Location',
+        destinationLandmark: destCoords?.address   || 'Nearby / Broadcast',
+        farePerSeat: form.baseTotalRideFare || 100, // fallback/initial
+        baseTotalRideFare: form.baseTotalRideFare || 100
       };
+
       await api.post('/rides', payload);
       setSuccess('Ride posted! Waiting for acceptance...');
       setTimeout(() => navigate('/my-rides'), 1500);
@@ -221,17 +236,20 @@ export default function PostRide() {
             {sourceCoords?.lat && destCoords?.lat ? (
               <>
                 <div className="field">
-                   <label>Suggested Fare Per Seat</label>
+                   <label>System Total Fare Recommendation</label>
                    <FareEstimator
                     sourceCoords={sourceCoords}
                     destCoords={destCoords}
-                    onFareSelect={(fare) => setForm(f => ({ ...f, farePerSeat: fare }))}
+                    onFareSelect={(fare) => setForm(f => ({ ...f, baseTotalRideFare: fare * 4, farePerSeat: fare * 4 }))}
                   />
                 </div>
                 <div className="field">
-                  <label>Final Fare Per Seat (₹)</label>
-                  <input type="number" name="farePerSeat" value={form.farePerSeat}
-                    onChange={handleChange} placeholder="Tap a suggestion above" required min={1} />
+                  <label>Total Trip Cost to be shared (₹)</label>
+                  <input type="number" name="baseTotalRideFare" value={form.baseTotalRideFare}
+                    onChange={handleChange} placeholder="Set the total fare for this trip" required min={1} />
+                  <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+                    This cost will be split equally among all confirmed passengers.
+                  </p>
                 </div>
               </>
             ) : activeOption === 'manual' ? (
