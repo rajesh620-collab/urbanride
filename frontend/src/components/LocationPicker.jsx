@@ -17,14 +17,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-function makeIcon(color, size = 32) {
-  return L.icon({
-    iconUrl: createMarkerIcon(color, size),
-    iconSize: [size, size + 12],
-    iconAnchor: [size / 2, size + 12],
-    popupAnchor: [0, -(size + 8)],
-  });
-}
+// Removed makeIcon global function to move it inside using useMemo
 
 // Component to handle map click for pin-drop
 function MapClickHandler({ onLocationSelect, enabled }) {
@@ -62,6 +55,33 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
   const searchTimeout = useRef(null);
 
   const color = mode === 'pickup' ? '#4CAF50' : '#E74C3C';
+
+  // Use useMemo for the marker icon to prevent frequent re-initialization which can lead to invisible markers
+  const markerIcon = useRef(null);
+  if (!markerIcon.current) {
+    const filterId = `pin-shadow-${mode}`;
+    const svgHtml = `
+      <svg width="32" height="46" viewBox="0 0 32 46" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="${filterId}" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="${color}" flood-opacity="0.4"/>
+          </filter>
+        </defs>
+        <path d="M16 0C7.16 0 0 7.16 0 16c0 10 16 30 16 30S32 26 32 16C32 7.16 24.84 0 16 0z"
+          fill="${color}" filter="url(#${filterId})"/>
+        <circle cx="16" cy="15" r="7" fill="white" opacity="0.95"/>
+        <circle cx="16" cy="15" r="4" fill="${color}" opacity="0.7"/>
+      </svg>
+    `;
+
+    markerIcon.current = L.divIcon({
+      html: `<div style="width:32px;height:46px">${svgHtml}</div>`,
+      className: '',
+      iconSize: [32, 46],
+      iconAnchor: [16, 46],
+      popupAnchor: [0, -40]
+    });
+  }
 
   useEffect(() => {
     api.get('/landmarks').then(res => {
@@ -319,7 +339,7 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
             {value?.lat && (
               <>
                 <MapRecenter position={[value.lat, value.lng]} />
-                <Marker position={[value.lat, value.lng]} icon={makeIcon(color)}>
+                <Marker position={[value.lat, value.lng]} icon={markerIcon.current}>
                   <Popup>{address || 'Selected location'}</Popup>
                 </Marker>
               </>
