@@ -507,10 +507,18 @@ export default function SearchRide() {
                     <span>📏 {(ride.distanceMeters / 1000).toFixed(1)} km</span>
                   )}
                 </div>
-                {/* Fare shown only on tap (inside RideDetail), not in the list */}
-                <span style={{ fontSize: 12, color: 'var(--coral)', fontWeight: 600 }}>
-                  Tap for fare →
-                </span>
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--coral)', marginBottom: 2 }}>₹{ride.farePerSeat}</p>
+                  {ride.confirmedCount > 0 ? (
+                    <p style={{ fontSize: 9, color: 'var(--success)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      ⚡ Shared Price ({ride.confirmedCount + 1} users)
+                    </p>
+                  ) : (
+                    <p style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      👤 Solo Price
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           ))}
