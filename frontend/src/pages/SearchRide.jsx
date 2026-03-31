@@ -364,8 +364,8 @@ export default function SearchRide() {
             <button
               type="button"
               onClick={() => setShowCreateModal(true)}
-              className="btn-primary"
-              style={{ flex: '1 1 160px', padding: '11px 16px', fontSize: 13, background: 'var(--charcoal)' }}
+              className="btn-secondary"
+              style={{ flex: '1 1 160px', padding: '11px 16px', fontSize: 13 }}
             >
               Create Ride Pool
             </button>
