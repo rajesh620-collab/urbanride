@@ -99,7 +99,7 @@ export default function RideDetail() {
         const r = res.data.data?.ride || res.data.ride;
         setRide(r);
         // If driver, fetch requests
-        if (String(r.driverId) === String(user?.id)) {
+        if (String(r.driverId) === String(user?._id || user?.id)) {
           api.get(`/bookings/ride/${id}`).then(res2 => {
             setRequests(res2.data.data?.bookings || res2.data.bookings || []);
           });
@@ -195,7 +195,7 @@ export default function RideDetail() {
     </div>
   );
 
-  const isDriver = String(ride.driverId) === String(user?.id);
+  const isDriver = String(ride.driverId) === String(user?._id || user?.id);
   const canBook  = !isDriver && ride.status === 'open' && ride.availableSeats > 0;
   const seatPct  = ((ride.totalSeats - ride.availableSeats) / ride.totalSeats) * 100;
   const hasMap   = ride.sourceCoords?.lat && ride.destCoords?.lat;
