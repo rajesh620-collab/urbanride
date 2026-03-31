@@ -32,7 +32,8 @@ export default function MyRides() {
   const bookingBadge = {
     confirmed: { bg: '#EDF6F0', color: '#166534' },
     pending:   { bg: '#FEF3C7', color: '#92400E' },
-    cancelled: { bg: '#FEE2E2', color: '#991B1B' },
+    rejected:  { bg: '#FEE2E2', color: '#991B1B' },
+    cancelled: { bg: '#F3F4F6', color: '#4B5563' },
   };
 
   return (

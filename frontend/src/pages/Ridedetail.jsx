@@ -88,16 +88,26 @@ export default function RideDetail() {
   const [message, setMessage]     = useState('');
   const [error, setError]         = useState('');
   const [booked, setBooked]           = useState(false);
-  const [confirmedFare, setConfirmedFare] = useState(null);
   const [routeCoords, setRouteCoords] = useState(null);
   const [activeTab, setActiveTab] = useState('details'); // 'details' | 'map' | 'track'
+  const [requests, setRequests]   = useState([]);
+  const [actingOn, setActingOn]   = useState(null); // id of booking being accepted/rejected
 
   useEffect(() => {
     api.get(`/rides/${id}`)
-      .then(res => setRide(res.data.data?.ride || res.data.ride))
+      .then(res => {
+        const r = res.data.data?.ride || res.data.ride;
+        setRide(r);
+        // If driver, fetch requests
+        if (String(r.driverId) === String(user?.id)) {
+          api.get(`/bookings/ride/${id}`).then(res2 => {
+            setRequests(res2.data.data?.bookings || res2.data.bookings || []);
+          });
+        }
+      })
       .catch(() => setError('Ride not found'))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, user?.id]);
 
   // Fetch route once coords available
   useEffect(() => {
@@ -134,15 +144,32 @@ export default function RideDetail() {
     setError(''); setBooking(true);
     try {
       await api.post('/bookings', { rideId: id });
-      setConfirmedFare(ride.farePerSeat);
       setBooked(true);
-      setMessage('Seat booked successfully!');
-      const res = await api.get(`/rides/${id}`);
-      setRide(res.data.data?.ride || res.data.ride);
+      setMessage('Join request sent! Waiting for driver acceptance.');
     } catch (err) {
-      setError(err.response?.data?.message || 'Booking failed');
+      setError(err.response?.data?.message || 'Request failed');
     } finally {
       setBooking(false);
+    }
+  };
+
+  const handleRequestAction = async (bookingId, action) => {
+    setActingOn(bookingId);
+    setError('');
+    try {
+      await api.patch(`/bookings/${bookingId}/${action}`);
+      setMessage(`Request ${action}ed`);
+      // Refresh both ride and requests
+      const [rRes, bRes] = await Promise.all([
+        api.get(`/rides/${id}`),
+        api.get(`/bookings/ride/${id}`)
+      ]);
+      setRide(rRes.data.data?.ride || rRes.data.ride);
+      setRequests(bRes.data.data?.bookings || bRes.data.bookings || []);
+    } catch (err) {
+      setError(err.response?.data?.message || `Failed to ${action} request`);
+    } finally {
+      setActingOn(null);
     }
   };
 
@@ -251,12 +278,7 @@ export default function RideDetail() {
                 { label: 'Status',  value: STATUS_LABELS[ride.status] || ride.status },
                 {
                   label: 'Fare / Seat',
-                  value: (
-                    booked || isDriver ||
-                    ['full', 'in_progress', 'completed'].includes(ride.status)
-                  )
-                    ? `₹${confirmedFare ?? ride.farePerSeat}`
-                    : 'Wait for full ride'
+                  value: ride.farePerSeat ? `₹${ride.farePerSeat}` : 'Not set'
                 },
               ].map(({ label, value }) => (
                 <div key={label} style={{
@@ -301,23 +323,23 @@ export default function RideDetail() {
             {message && !booked && <div className="alert-success">{message}</div>}
             {error   && <div className="alert-error">{error}</div>}
 
-            {/* Booking confirmed card */}
-            {booked && confirmedFare && (
+            {/* Join status for passenger */}
+            {booked && (
               <div style={{
-                background: 'rgba(72,187,120,0.1)', border: '1.5px solid var(--success)',
+                background: 'rgba(236,102,82,0.05)', border: '1.5px dashed var(--coral)',
                 borderRadius: 'var(--radius-md)', padding: '16px 20px', marginBottom: 12
               }}>
-                <p style={{ fontWeight: 700, color: 'var(--success)', fontSize: 15, marginBottom: 4 }}>Seat Confirmed!</p>
+                <p style={{ fontWeight: 700, color: 'var(--coral)', fontSize: 15, marginBottom: 4 }}>Request Pending</p>
                 <p style={{ fontSize: 13, color: 'var(--charcoal)' }}>
-                  Your fare: <strong>₹{confirmedFare}</strong> — please pay the driver on pickup.
+                  Your request to join has been sent to the driver. You'll be notified once they accept.
                 </p>
               </div>
             )}
 
-            {/* Book button — only if not yet booked */}
+            {/* Request button — only if not yet booked */}
             {canBook && !booked && (
               <button className="btn-primary" onClick={handleBook} disabled={booking}>
-                {booking ? 'Booking seat...' : 'Book Seat'}
+                {booking ? 'Sending request...' : 'Join Ride'}
               </button>
             )}
 
@@ -327,12 +349,54 @@ export default function RideDetail() {
               </p>
             )}
 
+            {/* Passenger Requests (Driver Only) */}
+            {isDriver && requests.length > 0 && (
+              <div style={{ marginTop: 24, padding: 20, background: 'var(--cream)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                <p style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 16 }}>
+                  Join Requests
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {requests.map(req => (
+                    <div key={req._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--white)', padding: 12, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+                      <div>
+                        <p style={{ fontWeight: 600, fontSize: 14 }}>{req.passengerName}</p>
+                        <p style={{ fontSize: 12, color: 'var(--muted)' }}>
+                          {req.seatsBooked} seat(s) · <span style={{ color: 'var(--success)', fontWeight: 600 }}>₹{ride.farePerSeat * req.seatsBooked}</span>
+                        </p>
+                        <p style={{ fontSize: 10, marginTop: 4, textTransform: 'uppercase', fontWeight: 700, color: req.status === 'confirmed' ? 'var(--success)' : 'var(--coral)' }}>
+                          Status: {req.status}
+                        </p>
+                      </div>
+                      {req.status === 'pending' && (
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button 
+                            disabled={actingOn === req._id}
+                            onClick={() => handleRequestAction(req._id, 'accept')}
+                            style={{ padding: '6px 12px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: 4, fontSize: 11, cursor: 'pointer' }}
+                          >
+                            {actingOn === req._id ? '...' : 'Accept'}
+                          </button>
+                          <button 
+                            disabled={actingOn === req._id}
+                            onClick={() => handleRequestAction(req._id, 'reject')}
+                            style={{ padding: '6px 12px', background: 'var(--cream-dark)', color: 'var(--charcoal)', border: 'none', borderRadius: 4, fontSize: 11, cursor: 'pointer' }}
+                          >
+                            Ignore
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Driver controls */}
             {isDriver && ride.status !== 'completed' && ride.status !== 'cancelled' && (
-              <div>
+              <div style={{ marginTop: 24 }}>
                 <p style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500,
                   textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-                  Driver Controls
+                  Ride Controls
                 </p>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {/* Navigate button — shown when ride is open/full and has coords */}
