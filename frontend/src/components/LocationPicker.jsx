@@ -49,7 +49,7 @@ function MapRecenter({ position }) {
   return null;
 }
 
-export default function LocationPicker({ value, onChange, label = 'Select Location', mode = 'pickup' }) {
+export default function LocationPicker({ value, onChange, label = 'Select Location', mode = 'pickup', onLocationDetected }) {
   const { dark } = useTheme();
   const [address, setAddress] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,6 +57,7 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
   const [searching, setSearching] = useState(false);
   const [detecting, setDetecting] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
   const searchTimeout = useRef(null);
 
   const color = mode === 'pickup' ? '#4CAF50' : '#E74C3C';
@@ -72,12 +73,14 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
     try {
       const res = await api.get('/maps/reverse-geocode', { params: { lat, lng } });
       const data = res.data.data;
-      setAddress(data.shortAddress || data.displayName);
+      const addr = data.shortAddress || data.displayName;
+      setAddress(addr);
       if (onChange) {
-        onChange({ lat, lng, address: data.shortAddress, fullAddress: data.displayName });
+        onChange({ lat, lng, address: addr, fullAddress: data.displayName });
       }
     } catch {
-      setAddress(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+      const fallback = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      setAddress(fallback);
     }
   };
 
@@ -87,6 +90,7 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
 
   const handleSearch = (query) => {
     setSearchQuery(query);
+    setAddress(''); // clear displayed address while typing
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     if (query.length < 3) {
       setSearchResults([]);
@@ -118,17 +122,21 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
     if (!navigator.geolocation) return;
     setDetecting(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
-        reverseGeocode(lat, lng);
+        await reverseGeocode(lat, lng);
         setDetecting(false);
         setShowMap(true);
+        if (onLocationDetected) onLocationDetected({ lat, lng });
       },
       () => setDetecting(false),
       { enableHighAccuracy: true }
     );
   };
+
+  // The displayed value in the input: searching → show query; otherwise show address
+  const inputDisplayValue = inputFocused ? searchQuery : (address || searchQuery);
 
   return (
     <div style={{ marginBottom: 18 }}>
@@ -143,28 +151,21 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
         <div style={{ flex: 1, position: 'relative' }}>
           <input
             type="text"
-            placeholder={address || 'Search a location or drop a pin...'}
-            value={searchQuery}
+            placeholder="Search a location or drop a pin..."
+            value={inputDisplayValue}
             onChange={e => handleSearch(e.target.value)}
-            onFocus={() => setShowMap(true)}
+            onFocus={() => { setInputFocused(true); setShowMap(true); setSearchQuery(''); }}
+            onBlur={() => { setInputFocused(false); setTimeout(() => setSearchResults([]), 200); }}
             style={{
               width: '100%', padding: '11px 14px',
               border: `1.5px solid ${value?.lat ? color : 'var(--border)'}`,
               borderRadius: 'var(--radius-sm)', fontSize: 14,
-              color: 'var(--charcoal)', background: 'var(--input-bg)',
-              outline: 'none', transition: 'border-color 0.2s'
+              color: address && !inputFocused ? 'var(--charcoal)' : 'var(--charcoal)',
+              background: 'var(--input-bg)',
+              outline: 'none', transition: 'border-color 0.2s',
+              boxSizing: 'border-box'
             }}
           />
-          {address && !searchQuery && (
-            <div style={{
-              position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
-              fontSize: 14, color: 'var(--charcoal)', pointerEvents: 'none',
-              maxWidth: 'calc(100% - 28px)', overflow: 'hidden', textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}>
-              📍 {address}
-            </div>
-          )}
 
           {/* Search results dropdown */}
           {searchResults.length > 0 && (
@@ -175,7 +176,7 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
               zIndex: 1000, maxHeight: 200, overflowY: 'auto'
             }}>
               {searchResults.map((r, i) => (
-                <div key={i} onClick={() => selectResult(r)} style={{
+                <div key={i} onMouseDown={() => selectResult(r)} style={{
                   padding: '10px 14px', cursor: 'pointer', fontSize: 13,
                   borderBottom: '1px solid var(--border)',
                   transition: 'background 0.15s'

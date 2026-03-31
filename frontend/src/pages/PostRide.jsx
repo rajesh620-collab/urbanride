@@ -19,6 +19,7 @@ export default function PostRide() {
   const [error, setError]   = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [gpsInfo, setGpsInfo] = useState('');
 
   useEffect(() => {
     api.get('/landmarks').then(res =>
@@ -89,6 +90,11 @@ export default function PostRide() {
         setForm(f => ({ ...f, destinationLandmark: location.address }));
       }
     }
+  };
+
+  // Called when GPS button detects current location in source picker
+  const handleGpsSourceDetected = (loc) => {
+    setGpsInfo('GPS location locked — set destination and your ride will post automatically');
   };
 
   const handleSubmit = async e => {
@@ -164,6 +170,15 @@ export default function PostRide() {
       <div className="card">
         {error   && <div className="alert-error">{error}</div>}
         {success && <div className="alert-success">{success}</div>}
+        {gpsInfo && (
+          <div style={{
+            background: 'rgba(72,187,120,0.1)', border: '1px solid var(--success)',
+            borderRadius: 'var(--radius-sm)', padding: '10px 14px', marginBottom: 16,
+            fontSize: 13, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: 8
+          }}>
+            📡 {gpsInfo}
+          </div>
+        )}
 
         {/* Mode toggle */}
         <div style={{
@@ -202,6 +217,7 @@ export default function PostRide() {
                 onChange={handleSourceChange}
                 label="From (your pickup)"
                 mode="pickup"
+                onLocationDetected={handleGpsSourceDetected}
               />
 
               <div style={{ textAlign: 'center', marginBottom: 14, color: 'var(--coral-light)', fontSize: 20 }}>↓</div>

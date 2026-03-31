@@ -249,7 +249,15 @@ export default function RideDetail() {
                 { label: 'Driver',  value: ride.driverName },
                 { label: 'Seats',   value: `${ride.availableSeats} / ${ride.totalSeats} free` },
                 { label: 'Status',  value: STATUS_LABELS[ride.status] || ride.status },
-                { label: 'Fare / Seat', value: booked || isDriver ? `₹${confirmedFare ?? ride.farePerSeat}` : 'Shown after booking' },
+                {
+                  label: 'Fare / Seat',
+                  value: (
+                    booked || isDriver ||
+                    ['full', 'in_progress', 'completed'].includes(ride.status)
+                  )
+                    ? `₹${confirmedFare ?? ride.farePerSeat}`
+                    : 'Shown when ride is full'
+                },
               ].map(({ label, value }) => (
                 <div key={label} style={{
                   background: 'var(--cream)', borderRadius: 'var(--radius-sm)', padding: '12px 14px'
