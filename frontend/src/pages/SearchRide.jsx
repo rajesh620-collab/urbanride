@@ -181,7 +181,6 @@ export default function SearchRide() {
   const [loading, setLoading]               = useState(false);
   const [pendingSaved, setPendingSaved]     = useState(false);
   const [liveAlert, setLiveAlert]           = useState(null);
-  const [searchMode, setSearchMode]         = useState('quick'); // 'quick' | 'map'
   const [showResultsMap, setShowResultsMap] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal]   = useState(false);
@@ -299,111 +298,41 @@ export default function SearchRide() {
 
       {/* Search card */}
       <div className="card" style={{ marginBottom: 24 }}>
-        {/* Mode toggle */}
-        <div style={{
-          display: 'flex', gap: 4, marginBottom: 20,
-          background: 'var(--cream-dark)', padding: 3,
-          borderRadius: 'var(--radius-sm)', width: 'fit-content'
-        }}>
-          {[
-            { key: 'quick', label: 'Quick Search' },
-            { key: 'map',   label: 'Map Pick' }
-          ].map(tab => (
-            <button key={tab.key} type="button" onClick={() => setSearchMode(tab.key)} style={{
-              padding: '6px 16px', border: 'none', cursor: 'pointer',
-              borderRadius: 6, fontSize: 12, fontWeight: 500,
-              background: searchMode === tab.key ? 'var(--white)' : 'transparent',
-              color: searchMode === tab.key ? 'var(--charcoal)' : 'var(--muted)',
-              boxShadow: searchMode === tab.key ? 'var(--shadow-sm)' : 'none',
-              transition: 'all 0.2s'
-            }}>
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
         <form onSubmit={handleSearch}>
-          {searchMode === 'map' ? (
-            <>
-              <LocationPicker
-                value={sourceCoords}
-                onChange={(loc) => {
-                  setSourceCoords(loc);
-                  if (loc.address) {
-                    const nearest = landmarks.find(l => loc.address.toLowerCase().includes(l.name.toLowerCase()));
-                    setFilters(f => ({ ...f, source: nearest?.name || loc.address }));
-                  }
-                }}
-                label="From (Pickup)"
-                mode="pickup"
-              />
-              <div style={{ textAlign: 'center', color: 'var(--coral)', fontSize: 22, margin: '4px 0' }}>↓</div>
-              <LocationPicker
-                value={destCoords}
-                onChange={(loc) => {
-                  setDestCoords(loc);
-                  if (loc.address) {
-                    const nearest = landmarks.find(l => loc.address.toLowerCase().includes(l.name.toLowerCase()));
-                    setFilters(f => ({ ...f, destination: nearest?.name || loc.address }));
-                  }
-                }}
-                label="To (Destination)"
-                mode="dropoff"
-              />
-            </>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {/* FROM */}
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label>From (Pickup)</label>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
-                  <select
-                    name="source"
-                    value={filters.source}
-                    onChange={handleChange}
-                    style={{ flex: 1 }}
-                  >
-                    <option value="">Select pickup location</option>
-                    {landmarks.map(lm => (
-                      <option key={lm._id} value={lm.name}>{lm.name}</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={detectNearestLandmark}
-                    title="Detect my location"
-                    style={{
-                      padding: '0 12px', background: 'var(--coral-pale)',
-                      border: '1.5px solid var(--coral)', borderRadius: 'var(--radius-sm)',
-                      cursor: 'pointer', fontSize: 16, color: 'var(--coral)', flexShrink: 0
-                    }}
-                  >📍</button>
-                </div>
-              </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* FROM */}
+            <LocationPicker
+              value={sourceCoords}
+              onChange={(loc) => {
+                setSourceCoords(loc);
+                setFilters(f => ({ ...f, source: loc.address }));
+              }}
+              label="From (Pickup)"
+              mode="pickup"
+              hideGps={true}
+              hideMapToggle={true}
+            />
 
-              {/* Connector */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-                <span style={{ fontSize: 18, color: 'var(--coral)' }}>↓</span>
-                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-              </div>
-
-              {/* TO */}
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label>To (Destination)</label>
-                <select
-                  name="destination"
-                  value={filters.destination}
-                  onChange={handleChange}
-                >
-                  <option value="">Select destination</option>
-                  {landmarks.map(lm => (
-                    <option key={lm._id} value={lm.name}>{lm.name}</option>
-                  ))}
-                </select>
-              </div>
+            {/* Connector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '-4px 0' }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              <span style={{ fontSize: 18, color: 'var(--coral)' }}>↓</span>
+              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             </div>
-          )}
+
+            {/* TO */}
+            <LocationPicker
+              value={destCoords}
+              onChange={(loc) => {
+                setDestCoords(loc);
+                setFilters(f => ({ ...f, destination: loc.address }));
+              }}
+              label="To (Destination)"
+              mode="dropoff"
+              hideGps={true}
+              hideMapToggle={true}
+            />
+          </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, flexWrap: 'wrap', gap: 12 }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>

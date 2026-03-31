@@ -49,7 +49,7 @@ function MapRecenter({ position }) {
   return null;
 }
 
-export default function LocationPicker({ value, onChange, label = 'Select Location', mode = 'pickup', onLocationDetected }) {
+export default function LocationPicker({ value, onChange, label = 'Select Location', mode = 'pickup', onLocationDetected, hideGps = false, hideMapToggle = false }) {
   const { dark } = useTheme();
   const [address, setAddress] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -168,57 +168,97 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
             }}
           />
 
-          {/* Search results dropdown */}
-          {searchResults.length > 0 && (
+          {/* Smart Search Dropdown */}
+          {inputFocused && (
             <div style={{
               position: 'absolute', top: '100%', left: 0, right: 0,
               background: 'var(--card-bg)', border: '1px solid var(--border)',
               borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow-md)',
-              zIndex: 1000, maxHeight: 200, overflowY: 'auto'
+              zIndex: 1000, maxHeight: 250, overflowY: 'auto', marginTop: 4
             }}>
+              {/* Smart Actions (only when query is short) */}
+              {searchQuery.length < 3 && (
+                <>
+                  <div onMouseDown={detectMyLocation} style={{
+                    padding: '12px 14px', cursor: 'pointer', fontSize: 13,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    borderBottom: '1px solid var(--border)', transition: 'background 0.15s'
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--cream)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <span style={{ fontSize: 16 }}>📍</span>
+                    <div>
+                      <span style={{ fontWeight: 600 }}>My Current Location</span>
+                      <span style={{ display: 'block', fontSize: 11, color: 'var(--muted)' }}>Use GPS to detect automatically</span>
+                    </div>
+                  </div>
+
+                  <div onMouseDown={() => { setShowMap(true); setInputFocused(false); }} style={{
+                    padding: '12px 14px', cursor: 'pointer', fontSize: 13,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    borderBottom: searchResults.length > 0 ? '1px solid var(--border)' : 'none',
+                    transition: 'background 0.15s'
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--cream)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <span style={{ fontSize: 16 }}>🗺️</span>
+                    <div>
+                      <span style={{ fontWeight: 600 }}>Select from Map</span>
+                      <span style={{ display: 'block', fontSize: 11, color: 'var(--muted)' }}>Drop a pin manually</span>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* API Search Results */}
               {searchResults.map((r, i) => (
                 <div key={i} onMouseDown={() => selectResult(r)} style={{
-                  padding: '10px 14px', cursor: 'pointer', fontSize: 13,
-                  borderBottom: '1px solid var(--border)',
+                  padding: '12px 14px', cursor: 'pointer', fontSize: 13,
+                  borderBottom: i === searchResults.length - 1 ? 'none' : '1px solid var(--border)',
                   transition: 'background 0.15s'
                 }}
                   onMouseEnter={e => e.currentTarget.style.background = 'var(--cream)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
-                  <span style={{ fontWeight: 500 }}>{r.shortName}</span>
+                  <span style={{ fontWeight: 600 }}>{r.shortName}</span>
                   <span style={{ display: 'block', fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
                     {r.displayName}
                   </span>
                 </div>
               ))}
-            </div>
-          )}
-          {searching && (
-            <div style={{
-              position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)'
-            }}>
-              <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+
+              {searching && (
+                <div style={{ padding: '10px 14px', textAlign: 'center' }}>
+                  <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        <button type="button" onClick={detectMyLocation} disabled={detecting} style={{
-          padding: '8px 12px', background: 'var(--coral-pale)',
-          border: `1.5px solid var(--coral)`, borderRadius: 'var(--radius-sm)',
-          cursor: 'pointer', fontSize: 16, whiteSpace: 'nowrap', color: 'var(--coral)',
-          opacity: detecting ? 0.6 : 1, transition: 'opacity 0.2s'
-        }} title="Use my location">
-          {detecting ? '⏳' : '📍'}
-        </button>
+        {!hideGps && (
+          <button type="button" onClick={detectMyLocation} disabled={detecting} style={{
+            padding: '8px 12px', background: 'var(--coral-pale)',
+            border: `1.5px solid var(--coral)`, borderRadius: 'var(--radius-sm)',
+            cursor: 'pointer', fontSize: 16, whiteSpace: 'nowrap', color: 'var(--coral)',
+            opacity: detecting ? 0.6 : 1, transition: 'opacity 0.2s'
+          }} title="Use my location">
+            {detecting ? '⏳' : '📍'}
+          </button>
+        )}
 
-        <button type="button" onClick={() => setShowMap(s => !s)} style={{
-          padding: '8px 12px', background: showMap ? 'var(--coral)' : 'var(--cream-dark)',
-          border: `1.5px solid ${showMap ? 'var(--coral)' : 'var(--border)'}`,
-          borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: 16,
-          color: showMap ? 'white' : 'var(--muted)', transition: 'all 0.2s'
-        }} title="Toggle map">
-          🗺️
-        </button>
+        {!hideMapToggle && (
+          <button type="button" onClick={() => setShowMap(s => !s)} style={{
+            padding: '8px 12px', background: showMap ? 'var(--coral)' : 'var(--cream-dark)',
+            border: `1.5px solid ${showMap ? 'var(--coral)' : 'var(--border)'}`,
+            borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: 16,
+            color: showMap ? 'white' : 'var(--muted)', transition: 'all 0.2s'
+          }} title="Toggle map">
+            🗺️
+          </button>
+        )}
       </div>
 
       {/* Map */}
