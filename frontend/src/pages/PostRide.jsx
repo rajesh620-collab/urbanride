@@ -79,15 +79,16 @@ export default function PostRide() {
 
   const handleSubmit = async e => {
     if (e) e.preventDefault();
-    if (form.sourceLandmark === form.destinationLandmark)
+    if (activeOption === 'manual' && form.sourceLandmark === form.destinationLandmark)
       return setError('Source and destination cannot be the same');
-    if (!form.farePerSeat || form.farePerSeat <= 0)
+    if (activeOption === 'manual' && (!form.farePerSeat || form.farePerSeat <= 0))
       return setError('Please set a fare per seat');
     setError('');
     setLoading(true);
     try {
       const payload = {
         ...form,
+        destinationLandmark: activeOption === 'quick' ? 'Nearby / Broadcast' : form.destinationLandmark,
         sourceCoords: sourceCoords ? { lat: sourceCoords.lat, lng: sourceCoords.lng } : undefined,
         destCoords: destCoords ? { lat: destCoords.lat, lng: destCoords.lng } : undefined
       };
@@ -135,7 +136,7 @@ export default function PostRide() {
             <div style={{ flex: 1 }}>
               <h3 style={{ fontSize: 18, marginBottom: 4 }}>Quick Post from My Location</h3>
               <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.4 }}>
-                Instant pickup at your current spot. Just set your destination and go.
+                Directly share your current coordinates and wait for nearby ride requests.
               </p>
             </div>
           </div>
@@ -184,12 +185,12 @@ export default function PostRide() {
                    </div>
                 </div>
 
-                <LocationPicker
-                  value={destCoords}
-                  onChange={handleDestChange}
-                  label="To (Destination)"
-                  mode="dropoff"
-                />
+                <div style={{ padding: 16, background: 'var(--cream)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)', textAlign: 'center' }}>
+                  <p style={{ fontSize: 14, color: 'var(--charcoal)', fontWeight: 500 }}>Broadcast visibility active</p>
+                  <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
+                    Your live location is shared. You will be notified of nearby passengers.
+                  </p>
+                </div>
               </div>
             ) : (
               <>
@@ -233,11 +234,11 @@ export default function PostRide() {
                     onChange={handleChange} placeholder="Tap a suggestion above" required min={1} />
                 </div>
               </>
-            ) : (
+            ) : activeOption === 'manual' ? (
               <div style={{ padding: 16, textAlign: 'center', background: 'var(--cream)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)', marginBottom: 18 }}>
                 <p style={{ fontSize: 13, color: 'var(--muted)' }}>Select destination to calculate fare</p>
               </div>
-            )}
+            ) : null}
 
             <div className="field">
               <label>Available Seats</label>
@@ -262,7 +263,9 @@ export default function PostRide() {
               </label>
             </div>
 
-            <button type="submit" className="btn-primary" disabled={loading || !sourceCoords || !destCoords || !!success} style={{ marginTop: 24 }}>
+            <button type="submit" className="btn-primary" 
+              disabled={loading || !sourceCoords || (activeOption === 'manual' && !destCoords) || !!success} 
+              style={{ marginTop: 24 }}>
               {loading ? 'Posting...' : 'Post Ride Now'}
             </button>
           </form>
