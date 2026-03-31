@@ -187,6 +187,7 @@ export default function SearchRide() {
   const [showJoinModal, setShowJoinModal]   = useState(false);
   const [isDiscovering, setIsDiscovering]   = useState(false);
   const [estimatedFare, setEstimatedFare]   = useState(0);
+  const [selectedCabType, setSelectedCabType] = useState('Cab XL');
 
   useEffect(() => {
     api.get('/landmarks').then(res => {
@@ -353,7 +354,7 @@ export default function SearchRide() {
           {sourceCoords && destCoords && (
             <div style={{ marginTop: 24 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-                Fare Estimates
+                Select Service
               </p>
               <FareEstimator 
                 sourceLandmark={filters.source}
@@ -362,31 +363,54 @@ export default function SearchRide() {
                 destCoords={destCoords}
                 onFareSelect={setEstimatedFare}
               />
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 16 }}>
-                <div 
-                  onClick={() => handleSearch()}
-                  style={{
-                    padding: 16, background: 'var(--card-bg)', border: '1.5px solid var(--coral)', 
-                    borderRadius: 'var(--radius-md)', cursor: 'pointer', textAlign: 'center',
-                    transition: 'transform 0.2s'
-                  }}>
-                  <p style={{ fontSize: 24, marginBottom: 4 }}>🚗</p>
-                  <p style={{ fontWeight: 700, fontSize: 13 }}>Shared Mini</p>
-                  <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--coral)' }}>₹{estimatedFare || '...'}</p>
-                </div>
-                <div 
-                  onClick={() => handleSearch()}
-                  style={{
-                    padding: 16, background: 'var(--card-bg)', border: '1.5px solid var(--border)', 
-                    borderRadius: 'var(--radius-md)', cursor: 'pointer', textAlign: 'center',
-                    opacity: 0.7
-                  }}>
-                  <p style={{ fontSize: 24, marginBottom: 4 }}>🚙</p>
-                  <p style={{ fontWeight: 700, fontSize: 13 }}>Shared Prime</p>
-                  <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--muted)' }}>₹{Math.round(estimatedFare * 1.3) || '...'}</p>
-                </div>
-              </div>
+
+              {/* Cab Type List */}
+              {estimatedFare > 0 && (() => {
+                const base = estimatedFare;
+                const cabTypes = [
+                  { name: 'Cab XL', emoji: '🚐', minMult: 1.20, maxMult: 1.45, desc: '6-seater SUV' },
+                  { name: 'Auto',   emoji: '🛺', minMult: 0.55, maxMult: 0.70, desc: '3-wheeler' },
+                  { name: 'Cab Non AC', emoji: '🚕', minMult: 0.75, maxMult: 0.90, desc: 'Budget sedan' },
+                  { name: 'Cab Premium', emoji: '🚘', minMult: 1.00, maxMult: 1.20, desc: 'AC sedan' },
+                ];
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 0, borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1.5px solid var(--border)' }}>
+                    {cabTypes.map((cab, idx) => {
+                      const isSelected = selectedCabType === cab.name;
+                      const minFare = Math.round(base * cab.minMult);
+                      const maxFare = Math.round(base * cab.maxMult);
+                      return (
+                        <div
+                          key={cab.name}
+                          onClick={() => { setSelectedCabType(cab.name); handleSearch(); }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 14,
+                            padding: '14px 16px',
+                            background: isSelected ? 'rgba(var(--coral-rgb,229,90,63),0.07)' : 'var(--card-bg)',
+                            borderLeft: isSelected ? '3px solid var(--coral)' : '3px solid transparent',
+                            borderBottom: idx < cabTypes.length - 1 ? '1px solid var(--border)' : 'none',
+                            cursor: 'pointer',
+                            transition: 'background 0.18s, border-left 0.18s',
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--cream)'}
+                          onMouseLeave={e => e.currentTarget.style.background = isSelected ? 'rgba(var(--coral-rgb,229,90,63),0.07)' : 'var(--card-bg)'}
+                        >
+                          <span style={{ fontSize: 26, lineHeight: 1 }}>{cab.emoji}</span>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{cab.name}</p>
+                            <p style={{ fontSize: 11, color: 'var(--muted)' }}>{cab.desc}</p>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <p style={{ fontWeight: 700, fontSize: 14, color: isSelected ? 'var(--coral)' : 'var(--charcoal)' }}>
+                              ₹{minFare} – ₹{maxFare}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </form>
