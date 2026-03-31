@@ -138,7 +138,6 @@ export default function PostRide() {
                 Instant pickup at your current spot. Just set your destination and go.
               </p>
             </div>
-            <div style={{ fontSize: 18, color: 'var(--coral)' }}>→</div>
           </div>
 
           <div
@@ -163,7 +162,6 @@ export default function PostRide() {
                 Select a specific pickup and destination point manually.
               </p>
             </div>
-            <div style={{ fontSize: 18, color: 'var(--muted)' }}>→</div>
           </div>
         </div>
       ) : (
