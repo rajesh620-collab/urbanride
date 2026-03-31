@@ -14,6 +14,7 @@ import RateRide from './pages/RateRide';
 import DriverNavigation from './pages/DriverNavigation';
 import PoolDetail from './pages/PoolDetail';
 import DriverPools from './pages/DriverPools';
+import DriverBroadcast from './pages/DriverBroadcast';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -48,6 +49,7 @@ function AppContent() {
         <Route path="/navigate/:id"  element={<ProtectedRoute><DriverNavigation /></ProtectedRoute>} />
         <Route path="/pool/:id"      element={<ProtectedRoute><PoolDetail /></ProtectedRoute>} />
         <Route path="/driver/pools"  element={<ProtectedRoute><DriverPools /></ProtectedRoute>} />
+        <Route path="/driver/broadcast" element={<ProtectedRoute><DriverBroadcast /></ProtectedRoute>} />
         <Route path="*"              element={<Navigate to="/" replace />} />
       </Routes>
     </>

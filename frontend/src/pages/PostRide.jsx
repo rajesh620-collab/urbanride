@@ -128,22 +128,37 @@ export default function PostRide() {
         </p>
       </div>
 
-      {/* Driver Pool CTA */}
-      <div className="card" style={{ 
-        marginBottom: 24, padding: 16, background: 'var(--charcoal)', 
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-        border: 'none', flexWrap: 'wrap', gap: 16 
-      }}>
-        <div style={{ flex: '1 1 200px' }}>
-            <p style={{ color: 'white', fontWeight: 600, fontSize: 14 }}>Accept Group Pool</p>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 }}>Ready groups of 1-4 people waiting for pickup</p>
-        </div>
-        <button onClick={() => navigate('/driver/pools')} className="btn-primary" style={{ 
-            width: 'auto', padding: '8px 24px', background: 'var(--coral)', fontSize: 13,
-            minWidth: 'fit-content'
+      {/* Driver quick actions */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 24 }}>
+        <div style={{
+          padding: 16, background: 'var(--charcoal)', borderRadius: 'var(--radius-md)',
+          display: 'flex', flexDirection: 'column', gap: 10
         }}>
+          <div>
+            <p style={{ color: 'white', fontWeight: 600, fontSize: 13 }}>Accept Pool</p>
+            <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 11, marginTop: 2 }}>Groups waiting for pickup</p>
+          </div>
+          <button onClick={() => navigate('/driver/pools')} className="btn-primary" style={{
+            width: '100%', padding: '8px', background: 'var(--coral)', fontSize: 12
+          }}>
             Open Dashboard
-        </button>
+          </button>
+        </div>
+        <div style={{
+          padding: 16, background: 'var(--coral)', borderRadius: 'var(--radius-md)',
+          display: 'flex', flexDirection: 'column', gap: 10
+        }}>
+          <div>
+            <p style={{ color: 'white', fontWeight: 600, fontSize: 13 }}>Share Location</p>
+            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, marginTop: 2 }}>Broadcast without a ride</p>
+          </div>
+          <button onClick={() => navigate('/driver/broadcast')} className="btn-primary" style={{
+            width: '100%', padding: '8px', background: 'rgba(0,0,0,0.25)', fontSize: 12,
+            border: '1px solid rgba(255,255,255,0.4)'
+          }}>
+            📡 Go Live
+          </button>
+        </div>
       </div>
 
       <div className="card">

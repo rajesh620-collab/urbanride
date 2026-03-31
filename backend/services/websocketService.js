@@ -13,6 +13,7 @@ const { Server } = require('socket.io');
 
 const connectedUsers = new Map();  // userId → socket
 const driverLocations = new Map(); // rideId → { lat, lng, heading, speed, updatedAt }
+const driverBroadcasts = new Map(); // userId → { name, lat, lng, updatedAt }
 let ioInstance = null;
 
 function setupWebSocket(httpServer) {
@@ -85,9 +86,27 @@ function setupWebSocket(httpServer) {
       }
     });
 
+    // Driver shares location to all nearby users (no ride needed)
+    socket.on('driver_broadcast_location', (data) => {
+      const { lat, lng, driverName } = data;
+      if (!lat || !lng || !socket.userId) return;
+      const payload = { userId: socket.userId, driverName, lat, lng, updatedAt: new Date().toISOString() };
+      driverBroadcasts.set(socket.userId, payload);
+      ioInstance.emit('nearby_driver_location', payload);
+    });
+
+    // Driver stops broadcasting
+    socket.on('stop_broadcast', () => {
+      if (socket.userId) {
+        driverBroadcasts.delete(socket.userId);
+        ioInstance.emit('driver_broadcast_stopped', { userId: socket.userId });
+      }
+    });
+
     socket.on('disconnect', () => {
       if (socket.userId) {
         connectedUsers.delete(socket.userId);
+        driverBroadcasts.delete(socket.userId);
       }
       console.log(`[WS] Socket disconnected: ${socket.id}`);
     });
@@ -147,6 +166,10 @@ function clearDriverLocation(rideId) {
   driverLocations.delete(String(rideId));
 }
 
+function getAllBroadcastingDrivers() {
+  return Array.from(driverBroadcasts.values());
+}
+
 module.exports = {
   setupWebSocket,
   notifyUser,
@@ -154,5 +177,6 @@ module.exports = {
   broadcast,
   isUserOnline,
   getDriverLocation,
-  clearDriverLocation
+  clearDriverLocation,
+  getAllBroadcastingDrivers
 };

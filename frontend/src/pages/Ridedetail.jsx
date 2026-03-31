@@ -87,6 +87,8 @@ export default function RideDetail() {
   const [booking, setBooking]     = useState(false);
   const [message, setMessage]     = useState('');
   const [error, setError]         = useState('');
+  const [booked, setBooked]           = useState(false);
+  const [confirmedFare, setConfirmedFare] = useState(null);
   const [routeCoords, setRouteCoords] = useState(null);
   const [activeTab, setActiveTab] = useState('details'); // 'details' | 'map' | 'track'
 
@@ -132,6 +134,8 @@ export default function RideDetail() {
     setError(''); setBooking(true);
     try {
       await api.post('/bookings', { rideId: id });
+      setConfirmedFare(ride.farePerSeat);
+      setBooked(true);
       setMessage('Seat booked successfully!');
       const res = await api.get(`/rides/${id}`);
       setRide(res.data.data?.ride || res.data.ride);
@@ -242,10 +246,10 @@ export default function RideDetail() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
               {[
-                { label: 'Fare / Seat', value: `₹${ride.farePerSeat}` },
                 { label: 'Driver',  value: ride.driverName },
                 { label: 'Seats',   value: `${ride.availableSeats} / ${ride.totalSeats} free` },
                 { label: 'Status',  value: STATUS_LABELS[ride.status] || ride.status },
+                { label: 'Fare / Seat', value: booked || isDriver ? `₹${confirmedFare ?? ride.farePerSeat}` : 'Shown after booking' },
               ].map(({ label, value }) => (
                 <div key={label} style={{
                   background: 'var(--cream)', borderRadius: 'var(--radius-sm)', padding: '12px 14px'
@@ -280,13 +284,26 @@ export default function RideDetail() {
             </div>
 
             {/* Alerts */}
-            {message && <div className="alert-success">{message}</div>}
+            {message && !booked && <div className="alert-success">{message}</div>}
             {error   && <div className="alert-error">{error}</div>}
 
-            {/* Book button */}
-            {canBook && (
+            {/* Booking confirmed card */}
+            {booked && confirmedFare && (
+              <div style={{
+                background: 'rgba(72,187,120,0.1)', border: '1.5px solid var(--success)',
+                borderRadius: 'var(--radius-md)', padding: '16px 20px', marginBottom: 12
+              }}>
+                <p style={{ fontWeight: 700, color: 'var(--success)', fontSize: 15, marginBottom: 4 }}>Seat Confirmed!</p>
+                <p style={{ fontSize: 13, color: 'var(--charcoal)' }}>
+                  Your fare: <strong>₹{confirmedFare}</strong> — please pay the driver on pickup.
+                </p>
+              </div>
+            )}
+
+            {/* Book button — only if not yet booked */}
+            {canBook && !booked && (
               <button className="btn-primary" onClick={handleBook} disabled={booking}>
-                {booking ? 'Booking seat...' : `Book Seat — ₹${ride.farePerSeat}`}
+                {booking ? 'Booking seat...' : 'Book Seat'}
               </button>
             )}
 

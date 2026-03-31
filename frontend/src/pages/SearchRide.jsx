@@ -5,6 +5,154 @@ import { getSocket } from '../hooks/useWebSocket';
 import LocationPicker from '../components/LocationPicker';
 import RouteMap from '../components/RouteMap';
 
+// ── Create Pool Modal ──────────────────────────────────────────────────────
+function CreatePoolModal({ landmarks, onClose }) {
+  const navigate = useNavigate();
+  const [source, setSource] = useState('');
+  const [destination, setDestination] = useState('');
+  const [maxP, setMaxP] = useState(4);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleCreate = async () => {
+    if (!source || !destination) return setError('Please select both locations');
+    if (source === destination) return setError('Source and destination cannot be the same');
+    setError('');
+    setLoading(true);
+    try {
+      const sourceLm = landmarks.find(l => l.name === source);
+      const destLm   = landmarks.find(l => l.name === destination);
+      const res = await api.post('/pools/create', {
+        sourceLandmark: source,
+        destinationLandmark: destination,
+        sourceCoords: sourceLm ? { lat: sourceLm.lat, lng: sourceLm.lng } : undefined,
+        destCoords:   destLm   ? { lat: destLm.lat,   lng: destLm.lng   } : undefined,
+        maxParticipants: maxP
+      });
+      const pool = res.data.data;
+      navigate(`/pool/${pool._id}`);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create pool');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,0,0.45)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', padding: 20
+    }} onClick={onClose}>
+      <div style={{
+        background: 'var(--card-bg)', borderRadius: 'var(--radius-lg)',
+        padding: 28, width: '100%', maxWidth: 420,
+        boxShadow: 'var(--shadow-lg)'
+      }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h3 style={{ fontSize: 18, letterSpacing: '-0.01em' }}>Create Ride Pool</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--muted)' }}>×</button>
+        </div>
+
+        {error && <div className="alert-error" style={{ marginBottom: 16 }}>{error}</div>}
+
+        <div className="field">
+          <label>From (Pickup)</label>
+          <select value={source} onChange={e => setSource(e.target.value)}>
+            <option value="">Select pickup point</option>
+            {landmarks.map(lm => <option key={lm._id} value={lm.name}>{lm.name}</option>)}
+          </select>
+        </div>
+
+        <div className="field">
+          <label>To (Destination)</label>
+          <select value={destination} onChange={e => setDestination(e.target.value)}>
+            <option value="">Select destination</option>
+            {landmarks.map(lm => <option key={lm._id} value={lm.name}>{lm.name}</option>)}
+          </select>
+        </div>
+
+        <div className="field">
+          <label>Max Participants</label>
+          <select value={maxP} onChange={e => setMaxP(Number(e.target.value))}>
+            {[2, 3, 4, 6].map(n => <option key={n} value={n}>{n} people</option>)}
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+          <button className="btn-outline" onClick={onClose} style={{ flex: 1 }}>Cancel</button>
+          <button className="btn-primary" onClick={handleCreate} disabled={loading} style={{ flex: 1 }}>
+            {loading ? 'Creating...' : 'Create Pool'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Join Pool Modal ────────────────────────────────────────────────────────
+function JoinPoolModal({ onClose }) {
+  const navigate = useNavigate();
+  const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleJoin = async () => {
+    if (!code.trim()) return setError('Please enter a pool code');
+    setError('');
+    setLoading(true);
+    try {
+      const res = await api.post('/pools/join', { poolCode: code.trim().toUpperCase() });
+      navigate(`/pool/${res.data.data._id}`);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to join pool');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,0,0.45)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', padding: 20
+    }} onClick={onClose}>
+      <div style={{
+        background: 'var(--card-bg)', borderRadius: 'var(--radius-lg)',
+        padding: 28, width: '100%', maxWidth: 380,
+        boxShadow: 'var(--shadow-lg)'
+      }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h3 style={{ fontSize: 18 }}>Join by Code</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--muted)' }}>×</button>
+        </div>
+
+        {error && <div className="alert-error" style={{ marginBottom: 16 }}>{error}</div>}
+
+        <div className="field">
+          <label>Pool Code</label>
+          <input
+            type="text"
+            value={code}
+            onChange={e => setCode(e.target.value.toUpperCase())}
+            placeholder="e.g. A1B2C3"
+            maxLength={8}
+            style={{ letterSpacing: 4, textTransform: 'uppercase', fontWeight: 700, fontSize: 18, textAlign: 'center' }}
+            onKeyDown={e => e.key === 'Enter' && handleJoin()}
+            autoFocus
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+          <button className="btn-outline" onClick={onClose} style={{ flex: 1 }}>Cancel</button>
+          <button className="btn-primary" onClick={handleJoin} disabled={loading} style={{ flex: 1 }}>
+            {loading ? 'Joining...' : 'Join Pool'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Skeleton ───────────────────────────────────────────────────────────────
 function RideCardSkeleton() {
   return (
     <div style={{
@@ -21,19 +169,22 @@ function RideCardSkeleton() {
   );
 }
 
+// ── Main Component ─────────────────────────────────────────────────────────
 export default function SearchRide() {
   const navigate = useNavigate();
-  const [landmarks, setLandmarks]       = useState([]);
-  const [filters, setFilters]           = useState({ source: '', destination: '', femaleOnly: false });
-  const [sourceCoords, setSourceCoords] = useState(null);
-  const [destCoords, setDestCoords]     = useState(null);
-  const [rides, setRides]               = useState([]);
-  const [searched, setSearched]         = useState(false);
-  const [loading, setLoading]           = useState(false);
-  const [pendingSaved, setPendingSaved] = useState(false);
-  const [liveAlert, setLiveAlert]       = useState(null);
-  const [searchMode, setSearchMode]     = useState('quick'); // 'quick' or 'map'
+  const [landmarks, setLandmarks]           = useState([]);
+  const [filters, setFilters]               = useState({ source: '', destination: '', femaleOnly: false });
+  const [sourceCoords, setSourceCoords]     = useState(null);
+  const [destCoords, setDestCoords]         = useState(null);
+  const [rides, setRides]                   = useState([]);
+  const [searched, setSearched]             = useState(false);
+  const [loading, setLoading]               = useState(false);
+  const [pendingSaved, setPendingSaved]     = useState(false);
+  const [liveAlert, setLiveAlert]           = useState(null);
+  const [searchMode, setSearchMode]         = useState('quick'); // 'quick' | 'map'
   const [showResultsMap, setShowResultsMap] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showJoinModal, setShowJoinModal]   = useState(false);
 
   useEffect(() => {
     api.get('/landmarks').then(res => {
@@ -49,7 +200,6 @@ export default function SearchRide() {
     return () => socket.off('ride_match_found');
   }, []);
 
-  // Auto-detect nearest landmark via GPS
   const detectNearestLandmark = () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -69,16 +219,11 @@ export default function SearchRide() {
   const handleChange = e => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setFilters({ ...filters, [e.target.name]: value });
-
-    // Set coordinates from landmark selection
     if (e.target.name === 'source' || e.target.name === 'destination') {
       const lm = landmarks.find(l => l.name === value);
       if (lm) {
-        if (e.target.name === 'source') {
-          setSourceCoords({ lat: lm.lat, lng: lm.lng, address: lm.name });
-        } else {
-          setDestCoords({ lat: lm.lat, lng: lm.lng, address: lm.name });
-        }
+        if (e.target.name === 'source') setSourceCoords({ lat: lm.lat, lng: lm.lng, address: lm.name });
+        else setDestCoords({ lat: lm.lat, lng: lm.lng, address: lm.name });
       }
     }
   };
@@ -120,6 +265,14 @@ export default function SearchRide() {
   return (
     <div className="page-wrapper" style={{ maxWidth: 640 }}>
 
+      {/* Modals */}
+      {showCreateModal && (
+        <CreatePoolModal landmarks={landmarks} onClose={() => setShowCreateModal(false)} />
+      )}
+      {showJoinModal && (
+        <JoinPoolModal onClose={() => setShowJoinModal(false)} />
+      )}
+
       <div style={{ marginBottom: 28 }}>
         <h2 style={{ fontSize: 26, letterSpacing: '-0.02em' }}>Find a Ride</h2>
         <p style={{ color: 'var(--muted)', fontSize: 14, marginTop: 4 }}>
@@ -144,20 +297,20 @@ export default function SearchRide() {
         </div>
       )}
 
-      {/* Search form */}
+      {/* Search card */}
       <div className="card" style={{ marginBottom: 24 }}>
         {/* Mode toggle */}
         <div style={{
-          display: 'flex', gap: 4, marginBottom: 16,
+          display: 'flex', gap: 4, marginBottom: 20,
           background: 'var(--cream-dark)', padding: 3,
           borderRadius: 'var(--radius-sm)', width: 'fit-content'
         }}>
           {[
-            { key: 'quick', label: '⚡ Quick' },
-            { key: 'map', label: '🗺️ Map' }
+            { key: 'quick', label: 'Quick Search' },
+            { key: 'map',   label: 'Map Pick' }
           ].map(tab => (
             <button key={tab.key} type="button" onClick={() => setSearchMode(tab.key)} style={{
-              padding: '6px 14px', border: 'none', cursor: 'pointer',
+              padding: '6px 16px', border: 'none', cursor: 'pointer',
               borderRadius: 6, fontSize: 12, fontWeight: 500,
               background: searchMode === tab.key ? 'var(--white)' : 'transparent',
               color: searchMode === tab.key ? 'var(--charcoal)' : 'var(--muted)',
@@ -181,9 +334,10 @@ export default function SearchRide() {
                     setFilters(f => ({ ...f, source: nearest?.name || loc.address }));
                   }
                 }}
-                label="From"
+                label="From (Pickup)"
                 mode="pickup"
               />
+              <div style={{ textAlign: 'center', color: 'var(--coral)', fontSize: 22, margin: '4px 0' }}>↓</div>
               <LocationPicker
                 value={destCoords}
                 onChange={(loc) => {
@@ -193,33 +347,57 @@ export default function SearchRide() {
                     setFilters(f => ({ ...f, destination: nearest?.name || loc.address }));
                   }
                 }}
-                label="To"
+                label="To (Destination)"
                 mode="dropoff"
               />
             </>
           ) : (
-            <div className="grid-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* FROM */}
               <div className="field" style={{ marginBottom: 0 }}>
-                <label>From</label>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <select name="source" value={filters.source} onChange={handleChange} style={{ flex: 1 }}>
-                    <option value="">Any source</option>
-                    {landmarks && landmarks.map(lm => (
+                <label>From (Pickup)</label>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+                  <select
+                    name="source"
+                    value={filters.source}
+                    onChange={handleChange}
+                    style={{ flex: 1 }}
+                  >
+                    <option value="">Select pickup location</option>
+                    {landmarks.map(lm => (
                       <option key={lm._id} value={lm.name}>{lm.name}</option>
                     ))}
                   </select>
-                  <button type="button" onClick={detectNearestLandmark} style={{
-                    padding: '6px 10px', background: 'var(--coral-pale)',
-                    border: '1.5px solid var(--coral)', borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer', fontSize: 14, color: 'var(--coral)'
-                  }} title="Detect my location">📍</button>
+                  <button
+                    type="button"
+                    onClick={detectNearestLandmark}
+                    title="Detect my location"
+                    style={{
+                      padding: '0 12px', background: 'var(--coral-pale)',
+                      border: '1.5px solid var(--coral)', borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer', fontSize: 16, color: 'var(--coral)', flexShrink: 0
+                    }}
+                  >📍</button>
                 </div>
               </div>
+
+              {/* Connector */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+                <span style={{ fontSize: 18, color: 'var(--coral)' }}>↓</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              </div>
+
+              {/* TO */}
               <div className="field" style={{ marginBottom: 0 }}>
-                <label>To</label>
-                <select name="destination" value={filters.destination} onChange={handleChange}>
-                  <option value="">Any destination</option>
-                  {landmarks && landmarks.map(lm => (
+                <label>To (Destination)</label>
+                <select
+                  name="destination"
+                  value={filters.destination}
+                  onChange={handleChange}
+                >
+                  <option value="">Select destination</option>
+                  {landmarks.map(lm => (
                     <option key={lm._id} value={lm.name}>{lm.name}</option>
                   ))}
                 </select>
@@ -227,89 +405,43 @@ export default function SearchRide() {
             </div>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, flexWrap: 'wrap', gap: 12 }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
               <input type="checkbox" name="femaleOnly" checked={filters.femaleOnly}
                 onChange={handleChange} style={{ accentColor: 'var(--coral)', width: 15, height: 15 }} />
               <span style={{ color: 'var(--charcoal)' }}>Female-only rides</span>
             </label>
             <button type="submit" className="btn-primary"
-              disabled={loading} style={{ width: 'auto', padding: '10px 28px' }}>
+              disabled={loading} style={{ width: 'auto', padding: '10px 32px' }}>
               {loading ? 'Searching...' : 'Search'}
             </button>
           </div>
-
-          <div style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 20 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Ride Pooling Options</p>
-            <div className="grid-2" style={{ gap: 10 }}>
-              <button 
-                type="button" 
-                onClick={async () => {
-                  const code = prompt('Enter 6-digit Pool Code:');
-                  if (!code) return;
-                  try {
-                    const res = await api.post('/api/pools/join', { poolCode: code.toUpperCase() });
-                    navigate(`/pool/${res.data.data?._id || res.data._id}`);
-                  } catch (err) {
-                    alert(err.response?.data?.message || 'Failed to join pool');
-                  }
-                }}
-                className="btn-outline" 
-                style={{ fontSize: 13, padding: '10px' }}
-              >
-                Join by Code
-              </button>
-              <button 
-                type="button"
-                onClick={async () => {
-                  if (!filters.source || !filters.destination) return alert('Select source and destination first');
-                  try {
-                    setLoading(true);
-                    const res = await api.post('/api/pools/auto-match', {
-                      sourceLandmark: filters.source,
-                      destinationLandmark: filters.destination,
-                      sourceCoords,
-                      destCoords
-                    });
-                    navigate(`/pool/${res.data.data?._id || res.data._id}`);
-                  } catch (err) {
-                    alert('Auto-match failed');
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                className="btn-outline" 
-                style={{ fontSize: 13, borderColor: 'var(--coral)', color: 'var(--coral)', padding: '10px' }}
-              >
-                Auto Match Pool
-              </button>
-            </div>
-            <button 
-                type="button"
-                onClick={async () => {
-                  if (!filters.source || !filters.destination) return alert('Select source and destination first');
-                  try {
-                    setLoading(true);
-                    const res = await api.post('/api/pools/create', {
-                      sourceLandmark: filters.source,
-                      destinationLandmark: filters.destination,
-                      sourceCoords,
-                      destCoords
-                    });
-                    navigate(`/pool/${res.data.data?._id || res.data._id}`);
-                  } catch (err) {
-                    alert('Create pool failed');
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                className="btn-primary" 
-                style={{ marginTop: 10, width: '100%', padding: '12px', background: 'var(--charcoal)', fontSize: 14 }}
-              >
-                Create New Ride Pool
-              </button>
-          </div>
         </form>
+
+        {/* ── Ride Pool Section ── */}
+        <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 20 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
+            Group Ride Pool
+          </p>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setShowJoinModal(true)}
+              className="btn-outline"
+              style={{ flex: '1 1 140px', padding: '11px 16px', fontSize: 13 }}
+            >
+              Join by Code
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(true)}
+              className="btn-primary"
+              style={{ flex: '1 1 160px', padding: '11px 16px', fontSize: 13, background: 'var(--charcoal)' }}
+            >
+              Create Ride Pool
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Loading skeletons */}
@@ -336,7 +468,7 @@ export default function SearchRide() {
         </div>
       )}
 
-      {/* Results */}
+      {/* Results — fare shown only after booking confirmation (via RideDetail) */}
       {!loading && rides.length > 0 && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
@@ -350,19 +482,14 @@ export default function SearchRide() {
                 cursor: 'pointer', fontSize: 12, color: showResultsMap ? 'white' : 'var(--muted)',
                 transition: 'all 0.2s'
               }}>
-                {showResultsMap ? '📋 List' : '🗺️ Map'}
+                {showResultsMap ? 'List View' : 'Map View'}
               </button>
             )}
           </div>
 
-          {/* Route map for results */}
           {showResultsMap && sourceCoords?.lat && destCoords?.lat && (
             <div style={{ marginBottom: 16 }}>
-              <RouteMap
-                sourceCoords={sourceCoords}
-                destCoords={destCoords}
-                height={220}
-              />
+              <RouteMap sourceCoords={sourceCoords} destCoords={destCoords} height={220} />
             </div>
           )}
 
@@ -375,7 +502,7 @@ export default function SearchRide() {
               onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
               onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
               onClick={() => navigate(`/ride/${ride._id}`)}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   <span style={{ fontWeight: 600, fontSize: 15 }}>{ride.sourceLandmark}</span>
                   <span style={{ color: 'var(--coral)', fontSize: 18 }}>→</span>
@@ -386,7 +513,7 @@ export default function SearchRide() {
                   <span className={`badge-status status-${ride.status}`}>{ride.status}</span>
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                 <div style={{ fontSize: 13, color: 'var(--muted)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   <span>💺 {ride.availableSeats} seat{ride.availableSeats !== 1 ? 's' : ''}</span>
                   <span>👤 {ride.driverName}</span>
@@ -394,8 +521,9 @@ export default function SearchRide() {
                     <span>📏 {(ride.distanceMeters / 1000).toFixed(1)} km</span>
                   )}
                 </div>
-                <span style={{ fontWeight: 700, color: 'var(--coral)', fontSize: 16, whiteSpace: 'nowrap', marginLeft: 12 }}>
-                  ₹{ride.farePerSeat}
+                {/* Fare shown only on tap (inside RideDetail), not in the list */}
+                <span style={{ fontSize: 12, color: 'var(--coral)', fontWeight: 600 }}>
+                  Tap for fare →
                 </span>
               </div>
             </div>
