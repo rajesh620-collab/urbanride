@@ -10,6 +10,8 @@ function CreatePoolModal({ landmarks, onClose }) {
   const navigate = useNavigate();
   const [source, setSource] = useState('');
   const [destination, setDestination] = useState('');
+  const [sourceCoords, setSourceCoords] = useState(null);
+  const [destCoords, setDestCoords] = useState(null);
   const [maxP, setMaxP] = useState(4);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -20,13 +22,11 @@ function CreatePoolModal({ landmarks, onClose }) {
     setError('');
     setLoading(true);
     try {
-      const sourceLm = landmarks.find(l => l.name === source);
-      const destLm   = landmarks.find(l => l.name === destination);
       const res = await api.post('/pools/create', {
         sourceLandmark: source,
         destinationLandmark: destination,
-        sourceCoords: sourceLm ? { lat: sourceLm.lat, lng: sourceLm.lng } : undefined,
-        destCoords:   destLm   ? { lat: destLm.lat,   lng: destLm.lng   } : undefined,
+        sourceCoords: sourceCoords ? { lat: sourceCoords.lat, lng: sourceCoords.lng } : undefined,
+        destCoords:   destCoords   ? { lat: destCoords.lat,   lng: destCoords.lng   } : undefined,
         maxParticipants: maxP
       });
       const pool = res.data.data;
@@ -45,7 +45,7 @@ function CreatePoolModal({ landmarks, onClose }) {
     }} onClick={onClose}>
       <div style={{
         background: 'var(--card-bg)', borderRadius: 'var(--radius-lg)',
-        padding: 28, width: '100%', maxWidth: 420,
+        padding: '28px 32px', width: '100%', maxWidth: 460,
         boxShadow: 'var(--shadow-lg)'
       }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -55,21 +55,21 @@ function CreatePoolModal({ landmarks, onClose }) {
 
         {error && <div className="alert-error" style={{ marginBottom: 16 }}>{error}</div>}
 
-        <div className="field">
-          <label>From (Pickup)</label>
-          <select value={source} onChange={e => setSource(e.target.value)}>
-            <option value="">Select pickup point</option>
-            {landmarks.map(lm => <option key={lm._id} value={lm.name}>{lm.name}</option>)}
-          </select>
-        </div>
+        <LocationPicker
+          value={sourceCoords}
+          onChange={(loc) => { setSourceCoords(loc); setSource(loc.address); }}
+          label="From (Pickup)"
+          mode="pickup"
+          hideGps hideMapToggle
+        />
 
-        <div className="field">
-          <label>To (Destination)</label>
-          <select value={destination} onChange={e => setDestination(e.target.value)}>
-            <option value="">Select destination</option>
-            {landmarks.map(lm => <option key={lm._id} value={lm.name}>{lm.name}</option>)}
-          </select>
-        </div>
+        <LocationPicker
+          value={destCoords}
+          onChange={(loc) => { setDestCoords(loc); setDestination(loc.address); }}
+          label="To (Destination)"
+          mode="dropoff"
+          hideGps hideMapToggle
+        />
 
         <div className="field">
           <label>Max Participants</label>
