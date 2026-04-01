@@ -21,14 +21,35 @@ export default function PostRide() {
   const [destCoords, setDestCoords] = useState(null);
   const [error, setError]   = useState('');
   const [success, setSuccess] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = false;
   const [detecting, setDetecting] = useState(false);
+  const [savedRoutes, setSavedRoutes] = useState([]);
+  const [recentRides, setRecentRides] = useState([]);
 
   useEffect(() => {
     api.get('/landmarks').then(res =>
       setLandmarks(res.data.data?.landmarks || res.data.landmarks || [])
     );
+    api.get('/saved-routes').then(res => setSavedRoutes(res.data.data?.routes || []));
+    api.get('/rides/my').then(res => setRecentRides(res.data.data?.rides?.slice(0, 5) || []));
   }, []);
+
+  const handleSaveRoute = async () => {
+    if (!sourceCoords || !destCoords) return;
+    try {
+        const res = await api.post('/saved-routes', {
+            sourceLandmark: sourceCoords.address,
+            destinationLandmark: destCoords.address,
+            sourceCoords: { lat: sourceCoords.lat, lng: sourceCoords.lng },
+            destCoords: { lat: destCoords.lat, lng: destCoords.lng }
+        });
+        setSavedRoutes([res.data.data.route, ...savedRoutes]);
+        setSuccess('Route saved to your favorites!');
+    } catch (e) {
+        setError(e.response?.data?.message || 'Could not save route');
+    }
+  };
+
 
   const resetOptions = () => {
     setActiveOption(null);
@@ -179,7 +200,44 @@ export default function PostRide() {
               </p>
             </div>
           </div>
+
+          {/* Smart Search: Saved Routes */}
+          {savedRoutes.length > 0 && (
+            <div style={{ marginTop: 8 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 12 }}>Your Saved Routes</p>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {savedRoutes.map(route => (
+                        <div key={route._id} className="route-chip" onClick={() => {
+                            setSourceCoords({ lat: route.sourceCoords.lat, lng: route.sourceCoords.lng, address: route.sourceLandmark });
+                            setDestCoords({ lat: route.destCoords.lat, lng: route.destCoords.lng, address: route.destinationLandmark });
+                            setForm(f => ({ ...f, sourceLandmark: route.sourceLandmark, destinationLandmark: route.destinationLandmark }));
+                            setActiveOption('manual');
+                        }}>
+                            ⭐ {route.label}
+                        </div>
+                    ))}
+                </div>
+            </div>
+          )}
+
+          {/* AI Suggestion: Return Trip */}
+          {recentRides.length > 0 && (
+              <div className="return-trip-banner" style={{ marginTop: 20 }} onClick={() => {
+                  const last = recentRides[0];
+                  setSourceCoords({ lat: last.destCoords.lat, lng: last.destCoords.lng, address: last.destinationLandmark });
+                  setDestCoords({ lat: last.sourceCoords.lat, lng: last.sourceCoords.lng, address: last.sourceLandmark });
+                  setForm(f => ({ ...f, sourceLandmark: last.destinationLandmark, destinationLandmark: last.sourceLandmark }));
+                  setActiveOption('manual');
+              }}>
+                  <div style={{ fontSize: 24 }}>🔄</div>
+                  <div>
+                      <p style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Plan your return trip?</p>
+                      <p style={{ fontSize: 12, opacity: 0.8, margin: 0 }}>Reversed route based on your last ride.</p>
+                  </div>
+              </div>
+          )}
         </div>
+
       ) : (
         <div className="card">
           {error   && <div className="alert-error">{error}</div>}
@@ -250,7 +308,14 @@ export default function PostRide() {
                   <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
                     This cost will be split equally among all confirmed passengers.
                   </p>
+                  <button type="button" onClick={handleSaveRoute} style={{
+                      marginTop: 10, background: 'none', border: 'none', color: 'var(--coral)',
+                      fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4
+                  }}>
+                      ⭐ Save this route for later
+                  </button>
                 </div>
+
               </>
             ) : activeOption === 'manual' ? (
               <div style={{ padding: 16, textAlign: 'center', background: 'var(--cream)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)', marginBottom: 18 }}>

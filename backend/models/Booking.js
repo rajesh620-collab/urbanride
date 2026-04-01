@@ -18,6 +18,11 @@ const bookingSchema = new mongoose.Schema({
     enum: ['pending', 'accepted_by_driver', 'confirmed', 'rejected', 'cancelled'],
     default: 'pending'
   },
+  // OTP for driver verification at pickup
+  otp: { type: String },
+  otpVerified: { type: Boolean, default: false },
+  // Final fare the passenger paid
+  fareCharged: { type: Number },
   bookedAt: { type: Date, default: Date.now }
 });
 

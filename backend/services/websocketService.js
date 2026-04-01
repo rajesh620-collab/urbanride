@@ -103,6 +103,30 @@ function setupWebSocket(httpServer) {
       }
     });
 
+    // ── In-Ride Chat ──────────────────────────────────────────────
+    socket.on('chat_message', ({ rideId, message, senderName, senderId }) => {
+      if (!rideId || !message || !senderId) return;
+      const payload = {
+        rideId,
+        senderId,
+        senderName: senderName || 'Rider',
+        message: message.slice(0, 500), // max length
+        timestamp: new Date().toISOString()
+      };
+      // Broadcast to the entire ride room (including sender for confirmation)
+      ioInstance.to(`ride:${rideId}`).emit('chat_message', payload);
+    });
+
+    // ── Driver Arrived at Pickup ──────────────────────────────────
+    socket.on('driver_arrived', ({ rideId }) => {
+      if (!rideId) return;
+      ioInstance.to(`ride:${rideId}`).emit('driver_arrived', {
+        rideId,
+        message: 'Your driver has arrived at the pickup point!',
+        timestamp: new Date().toISOString()
+      });
+    });
+
     socket.on('disconnect', () => {
       if (socket.userId) {
         connectedUsers.delete(socket.userId);

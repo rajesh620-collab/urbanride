@@ -115,9 +115,14 @@ function ProfileDropdown({ user, onClose, navigate, onLogout }) {
       svg: <><rect x="3" y="7" width="18" height="13" rx="2" stroke="var(--coral)" strokeWidth="1.5" fill="none"/><path d="M7 7V5a5 5 0 0110 0v2" stroke="var(--coral)" strokeWidth="1.5" fill="none"/><circle cx="12" cy="14" r="2" fill="var(--coral)"/></>
     },
     {
+      label: 'Wallet', desc: 'Credits & payments', path: '/wallet',
+      svg: <><rect x="3" y="10" width="18" height="11" rx="2" stroke="var(--coral)" strokeWidth="1.5"/><path d="M16 14h2" stroke="var(--coral)" strokeWidth="2" strokeLinecap="round"/><path d="M7 10V8a5 5 0 0110 0v2" stroke="var(--coral)" strokeWidth="1.5"/></>
+    },
+    {
       label: 'Settings', desc: 'Theme & preferences', path: '/settings',
       svg: <><circle cx="12" cy="12" r="3" stroke="var(--coral)" strokeWidth="1.5" fill="none"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="var(--coral)" strokeWidth="1.5" strokeLinecap="round"/></>
     },
+
   ];
 
   return (

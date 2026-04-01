@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { getSocket } from '../hooks/useWebSocket';
 import RouteMap from '../components/RouteMap';
 import LiveTracking from '../components/LiveTracking';
+import RideChat from '../components/RideChat';
+import Confetti from '../components/Confetti';
 
 const STATUS_STEPS = ['open', 'full', 'in_progress', 'completed'];
 const STATUS_LABELS = {
@@ -92,7 +94,15 @@ export default function RideDetail() {
   const [activeTab, setActiveTab] = useState('details'); // 'details' | 'map' | 'track'
   const [requests, setRequests]   = useState([]);
   const [myBooking, setMyBooking] = useState(null);
-  const [actingOn, setActingOn]   = useState(null); // id of booking being accepted/rejected
+  const [actingOn, setActingOn]   = useState(null);
+  // Chat
+  const [chatOpen, setChatOpen]   = useState(false);
+  // Confetti
+  const [showConfetti, setShowConfetti] = useState(false);
+  // OTP for driver
+  const [otpInput, setOtpInput]     = useState({});   // bookingId → string
+  const [otpError, setOtpError]     = useState({});
+  const [otpLoading, setOtpLoading] = useState({});
   const isDriverRef   = useRef(false);
   const myBookingRef  = useRef(null);
 
@@ -153,28 +163,37 @@ export default function RideDetail() {
     socket.on('ride_status_updated', data => {
       setRide(prev => prev ? { ...prev, status: data.newStatus } : prev);
       setMessage(data.message);
+      // Confetti on completion!
+      if (data.newStatus === 'completed') {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 4000);
+      }
     });
     socket.on('price_updated', data => {
         setRide(r => ({ ...r, farePerSeat: data.newFare }));
         setMessage(data.message);
     });
-    // Real-time new booking requests for driver
     socket.on('new_booking_request', async (data) => {
       if (isDriverRef.current) {
         const bRes = await api.get(`/bookings/ride/${id}`);
         setRequests(bRes.data.data?.bookings || bRes.data.bookings || []);
       }
     });
-    // Real-time booking status changes for passenger
     socket.on('driver_accepted_match', (data) => {
       if (String(data.bookingId) && myBookingRef.current) {
-        setMyBooking(b => b ? { ...b, status: 'accepted_by_driver' } : b);
-        setMessage('Driver accepted your request! Review the fare to confirm.');
+        setMyBooking(b => b ? { ...b, status: 'accepted_by_driver', otp: data.otp } : b);
+        setMessage(`Driver accepted! 🔒 Your pickup OTP is: ${data.otp}`);
       }
     });
     socket.on('booking_rejected', () => {
       setMyBooking(b => b ? { ...b, status: 'rejected' } : b);
       setMessage('Your request was declined by the driver.');
+    });
+    socket.on('driver_arrived', (data) => {
+      setMessage('🚗 Your driver has arrived at the pickup point!');
+    });
+    socket.on('otp_verified', () => {
+      setMessage('✅ Identity verified! Enjoy your ride.');
     });
     return () => { 
         socket.off('seat_booked'); 
@@ -183,8 +202,11 @@ export default function RideDetail() {
         socket.off('new_booking_request');
         socket.off('driver_accepted_match');
         socket.off('booking_rejected');
+        socket.off('driver_arrived');
+        socket.off('otp_verified');
     };
   }, [id]);
+
 
   const handleBook = async () => {
     setError(''); setBooking(true);
@@ -258,12 +280,40 @@ export default function RideDetail() {
       const res = await api.patch(`/rides/${id}/status`, { status });
       setRide(res.data.data?.ride || res.data.ride);
       setMessage(`Ride marked as ${STATUS_LABELS[status] || status}`);
+      // local confetti for driver too
+      if (status === 'completed') {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 4000);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Update failed');
     }
   };
 
+  const handleVerifyOtp = async (bookingId) => {
+    const otp = otpInput[bookingId];
+    if (!otp || otp.length !== 4) return setOtpError(e => ({ ...e, [bookingId]: 'Enter 4-digit OTP' }));
+    setOtpLoading(l => ({ ...l, [bookingId]: true }));
+    setOtpError(e => ({ ...e, [bookingId]: '' }));
+    try {
+      await api.post(`/bookings/${bookingId}/verify-otp`, { otp });
+      setRequests(prev => prev.map(r => r._id === bookingId ? { ...r, otpVerified: true } : r));
+      setMessage('Passenger verified! ✓');
+    } catch (err) {
+      setOtpError(e => ({ ...e, [bookingId]: err.response?.data?.message || 'Wrong OTP' }));
+    } finally {
+      setOtpLoading(l => ({ ...l, [bookingId]: false }));
+    }
+  };
+
+  const handleDriverArrived = () => {
+    const socket = getSocket();
+    if (socket) socket.emit('driver_arrived', { rideId: id });
+    setMessage('Passengers notified that you have arrived!');
+  };
+
   if (loading) return <Spinner />;
+
 
   if (!ride) return (
     <div style={{ textAlign: 'center', padding: 80 }}>
@@ -279,6 +329,7 @@ export default function RideDetail() {
   const seatPct  = ((ride.totalSeats - ride.availableSeats) / ride.totalSeats) * 100;
   const hasMap   = ride.sourceCoords?.lat && ride.destCoords?.lat;
   const inProgress = ride.status === 'in_progress';
+  const isActiveRide = inProgress || ride.status === 'open';
 
   const tabs = [
     { key: 'details', label: 'Details' },
@@ -286,8 +337,36 @@ export default function RideDetail() {
     ...(inProgress ? [{ key: 'track', label: '📍 Live Track' }] : []),
   ];
 
+  // SOS handler — share ride details as emergency
+  const handleSOS = () => {
+    const txt = encodeURIComponent(
+      `🆘 SOS! I'm in UrbanRide from ${ride.sourceLandmark} → ${ride.destinationLandmark}.\nDriver: ${ride.driverName}\nRide: ${window.location.href}`
+    );
+    window.open(`https://wa.me/?text=${txt}`, '_blank');
+  };
+
   return (
     <div className="page-wrapper" style={{ maxWidth: 580 }}>
+      {/* Confetti on ride completion */}
+      <Confetti active={showConfetti} />
+
+      {/* SOS Button — passengers during active rides */}
+      {!isDriver && inProgress && (
+        <button className="sos-btn" onClick={handleSOS} title="Send SOS">
+          SOS
+        </button>
+      )}
+
+      {/* Chat — available when ride is active/in_progress */}
+      {isActiveRide && (
+        <RideChat
+          rideId={id}
+          isOpen={chatOpen}
+          onClose={() => setChatOpen(c => !c)}
+          driverName={ride.driverName}
+        />
+      )}
+
 
       <button onClick={() => navigate(-1)} style={{
         background: 'none', border: 'none', cursor: 'pointer',
@@ -589,6 +668,45 @@ export default function RideDetail() {
                               </button>
                             </div>
                           )}
+
+                          {/* OTP Verification for Driver at Pickup */}
+                          {req.status === 'accepted_by_driver' && !req.otpVerified && inProgress && (
+                            <div style={{
+                                marginTop: 12, padding: 12, background: 'var(--cream-dark)',
+                                borderRadius: 12, border: '1px solid var(--border)'
+                            }}>
+                                <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                                    Verify Passenger OTP
+                                </p>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <input
+                                        type="text"
+                                        placeholder="4-digit OTP"
+                                        value={otpInput[req._id] || ''}
+                                        onChange={e => setOtpInput({ ...otpInput, [req._id]: e.target.value })}
+                                        maxLength={4}
+                                        style={{
+                                            flex: 1, padding: '8px 12px', borderRadius: 8,
+                                            border: '1.5px solid var(--border)', fontSize: 14, textAlign: 'center', letterSpacing: 2
+                                        }}
+                                    />
+                                    <button
+                                        onClick={() => handleVerifyOtp(req._id)}
+                                        disabled={otpLoading[req._id]}
+                                        className="btn-primary"
+                                        style={{ width: 'auto', padding: '0 16px', background: '#16A34A' }}
+                                    >
+                                        {otpLoading[req._id] ? '...' : 'Verify'}
+                                    </button>
+                                </div>
+                                {otpError[req._id] && <p style={{ color: 'var(--error)', fontSize: 11, marginTop: 4 }}>{otpError[req._id]}</p>}
+                            </div>
+                          )}
+                          {req.otpVerified && (
+                              <div style={{ marginTop: 8, color: '#16A34A', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  ✅ Identity Verified
+                              </div>
+                          )}
                         </div>
                       );
                     })}
@@ -620,13 +738,22 @@ export default function RideDetail() {
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {/* Status: Open/Full -> Start Ride */}
                   {(ride.status === 'open' || ride.status === 'full') && (
-                    <button
-                      className="btn-primary"
-                      onClick={() => updateStatus('in_progress')}
-                      style={{ flex: 1, minWidth: 140, background: '#16A34A', boxShadow: '0 4px 12px rgba(22,163,74,0.3)' }}
-                    >
-                      ▶ Start Ride Now
-                    </button>
+                    <>
+                      <button
+                        className="btn-primary"
+                        onClick={handleDriverArrived}
+                        style={{ flex: 1, minWidth: 140, background: '#F59E0B', boxShadow: '0 4px 12px rgba(245,158,11,0.3)' }}
+                      >
+                        📍 I've Arrived
+                      </button>
+                      <button
+                        className="btn-primary"
+                        onClick={() => updateStatus('in_progress')}
+                        style={{ flex: 1, minWidth: 140, background: '#16A34A', boxShadow: '0 4px 12px rgba(22,163,74,0.3)' }}
+                      >
+                        ▶ Start Ride Now
+                      </button>
+                    </>
                   )}
 
                   {/* Status: In Progress -> Complete Ride */}

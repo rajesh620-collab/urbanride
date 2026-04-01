@@ -2,10 +2,18 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
 
-function Spinner() {
+function RideCardSkeleton() {
   return (
-    <div style={{ textAlign: 'center', padding: 80 }}>
-      <div className="spinner" />
+    <div className="ride-card-skeleton">
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div className="skeleton" style={{ width: '60%', height: 16, borderRadius: 6 }} />
+        <div className="skeleton" style={{ width: '18%', height: 16, borderRadius: 20 }} />
+      </div>
+      <div className="skeleton" style={{ width: '40%', height: 12, borderRadius: 6, marginBottom: 14 }} />
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div className="skeleton" style={{ width: '50%', height: 12, borderRadius: 6 }} />
+        <div className="skeleton" style={{ width: '20%', height: 28, borderRadius: 8 }} />
+      </div>
     </div>
   );
 }
@@ -26,7 +34,15 @@ export default function MyRides() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <Spinner />;
+  if (loading) return (
+    <div className="page-wrapper" style={{ maxWidth: 640 }}>
+      <div style={{ marginBottom: 28 }}>
+        <div className="skeleton" style={{ width: 120, height: 28, borderRadius: 8, marginBottom: 8 }} />
+        <div className="skeleton" style={{ width: 220, height: 14, borderRadius: 6 }} />
+      </div>
+      {[1, 2, 3].map(i => <RideCardSkeleton key={i} />)}
+    </div>
+  );
 
   /* badge colour lookup for booking statuses */
   const bookingBadge = {
@@ -75,7 +91,7 @@ export default function MyRides() {
           {postedRides.length === 0 ? (
             <div style={{
               textAlign: 'center', padding: '48px 20px',
-              background: 'var(--white)', borderRadius: 'var(--radius-lg)',
+              background: 'var(--card-bg)', borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--border)'
             }}>
               <p style={{ fontSize: 32, marginBottom: 12 }}>🚗</p>
@@ -91,12 +107,17 @@ export default function MyRides() {
           ) : (
             postedRides.map(ride => (
               <div key={ride._id} style={{
-                background: 'var(--white)', border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-md)', padding: 20, marginBottom: 12
-              }}>
+                background: 'var(--card-bg)', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)', padding: 20, marginBottom: 12,
+                transition: 'box-shadow 0.2s', cursor: 'pointer'
+              }}
+                onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
+                onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+                onClick={() => navigate(`/ride/${ride._id}`)}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
                   <div>
-                    <p style={{ fontWeight: 500, fontSize: 15 }}>
+                    <p style={{ fontWeight: 600, fontSize: 15 }}>
                       {ride.sourceLandmark}
                       <span style={{ color: 'var(--coral)', margin: '0 8px' }}>→</span>
                       {ride.destinationLandmark}
@@ -111,13 +132,12 @@ export default function MyRides() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 13, color: 'var(--muted)' }}>
-                    {ride.availableSeats}/{ride.totalSeats} seats · ₹{ride.farePerSeat}/seat
+                    {ride.availableSeats}/{ride.totalSeats} seats available
                     {ride.femaleOnly && <span className="badge-female" style={{ marginLeft: 8 }}>Female only</span>}
                   </span>
-                  <button className="btn-outline" style={{ padding: '6px 14px', fontSize: 12 }}
-                    onClick={() => navigate(`/ride/${ride._id}`)}>
-                    Manage
-                  </button>
+                  <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--coral)' }}>
+                    ₹{ride.farePerSeat}
+                  </span>
                 </div>
               </div>
             ))
@@ -131,7 +151,7 @@ export default function MyRides() {
           {bookedRides.length === 0 ? (
             <div style={{
               textAlign: 'center', padding: '48px 20px',
-              background: 'var(--white)', borderRadius: 'var(--radius-lg)',
+              background: 'var(--card-bg)', borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--border)'
             }}>
               <p style={{ fontSize: 32, marginBottom: 12 }}>🎫</p>
@@ -147,18 +167,18 @@ export default function MyRides() {
           ) : (
             bookedRides.map(b => b.rideId && (
               <div key={b._id} style={{
-                background: 'var(--white)', border: '1px solid var(--border)',
+                background: 'var(--card-bg)', border: '1px solid var(--border)',
                 borderRadius: 'var(--radius-md)', padding: 20, marginBottom: 12
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
                   <div>
-                    <p style={{ fontWeight: 500, fontSize: 15 }}>
+                    <p style={{ fontWeight: 600, fontSize: 15 }}>
                       {b.rideId.sourceLandmark}
                       <span style={{ color: 'var(--coral)', margin: '0 8px' }}>→</span>
                       {b.rideId.destinationLandmark}
                     </p>
                     <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 3 }}>
-                      {new Date(b.rideId.departureTime).toLocaleString()}
+                      Driver: {b.rideId.driverName}
                     </p>
                   </div>
                   <span style={{
@@ -166,14 +186,36 @@ export default function MyRides() {
                     background: (bookingBadge[b.status] || bookingBadge.cancelled).bg,
                     color:      (bookingBadge[b.status] || bookingBadge.cancelled).color
                   }}>
-                    {b.status}
+                    {b.status.replace('_', ' ')}
                   </span>
                 </div>
+
+                {/* OTP display when accepted by driver */}
+                {b.status === 'accepted_by_driver' && b.otp && (
+                  <div style={{
+                    margin: '12px 0', padding: 14, background: 'var(--coral-pale)',
+                    borderRadius: 'var(--radius-sm)', border: '1px solid var(--coral)',
+                    textAlign: 'center'
+                  }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--coral)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                      Your Pickup OTP
+                    </p>
+                    <div className="otp-display">
+                      {b.otp.split('').map((d, i) => (
+                        <div key={i} className="otp-digit">{d}</div>
+                      ))}
+                    </div>
+                    <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
+                      Show this to your driver at pickup
+                    </p>
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 13, color: 'var(--muted)' }}>
-                    Driver: {b.rideId.driverName} · ₹{b.rideId.farePerSeat}
+                  <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--coral)' }}>
+                    ₹{b.rideId.farePerSeat}
                   </span>
-                  {b.status === 'confirmed' && (
+                  {(b.status === 'confirmed' || b.status === 'accepted_by_driver') && (
                     <button className="btn-outline" style={{ padding: '6px 14px', fontSize: 12 }}
                       onClick={() => navigate(`/ride/${b.rideId._id}`)}>
                       View Ride

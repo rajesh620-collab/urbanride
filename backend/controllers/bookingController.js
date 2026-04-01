@@ -89,15 +89,20 @@ async function acceptBooking(req, res) {
       return fail(res, 400, `Booking is already ${booking.status}`);
     }
 
-    // Move to accepted phase. Price will be shown to passenger for final confirm.
+    // Generate 4-digit OTP for pickup verification
+    const otp = String(Math.floor(1000 + Math.random() * 9000));
+
+    // Move to accepted phase
     booking.status = 'accepted_by_driver';
+    booking.otp = otp;
     await booking.save();
 
-    // Notify passenger that driver is ready - now they must confirm price
+    // Notify passenger with OTP
     notifyUser(String(booking.passengerId), 'driver_accepted_match', {
-      message: `Driver ${ride.driverName} is ready! Review the shared fare to confirm your ride.`,
+      message: `Driver ${ride.driverName} accepted! Share your OTP with the driver at pickup.`,
       rideId: ride._id,
-      bookingId: booking._id
+      bookingId: booking._id,
+      otp // passenger sees OTP
     });
 
     return ok(res, { message: 'Match accepted by driver', data: { booking } });
@@ -295,6 +300,42 @@ async function cancelBooking(req, res) {
   }
 }
 
+/**
+ * POST /api/bookings/:id/verify-otp
+ * Driver enters the passenger's OTP to verify identity at pickup.
+ */
+async function verifyOtp(req, res) {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return fail(res, 404, 'Booking not found');
+
+    const ride = await Ride.findById(booking.rideId);
+    if (String(ride.driverId) !== String(req.user.id)) {
+      return fail(res, 403, 'Not your ride');
+    }
+
+    if (booking.otpVerified) {
+      return ok(res, { message: 'OTP already verified', data: { booking } });
+    }
+
+    if (!req.body.otp || String(req.body.otp) !== String(booking.otp)) {
+      return fail(res, 400, 'Invalid OTP. Please ask the passenger for the correct code.');
+    }
+
+    booking.otpVerified = true;
+    await booking.save();
+
+    notifyUser(String(booking.passengerId), 'otp_verified', {
+      message: 'You have been verified! Your ride is starting.',
+      bookingId: booking._id
+    });
+
+    return ok(res, { message: 'Passenger verified successfully!', data: { booking } });
+  } catch (err) {
+    return fail(res, 500, 'Server error', { error: err.message });
+  }
+}
+
 module.exports = {
   bookSeat,
   getMyBookings,
@@ -302,5 +343,6 @@ module.exports = {
   acceptBooking,
   confirmPassengerBooking,
   rejectBooking,
-  cancelBooking
+  cancelBooking,
+  verifyOtp
 };
