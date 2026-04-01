@@ -23,6 +23,7 @@ const rideSchema = new mongoose.Schema({
   availableSeats: { type: Number, required: true },
   femaleOnly: { type: Boolean, default: false },
   farePerSeat: { type: Number, required: true },
+  baseTotalRideFare: { type: Number, required: true }, // Total trip cost for sharing
   suggestedFare: { type: Number }, // AI-suggested fare for reference
   distanceMeters: { type: Number },
   estimatedDurationMin: { type: Number },

@@ -236,6 +236,7 @@ export default function Navbar() {
   const [showNotifs, setShowNotifs] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState(0);
   const notifsRef = useRef(null);
 
   useEffect(() => {
@@ -249,11 +250,25 @@ export default function Navbar() {
     socket.on('new_booking', add);
     socket.on('ride_status_updated', add);
     socket.on('ride_cancelled', add);
+    // New booking request for driver
+    socket.on('new_booking_request', data => {
+      add(data);
+      setPendingRequests(n => n + 1);
+    });
+    socket.on('driver_accepted_match', () => {
+      setPendingRequests(n => Math.max(0, n - 1));
+    });
+    socket.on('booking_rejected', () => {
+      setPendingRequests(n => Math.max(0, n - 1));
+    });
     return () => {
       socket.off('ride_match_found');
       socket.off('new_booking');
       socket.off('ride_status_updated');
       socket.off('ride_cancelled');
+      socket.off('new_booking_request');
+      socket.off('driver_accepted_match');
+      socket.off('booking_rejected');
     };
   }, []);
 
@@ -281,9 +296,10 @@ export default function Navbar() {
   if (!user) return null;
 
   const navItems = [
-    { label: 'Search',    path: '/search',    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/><path d="M20 20l-3.35-3.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg> },
-    { label: 'Post Ride', path: '/post-ride',  icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/><path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg> },
-    { label: 'My Rides',  path: '/my-rides',   icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/><path d="M7 7V5a5 5 0 0110 0v2" stroke="currentColor" strokeWidth="2" fill="none"/></svg> },
+    { label: 'Search',    path: '/search',          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/><path d="M20 20l-3.35-3.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg> },
+    { label: 'Post Ride', path: '/post-ride',        icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/><path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg> },
+    { label: 'My Rides',  path: '/my-rides',         icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/><path d="M7 7V5a5 5 0 0110 0v2" stroke="currentColor" strokeWidth="2" fill="none"/></svg> },
+    { label: 'Requests',  path: '/driver/requests',  icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>, badge: pendingRequests },
   ];
 
   const initials = user.name?.[0]?.toUpperCase() || '?';
@@ -328,15 +344,24 @@ export default function Navbar() {
         {/* Nav links */}
         <div style={{ display: 'flex', gap: 4 }}>
           {navItems.map(item => (
-            <button key={item.path} onClick={() => navigate(item.path)} style={{
+            <button key={item.path} onClick={() => { navigate(item.path); if (item.badge) setPendingRequests(0); }} style={{
               padding: '6px 14px', border: 'none', cursor: 'pointer',
               borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 500,
               background: location.pathname === item.path ? 'var(--coral-pale)' : 'transparent',
               color: location.pathname === item.path ? 'var(--coral)' : 'var(--muted)',
               transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6,
+              position: 'relative',
             }}>
               <span style={{ display: 'flex' }}>{item.icon}</span>
               <span className="nav-label">{item.label}</span>
+              {item.badge > 0 && (
+                <span style={{
+                  background: 'var(--coral)', color: 'white',
+                  borderRadius: 10, padding: '1px 6px',
+                  fontSize: 10, fontWeight: 700, lineHeight: '14px',
+                  animation: 'navPulse 1.5s ease-in-out infinite',
+                }}>{item.badge}</span>
+              )}
             </button>
           ))}
         </div>

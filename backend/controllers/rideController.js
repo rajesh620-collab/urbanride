@@ -121,6 +121,7 @@ async function searchRides(req, res) {
 
 /**
  * GET /api/rides/search (legacy — backward compatible)
+ * Now calculates real-time sharing price for search results.
  */
 async function searchRidesLegacy(req, res) {
   try {
@@ -137,12 +138,27 @@ async function searchRidesLegacy(req, res) {
 
     const rides = await Ride.find(query).sort({ createdAt: -1 });
 
+    // Map through rides to calculate dynamic current shared price
+    const ridesWithDynamicFare = await Promise.all(rides.map(async (r) => {
+      const rideObj = r.toObject();
+      const confirmedCount = await Booking.countDocuments({ 
+        rideId: rideObj._id, 
+        status: 'confirmed' 
+      });
+      
+      // If 0 confirmed, price = total (solo). If 1 confirmed, price = total/2, etc.
+      // We assume the searcher will be the (confirmedCount + 1)-th person
+      rideObj.farePerSeat = Math.ceil(rideObj.baseTotalRideFare / (confirmedCount + 1));
+      rideObj.confirmedCount = confirmedCount;
+      return rideObj;
+    }));
+
     return ok(res, {
-      type: rides.length > 0 ? 'shared' : 'solo',
-      message: rides.length > 0
-        ? `${rides.length} ride${rides.length > 1 ? 's' : ''} found`
+      type: ridesWithDynamicFare.length > 0 ? 'shared' : 'solo',
+      message: ridesWithDynamicFare.length > 0
+        ? `${ridesWithDynamicFare.length} ride${ridesWithDynamicFare.length > 1 ? 's' : ''} found`
         : 'No rides found',
-      data: { rides }
+      data: { rides: ridesWithDynamicFare }
     });
   } catch (err) {
     return fail(res, 500, 'Server error', { error: err.message });

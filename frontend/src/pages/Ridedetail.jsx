@@ -93,14 +93,19 @@ export default function RideDetail() {
   const [requests, setRequests]   = useState([]);
   const [myBooking, setMyBooking] = useState(null);
   const [actingOn, setActingOn]   = useState(null); // id of booking being accepted/rejected
+  const isDriverRef   = useRef(false);
+  const myBookingRef  = useRef(null);
 
   useEffect(() => {
     api.get(`/rides/${id}`)
       .then(res => {
         const r = res.data.data?.ride || res.data.ride;
         setRide(r);
+        const driverId = String(r.driverId);
+        const userId   = String(user?._id || user?.id);
+        isDriverRef.current = driverId === userId;
         // If driver, fetch requests
-        if (String(r.driverId) === String(user?._id || user?.id)) {
+        if (driverId === userId) {
           api.get(`/bookings/ride/${id}`).then(res2 => {
             setRequests(res2.data.data?.bookings || res2.data.bookings || []);
           });
@@ -111,6 +116,7 @@ export default function RideDetail() {
             const mine = bookings.find(b => String(b.rideId?._id || b.rideId) === String(id));
             if (mine) {
                 setMyBooking(mine);
+                myBookingRef.current = mine;
                 setBooked(true);
             }
           });
@@ -152,10 +158,31 @@ export default function RideDetail() {
         setRide(r => ({ ...r, farePerSeat: data.newFare }));
         setMessage(data.message);
     });
+    // Real-time new booking requests for driver
+    socket.on('new_booking_request', async (data) => {
+      if (isDriverRef.current) {
+        const bRes = await api.get(`/bookings/ride/${id}`);
+        setRequests(bRes.data.data?.bookings || bRes.data.bookings || []);
+      }
+    });
+    // Real-time booking status changes for passenger
+    socket.on('driver_accepted_match', (data) => {
+      if (String(data.bookingId) && myBookingRef.current) {
+        setMyBooking(b => b ? { ...b, status: 'accepted_by_driver' } : b);
+        setMessage('Driver accepted your request! Review the fare to confirm.');
+      }
+    });
+    socket.on('booking_rejected', () => {
+      setMyBooking(b => b ? { ...b, status: 'rejected' } : b);
+      setMessage('Your request was declined by the driver.');
+    });
     return () => { 
         socket.off('seat_booked'); 
         socket.off('ride_status_updated'); 
         socket.off('price_updated');
+        socket.off('new_booking_request');
+        socket.off('driver_accepted_match');
+        socket.off('booking_rejected');
     };
   }, [id]);
 
@@ -445,92 +472,207 @@ export default function RideDetail() {
             )}
 
             {/* Passenger Requests (Driver Only) */}
-            {isDriver && requests.length > 0 && (
-              <div style={{ marginTop: 24, padding: 20, background: 'var(--cream)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-                <p style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 16 }}>
-                  Join Requests
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {requests.map(req => (
-                    <div key={req._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--white)', padding: 12, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
-                      <div>
-                        <p style={{ fontWeight: 600, fontSize: 14 }}>{req.passengerName}</p>
-                        <p style={{ fontSize: 12, color: 'var(--muted)' }}>
-                          {req.seatsBooked} seat(s) · <span style={{ color: 'var(--success)', fontWeight: 600 }}>₹{ride.farePerSeat * req.seatsBooked}</span>
-                        </p>
-                        <p style={{ fontSize: 10, marginTop: 4, textTransform: 'uppercase', fontWeight: 700, color: req.status === 'confirmed' ? 'var(--success)' : 'var(--coral)' }}>
-                          Status: {req.status}
-                        </p>
-                      </div>
-                      {req.status === 'pending' && (
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <button 
-                            disabled={actingOn === req._id}
-                            onClick={() => handleRequestAction(req._id, 'accept')}
-                            style={{ padding: '6px 12px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: 4, fontSize: 11, cursor: 'pointer' }}
-                          >
-                            {actingOn === req._id ? '...' : 'Accept'}
-                          </button>
-                          <button 
-                            disabled={actingOn === req._id}
-                            onClick={() => handleRequestAction(req._id, 'reject')}
-                            style={{ padding: '6px 12px', background: 'var(--cream-dark)', color: 'var(--charcoal)', border: 'none', borderRadius: 4, fontSize: 11, cursor: 'pointer' }}
-                          >
-                            Ignore
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+            {isDriver && (
+              <div style={{ marginTop: 24 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <p style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Join Requests
+                  </p>
+                  {requests.length > 0 && (
+                    <span style={{
+                      background: requests.some(r => r.status === 'pending') ? 'var(--coral)' : 'var(--cream-dark)',
+                      color: requests.some(r => r.status === 'pending') ? 'white' : 'var(--muted)',
+                      borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700
+                    }}>
+                      {requests.filter(r => r.status === 'pending').length} pending
+                    </span>
+                  )}
                 </div>
+
+                {requests.length === 0 ? (
+                  <div style={{
+                    textAlign: 'center', padding: '24px 20px',
+                    background: 'var(--cream)', borderRadius: 'var(--radius-md)',
+                    border: '1.5px dashed var(--border)'
+                  }}>
+                    <p style={{ fontSize: 22, marginBottom: 8 }}>⏳</p>
+                    <p style={{ fontSize: 13, color: 'var(--muted)' }}>No requests yet — waiting for passengers</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {requests.map(req => {
+                      const isPending = req.status === 'pending';
+                      const statusStyles = {
+                        pending:            { bg: '#FFF7ED', border: '#FDBA74', color: '#C2410C', label: 'Pending' },
+                        accepted_by_driver: { bg: '#F0FDF4', border: '#86EFAC', color: '#166534', label: 'Accepted ✓' },
+                        confirmed:          { bg: '#EFF6FF', border: '#93C5FD', color: '#1D4ED8', label: 'Confirmed ✓' },
+                        rejected:           { bg: '#FEF2F2', border: '#FCA5A5', color: '#991B1B', label: 'Rejected' },
+                        cancelled:          { bg: '#F9FAFB', border: '#D1D5DB', color: '#6B7280', label: 'Cancelled' },
+                      };
+                      const st = statusStyles[req.status] || statusStyles.pending;
+                      return (
+                        <div key={req._id} style={{
+                          background: 'var(--card-bg)',
+                          border: `1.5px solid ${isPending ? 'var(--coral)' : 'var(--border)'}`,
+                          borderRadius: 'var(--radius-md)',
+                          padding: '16px 18px',
+                          boxShadow: isPending ? '0 2px 12px rgba(229,90,63,0.12)' : 'none',
+                          transition: 'all 0.25s'
+                        }}>
+                          {/* Request Header */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <div style={{
+                                width: 36, height: 36, borderRadius: '50%',
+                                background: isPending ? 'var(--coral)' : 'var(--cream-dark)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: 15, fontWeight: 700,
+                                color: isPending ? 'white' : 'var(--muted)',
+                                flexShrink: 0
+                              }}>
+                                {req.passengerName?.[0]?.toUpperCase() || '?'}
+                              </div>
+                              <div>
+                                <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--charcoal)' }}>
+                                  {req.passengerName}
+                                </p>
+                                <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>
+                                  {req.seatsBooked} seat{req.seatsBooked > 1 ? 's' : ''} · ₹{ride.farePerSeat * req.seatsBooked} est.
+                                </p>
+                              </div>
+                            </div>
+                            <span style={{
+                              padding: '3px 10px', borderRadius: 20,
+                              background: st.bg, border: `1px solid ${st.border}`,
+                              color: st.color, fontSize: 10, fontWeight: 700,
+                              textTransform: 'uppercase', letterSpacing: '0.04em'
+                            }}>
+                              {st.label}
+                            </span>
+                          </div>
+
+                          {/* Action buttons for pending */}
+                          {isPending && (
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <button
+                                disabled={actingOn === req._id}
+                                onClick={() => handleRequestAction(req._id, 'accept')}
+                                style={{
+                                  flex: 2, padding: '11px 0',
+                                  background: actingOn === req._id ? 'var(--cream-dark)' : '#16A34A',
+                                  color: 'white', border: 'none',
+                                  borderRadius: 'var(--radius-sm)',
+                                  fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                  boxShadow: '0 2px 8px rgba(22,163,74,0.3)',
+                                  transition: 'all 0.2s'
+                                }}
+                              >
+                                {actingOn === req._id
+                                  ? <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> Processing</>
+                                  : '✓ Accept'
+                                }
+                              </button>
+                              <button
+                                disabled={actingOn === req._id}
+                                onClick={() => handleRequestAction(req._id, 'reject')}
+                                style={{
+                                  flex: 1, padding: '11px 0',
+                                  background: 'var(--cream-dark)', color: 'var(--muted)',
+                                  border: '1.5px solid var(--border)',
+                                  borderRadius: 'var(--radius-sm)',
+                                  fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                                  transition: 'all 0.2s'
+                                }}
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
             {/* Driver controls */}
             {isDriver && ride.status !== 'completed' && ride.status !== 'cancelled' && (
-              <div style={{ marginTop: 24 }}>
-                <p style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500,
-                  textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-                  Ride Controls
-                </p>
+              <div style={{
+                marginTop: 24, padding: 20, background: 'var(--cream-dark)',
+                borderRadius: 'var(--radius-md)', border: '1px solid var(--border)',
+                animation: 'slideUp 0.4s ease'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <p style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Driver Actions
+                  </p>
+                  <span style={{
+                    fontSize: 10, padding: '2px 8px', borderRadius: 4,
+                    background: inProgress ? 'rgba(76,175,80,0.1)' : 'rgba(0,0,0,0.05)',
+                    color: inProgress ? '#166534' : 'var(--muted)', fontWeight: 700
+                  }}>
+                    {inProgress ? '• LIVE TRIP' : 'PRE-TRIP'}
+                  </span>
+                </div>
+
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {/* Navigate button — shown when ride is open/full and has coords */}
-                  {hasMap && (ride.status === 'open' || ride.status === 'full') && (
+                  {/* Status: Open/Full -> Start Ride */}
+                  {(ride.status === 'open' || ride.status === 'full') && (
                     <button
                       className="btn-primary"
-                      style={{ width: 'auto', padding: '9px 20px' }}
-                      onClick={() => navigate(`/navigate/${id}`)}
+                      onClick={() => updateStatus('in_progress')}
+                      style={{ flex: 1, minWidth: 140, background: '#16A34A', boxShadow: '0 4px 12px rgba(22,163,74,0.3)' }}
                     >
-                      🧭 Start Navigation
+                      ▶ Start Ride Now
                     </button>
                   )}
-                  {(ride.status === 'open' || ride.status === 'full') && (
-                    <button className="btn-secondary" onClick={() => updateStatus('in_progress')}>
-                      ▶ Start Ride
-                    </button>
-                  )}
+
+                  {/* Status: In Progress -> Complete Ride */}
                   {ride.status === 'in_progress' && (
-                    <>
-                      {hasMap && (
-                        <button
-                          className="btn-primary"
-                          style={{ width: 'auto', padding: '9px 20px' }}
-                          onClick={() => navigate(`/navigate/${id}`)}
-                        >
-                          🧭 Navigate
-                        </button>
-                      )}
-                      <button className="btn-secondary" onClick={() => updateStatus('completed')}>
-                        ✓ Complete Ride
-                      </button>
-                    </>
+                    <button
+                      className="btn-primary"
+                      onClick={() => {
+                        if (window.confirm('Mark this ride as completed? All passengers will be notified.')) {
+                          updateStatus('completed');
+                        }
+                      }}
+                      style={{ flex: 1, minWidth: 140, background: '#2563EB', boxShadow: '0 4px 12px rgba(37,99,235,0.3)' }}
+                    >
+                      ✓ Complete Ride
+                    </button>
                   )}
-                  <button onClick={() => updateStatus('cancelled')} style={{
-                    padding: '9px 18px', background: 'var(--coral-pale)', color: 'var(--error)',
-                    border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)',
-                    fontSize: 13, fontWeight: 500, cursor: 'pointer'
-                  }}>
-                    Cancel Ride
+
+                  {/* Navigation — always useful for driver */}
+                  {hasMap && (
+                    <button
+                      className="btn-secondary"
+                      onClick={() => navigate(`/navigate/${id}`)}
+                      style={{ flex: 1, minWidth: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                    >
+                      🧭 Navigate
+                    </button>
+                  )}
+
+                  {/* Cancel Ride */}
+                  <button
+                    onClick={() => {
+                      if (window.confirm('ARE YOU SURE? This will cancel the ride for all passengers and cannot be undone.')) {
+                        updateStatus('cancelled');
+                      }
+                    }}
+                    style={{
+                      width: '100%', marginTop: 6, padding: '10px',
+                      background: 'none', border: '1.5px solid var(--border)',
+                      color: '#EF4444', borderRadius: 'var(--radius-sm)',
+                      fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#FEF2F2'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                  >
+                    Cancel Entire Ride
                   </button>
                 </div>
               </div>

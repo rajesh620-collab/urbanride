@@ -9,7 +9,7 @@ const { ok, created, fail } = require('../utils/response');
 
 /**
  * POST /api/bookings
- * Book a seat on a ride (shared or solo).
+ * Passenger requests to join a ride.
  */
 async function bookSeat(req, res) {
   try {
@@ -35,46 +35,159 @@ async function bookSeat(req, res) {
       return fail(res, 403, 'This ride is for female passengers only');
     }
 
-    // Check duplicate booking
+    // Check duplicate booking (ignore cancelled/rejected)
     const existing = await Booking.findOne({
       rideId,
       passengerId: req.user.id,
-      status: 'confirmed'
+      status: { $in: ['pending', 'confirmed'] }
     });
-    if (existing) return fail(res, 400, 'You have already booked this ride');
+    if (existing) return fail(res, 400, 'You have a pending or confirmed booking for this ride');
 
-    // Create booking
+    // Create booking (defaults to 'pending')
     const booking = await Booking.create({
       rideId,
       passengerId: req.user.id,
       passengerName: req.user.name,
-      seatsBooked: seatsToBook
+      seatsBooked: seatsToBook,
+      status: 'pending' // explicit
     });
 
-    // Update ride
-    ride.availableSeats -= seatsToBook;
-    if (ride.availableSeats <= 0) ride.status = 'full';
-    await ride.save();
-
-    // WebSocket notifications
-    notifyRideRoom(rideId, 'seat_booked', {
-      rideId,
-      availableSeats: ride.availableSeats,
-      passengerName: req.user.name,
-      message: `${req.user.name} joined the ride`
-    });
-
-    notifyUser(String(ride.driverId), 'new_booking', {
-      message: `${req.user.name} booked ${seatsToBook} seat(s) on your ride`,
+    // Notify driver of a new request
+    notifyUser(String(ride.driverId), 'new_booking_request', {
+      message: `${req.user.name} wants to join your ride with ${seatsToBook} seat(s)`,
       rideId,
       bookingId: booking._id
     });
 
     return created(res, {
-      type: 'shared',
-      message: 'Seat booked successfully',
-      data: { booking, ride }
+      message: 'Join request sent. Waiting for driver acceptance.',
+      data: { booking }
     });
+  } catch (err) {
+    return fail(res, 500, 'Server error', { error: err.message });
+  }
+}
+
+/**
+ * PATCH /api/bookings/:id/accept
+ * Driver accepts the passenger's join request.
+ * Transitions from 'pending' to 'accepted_by_driver'.
+ */
+async function acceptBooking(req, res) {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return fail(res, 404, 'Booking not found');
+
+    const ride = await Ride.findById(booking.rideId);
+    if (!ride) return fail(res, 404, 'Ride not found');
+
+    if (String(ride.driverId) !== String(req.user.id)) {
+      return fail(res, 403, 'Not your ride');
+    }
+
+    if (booking.status !== 'pending') {
+      return fail(res, 400, `Booking is already ${booking.status}`);
+    }
+
+    // Move to accepted phase. Price will be shown to passenger for final confirm.
+    booking.status = 'accepted_by_driver';
+    await booking.save();
+
+    // Notify passenger that driver is ready - now they must confirm price
+    notifyUser(String(booking.passengerId), 'driver_accepted_match', {
+      message: `Driver ${ride.driverName} is ready! Review the shared fare to confirm your ride.`,
+      rideId: ride._id,
+      bookingId: booking._id
+    });
+
+    return ok(res, { message: 'Match accepted by driver', data: { booking } });
+  } catch (err) {
+    return fail(res, 500, 'Server error', { error: err.message });
+  }
+}
+
+/**
+ * PATCH /api/bookings/:id/confirm
+ * Passenger confirms the final split price and joins the ride.
+ */
+async function confirmPassengerBooking(req, res) {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return fail(res, 404, 'Booking not found');
+
+    if (String(booking.passengerId) !== String(req.user.id)) {
+      return fail(res, 403, 'Not your booking');
+    }
+
+    if (booking.status !== 'accepted_by_driver') {
+      return fail(res, 400, 'Driver has not accepted your request yet');
+    }
+
+    const ride = await Ride.findById(booking.rideId);
+    if (!ride || ride.availableSeats < booking.seatsBooked) {
+      return fail(res, 400, 'Ride is no longer available');
+    }
+
+    // Calculate dynamic pricing
+    // N = existing confirmed bookings + current one
+    const confirmedCount = await Booking.countDocuments({ 
+      rideId: ride._id, 
+      status: 'confirmed' 
+    });
+
+    // Finalize
+    booking.status = 'confirmed';
+    await booking.save();
+
+    // Update ride - decrement seats and update dynamic price for others
+    ride.availableSeats -= booking.seatsBooked;
+    if (ride.availableSeats <= 0) ride.status = 'full';
+    
+    // Dynamic Fare logic: Total / (Confirmed passengers + 1 driver?) 
+    // Driver example: 100 / 3 passengers = ₹33 each.
+    const newPassengerCount = confirmedCount + 1;
+    ride.farePerSeat = Math.ceil(ride.baseTotalRideFare / newPassengerCount);
+    
+    await ride.save();
+
+    // Broadcast updated price to everyone in the ride
+    notifyRideRoom(String(ride._id), 'price_updated', {
+      newFare: ride.farePerSeat,
+      message: `New passenger joined! Fare dropped to ₹${ride.farePerSeat}`
+    });
+
+    return ok(res, { 
+      message: 'Booking confirmed successfully', 
+      data: { booking, ride } 
+    });
+  } catch (err) {
+    return fail(res, 500, 'Server error', { error: err.message });
+  }
+}
+
+/**
+ * PATCH /api/bookings/:id/reject
+ * Driver ignores or rejects the passenger's request.
+ */
+async function rejectBooking(req, res) {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return fail(res, 404, 'Booking not found');
+
+    const ride = await Ride.findById(booking.rideId);
+    if (String(ride.driverId) !== String(req.user.id)) {
+      return fail(res, 403, 'Not your ride');
+    }
+
+    booking.status = 'rejected';
+    await booking.save();
+
+    notifyUser(String(booking.passengerId), 'booking_rejected', {
+      message: `Sorry, your request to join the ride from ${ride.sourceLandmark} was declined by the driver.`,
+      rideId: ride._id
+    });
+
+    return ok(res, { message: 'Request rejected' });
   } catch (err) {
     return fail(res, 500, 'Server error', { error: err.message });
   }
@@ -112,13 +225,14 @@ async function getRideBookings(req, res) {
       return fail(res, 403, 'Not your ride');
     }
 
+    // Driver sees all non-cancelled bookings
     const bookings = await Booking.find({
       rideId: req.params.rideId,
-      status: 'confirmed'
-    });
+      status: { $ne: 'cancelled' }
+    }).sort({ bookedAt: -1 });
 
     return ok(res, {
-      message: `${bookings.length} confirmed booking(s)`,
+      message: `${bookings.length} request(s) found`,
       data: { bookings }
     });
   } catch (err) {
@@ -128,7 +242,7 @@ async function getRideBookings(req, res) {
 
 /**
  * PATCH /api/bookings/:id/cancel
- * Cancel a booking and release the seat.
+ * Cancel a booking and release the seat (passenger-side).
  */
 async function cancelBooking(req, res) {
   try {
@@ -143,22 +257,34 @@ async function cancelBooking(req, res) {
       return fail(res, 400, 'Booking already cancelled');
     }
 
+    const oldStatus = booking.status;
     booking.status = 'cancelled';
     await booking.save();
 
-    // Give seat(s) back
-    const ride = await Ride.findById(booking.rideId);
-    if (ride) {
-      ride.availableSeats += booking.seatsBooked;
-      if (ride.status === 'full') ride.status = 'open';
-      await ride.save();
+    // Give seat(s) back only if it was already confirmed
+    if (oldStatus === 'confirmed') {
+      const ride = await Ride.findById(booking.rideId);
+      if (ride) {
+        ride.availableSeats += booking.seatsBooked;
+        if (ride.status === 'full') ride.status = 'open';
+        
+        // Recalculate price upward?
+        const confirmedCount = await Booking.countDocuments({ rideId: ride._id, status: 'confirmed' });
+        if (confirmedCount > 0) {
+            ride.farePerSeat = Math.ceil(ride.baseTotalRideFare / confirmedCount);
+        } else {
+            ride.farePerSeat = ride.baseTotalRideFare; // fallback
+        }
+        await ride.save();
+      }
+      
+      notifyRideRoom(booking.rideId, 'booking_cancelled', {
+        rideId: booking.rideId,
+        message: `${req.user.name} cancelled their booking`,
+        availableSeats: ride?.availableSeats,
+        newFare: ride?.farePerSeat
+      });
     }
-
-    notifyRideRoom(booking.rideId, 'booking_cancelled', {
-      rideId: booking.rideId,
-      message: `${req.user.name} cancelled their booking`,
-      availableSeats: ride?.availableSeats
-    });
 
     return ok(res, {
       message: 'Booking cancelled',
@@ -173,5 +299,8 @@ module.exports = {
   bookSeat,
   getMyBookings,
   getRideBookings,
+  acceptBooking,
+  confirmPassengerBooking,
+  rejectBooking,
   cancelBooking
 };

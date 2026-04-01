@@ -42,12 +42,13 @@ function CreatePoolModal({ landmarks, onClose }) {
     <div style={{
       position: 'fixed', inset: 0, zIndex: 1000,
       background: 'rgba(0,0,0,0.45)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', padding: 20
+      alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px',
+      overflowY: 'auto'
     }} onClick={onClose}>
       <div style={{
         background: 'var(--card-bg)', borderRadius: 'var(--radius-lg)',
         padding: '28px 32px', width: '100%', maxWidth: 460,
-        boxShadow: 'var(--shadow-lg)'
+        boxShadow: 'var(--shadow-lg)', marginBottom: 20
       }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h3 style={{ fontSize: 18, letterSpacing: '-0.01em' }}>Create Ride Pool</h3>
@@ -114,12 +115,13 @@ function JoinPoolModal({ onClose }) {
     <div style={{
       position: 'fixed', inset: 0, zIndex: 1000,
       background: 'rgba(0,0,0,0.45)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', padding: 20
+      alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px',
+      overflowY: 'auto'
     }} onClick={onClose}>
       <div style={{
         background: 'var(--card-bg)', borderRadius: 'var(--radius-lg)',
         padding: 28, width: '100%', maxWidth: 380,
-        boxShadow: 'var(--shadow-lg)'
+        boxShadow: 'var(--shadow-lg)', marginBottom: 20
       }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h3 style={{ fontSize: 18 }}>Join by Code</h3>
