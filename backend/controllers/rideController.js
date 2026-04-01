@@ -18,7 +18,7 @@ async function postRide(req, res) {
   try {
     const {
       sourceLandmark, destinationLandmark,
-      totalSeats, femaleOnly, farePerSeat,
+      totalSeats, femaleOnly, farePerSeat, baseTotalRideFare,
       sourceCoords, destCoords, distanceMeters, estimatedDurationMin, suggestedFare
     } = req.body;
 
@@ -40,6 +40,7 @@ async function postRide(req, res) {
       availableSeats: totalSeats || 1,
       femaleOnly: femaleOnly || false,
       farePerSeat: farePerSeat || 0,
+      baseTotalRideFare: baseTotalRideFare || (farePerSeat ? farePerSeat * (totalSeats || 1) : 0),
       status: 'open'
     };
 
