@@ -21,7 +21,7 @@ export default function PostRide() {
   const [destCoords, setDestCoords] = useState(null);
   const [error, setError]   = useState('');
   const [success, setSuccess] = useState('');
-  const [loading, setLoading] = false;
+  const [loading, setLoading] = useState(false);
   const [detecting, setDetecting] = useState(false);
   const [savedRoutes, setSavedRoutes] = useState([]);
   const [recentRides, setRecentRides] = useState([]);
