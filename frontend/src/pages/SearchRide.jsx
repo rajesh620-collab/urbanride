@@ -191,13 +191,19 @@ export default function SearchRide() {
   const [fareData, setFareData]             = useState(null);
   const [fareLoading, setFareLoading]       = useState(false);
   const [selectedCabType, setSelectedCabType] = useState('Cab XL');
+  const [savedRoutes, setSavedRoutes] = useState([]);
+  const [recentRides, setRecentRides] = useState([]);
+
 
   useEffect(() => {
     api.get('/landmarks').then(res => {
       const lm = res.data.data?.landmarks || res.data.landmarks;
       setLandmarks(lm || []);
     });
+    api.get('/saved-routes').then(res => setSavedRoutes(res.data.data?.routes || []));
+    api.get('/rides/my').then(res => setRecentRides(res.data.data?.rides?.slice(0, 5) || []));
   }, []);
+
 
   // Fetch fare estimate whenever both coords are available
   useEffect(() => {
@@ -309,7 +315,45 @@ export default function SearchRide() {
         <p style={{ color: 'var(--muted)', fontSize: 14, marginTop: 4 }}>
           Search available rides near you — instant matches
         </p>
+
+        {/* Smart Search: Saved Routes */}
+        {savedRoutes.length > 0 && !searched && (
+          <div style={{ marginTop: 16 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 12 }}>Quick Search</p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {savedRoutes.map(route => (
+                    <div key={route._id} className="route-chip" onClick={() => {
+                        setSourceCoords({ lat: route.sourceCoords.lat, lng: route.sourceCoords.lng, address: route.sourceLandmark });
+                        setDestCoords({ lat: route.destCoords.lat, lng: route.destCoords.lng, address: route.destinationLandmark });
+                        setFilters(f => ({ ...f, source: route.sourceLandmark, destination: route.destinationLandmark }));
+                        // Auto-trigger search
+                        handleSearch();
+                    }}>
+                        ⭐ {route.label}
+                    </div>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* AI Suggestion: Return Trip */}
+        {recentRides.length > 0 && !searched && (
+            <div className="return-trip-banner" style={{ marginTop: 20 }} onClick={() => {
+                const last = recentRides[0];
+                setSourceCoords({ lat: last.destCoords.lat, lng: last.destCoords.lng, address: last.destinationLandmark });
+                setDestCoords({ lat: last.sourceCoords.lat, lng: last.sourceCoords.lng, address: last.sourceLandmark });
+                setFilters(f => ({ ...f, source: last.destinationLandmark, destination: last.sourceLandmark }));
+                handleSearch();
+            }}>
+                <div style={{ fontSize: 24 }}>🔄</div>
+                <div>
+                    <p style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Need a return trip?</p>
+                    <p style={{ fontSize: 12, opacity: 0.8, margin: 0 }}>Quick search for your reverse route.</p>
+                </div>
+            </div>
+        )}
       </div>
+
 
       {/* Live alert */}
       {liveAlert && (
