@@ -628,26 +628,50 @@ export default function PostRide() {
                       })()}
                     </div>
 
-                    {/* Time Picker Container */}
-                    <div style={{ 
-                      marginTop: 18, background: 'var(--cream)', borderRadius: 20, padding: '16px 20px', 
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between' 
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 40, height: 40, background: 'var(--card-bg)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>⏰</div>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--charcoal)' }}>Pick Time</span>
+                    {/* iOS Style Time Wheel Simulator */}
+                    <div style={{ marginTop: 20 }}>
+                      <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--charcoal)', marginBottom: 12, display: 'block' }}>Departure Time</label>
+                      <div style={{ 
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                        gap: 12, background: 'var(--cream)', borderRadius: 24, padding: '20px 10px',
+                        boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.03)'
+                      }}>
+                        {/* Hour Selecor */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 60 }}>
+                          <button type="button" onClick={() => {
+                            const [h, m] = departureTime.split(':');
+                            const next = (parseInt(h) + 1) % 24;
+                            setDepartureTime(`${next.toString().padStart(2,'0')}:${m}`);
+                          }} style={{ background: 'none', border: 'none', fontSize: 20, color: 'var(--coral)', cursor: 'pointer', padding: 4 }}>▲</button>
+                          <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--charcoal)', fontFamily: 'inherit' }}>{departureTime.split(':')[0]}</div>
+                          <button type="button" onClick={() => {
+                            const [h, m] = departureTime.split(':');
+                            const next = (parseInt(h) - 1 + 24) % 24;
+                            setDepartureTime(`${next.toString().padStart(2,'0')}:${m}`);
+                          }} style={{ background: 'none', border: 'none', fontSize: 20, color: 'var(--coral)', cursor: 'pointer', padding: 4 }}>▼</button>
+                        </div>
+
+                        <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--muted)', marginTop: -4 }}>:</div>
+
+                        {/* Minute Selector */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 60 }}>
+                          <button type="button" onClick={() => {
+                            const [h, m] = departureTime.split(':');
+                            const next = (parseInt(m) + 5) % 60;
+                            setDepartureTime(`${h}:${next.toString().padStart(2,'0')}`);
+                          }} style={{ background: 'none', border: 'none', fontSize: 20, color: 'var(--coral)', cursor: 'pointer', padding: 4 }}>▲</button>
+                          <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--charcoal)', fontFamily: 'inherit' }}>{departureTime.split(':')[1]}</div>
+                          <button type="button" onClick={() => {
+                            const [h, m] = departureTime.split(':');
+                            const next = (parseInt(m) - 5 + 60) % 60;
+                            setDepartureTime(`${h}:${next.toString().padStart(2,'0')}`);
+                          }} style={{ background: 'none', border: 'none', fontSize: 20, color: 'var(--coral)', cursor: 'pointer', padding: 4 }}>▼</button>
+                        </div>
+
+                        <div style={{ marginLeft: 12, padding: '8px 14px', background: 'var(--card-bg)', borderRadius: 14, fontSize: 13, fontWeight: 800, color: 'var(--coral)', textTransform: 'uppercase', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                          {parseInt(departureTime.split(':')[0]) >= 12 ? 'PM' : 'AM'}
+                        </div>
                       </div>
-                      <input 
-                        type="time" 
-                        value={departureTime} 
-                        onChange={e => setDepartureTime(e.target.value)}
-                        style={{ 
-                          border: 'none', background: 'var(--card-bg)', padding: '10px 16px', 
-                          borderRadius: 14, fontSize: 18, fontWeight: 900, color: 'var(--coral)',
-                          fontFamily: 'monospace', outline: 'none', cursor: 'pointer',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-                        }} 
-                      />
                     </div>
                   </div>
 
