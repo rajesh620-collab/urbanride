@@ -12,7 +12,7 @@ const calculateBaseFare = (km, type) => {
 
 exports.createPool = async (req, res) => {
   try {
-    const { sourceCoords, destCoords, vehicleType, distanceKm, durationMin, maxParticipants } = req.body;
+    const { sourceCoords, destCoords, vehicleType, distanceKm, durationMin, maxParticipants, departureTime } = req.body;
     const userId = req.user?.id || req.user?._id || req.userId;
 
     if (!userId) {
@@ -40,6 +40,7 @@ exports.createPool = async (req, res) => {
       durationMin: durationMin || 15,
       totalFare,
       maxParticipants: maxParticipants || 4,
+      departureTime: departureTime || new Date(),
       status: 'waiting'
     });
 

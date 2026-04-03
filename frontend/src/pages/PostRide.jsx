@@ -331,6 +331,8 @@ export default function PostRide() {
   const [error, setError]               = useState('');
   const [success, setSuccess]           = useState('');
   const [loading, setLoading]           = useState(false);
+  const [departureDate, setDepartureDate] = useState(new Date().toISOString().split('T')[0]);
+  const [departureTime, setDepartureTime] = useState(new Date(Date.now() + 30 * 60000).toTimeString().slice(0,5));
   const [savedRoutes, setSavedRoutes]   = useState([]);
 
   const pollRef = useRef(null);
@@ -440,11 +442,13 @@ export default function PostRide() {
     }
     setLoading(true); setError(''); setSuccess('');
     try {
+      const schedule = new Date(`${departureDate}T${departureTime}`);
       const r = await api.post('/pools/create', { 
         vehicleType, 
         sourceCoords: { lat: sourceCoords.lat, lng: sourceCoords.lng, address: sourceCoords.address }, 
         destCoords: { lat: destCoords.lat, lng: destCoords.lng, address: destCoords.address },
-        distanceKm: 5, durationMin: 15
+        distanceKm: 5, durationMin: 15,
+        departureTime: schedule.toISOString()
       });
       setSuccess('Pool created! Redirecting to waiting room...');
       setTimeout(() => navigate(`/waiting/${r.data.data._id}`), 1200);
@@ -580,6 +584,29 @@ export default function PostRide() {
                        </div>
                     </div>
                   )}
+
+                  {/* Date & Time Selection */}
+                  <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 12 }}>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>Departure Date</label>
+                      <input 
+                        type="date" 
+                        value={departureDate} 
+                        onChange={e => setDepartureDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1.5px solid var(--border)', background: 'var(--card-bg)', color: 'var(--charcoal)', fontWeight: 600, fontSize: 14, outline: 'none' }} 
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>Start Time</label>
+                      <input 
+                        type="time" 
+                        value={departureTime} 
+                        onChange={e => setDepartureTime(e.target.value)}
+                        style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1.5px solid var(--border)', background: 'var(--card-bg)', color: 'var(--charcoal)', fontWeight: 600, fontSize: 14, outline: 'none' }} 
+                      />
+                    </div>
+                  </div>
 
                   <div style={{ marginTop: 20 }}>
                     <label style={{ fontSize: 12, fontWeight: 800, display: 'block', marginBottom: 10 }}>Seats Available</label>

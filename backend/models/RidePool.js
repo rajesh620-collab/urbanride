@@ -58,6 +58,10 @@ const ridePoolSchema = new mongoose.Schema({
     phone: String
   },
   otp: String,
+  departureTime: {
+    type: Date,
+    default: Date.now
+  },
   createdAt: {
     type: Date,
     default: Date.now
