@@ -341,22 +341,7 @@ export default function SearchRide() {
           </div>
         )}
 
-        {/* AI Suggestion: Return Trip */}
-        {recentRides.length > 0 && !searched && (
-            <div className="return-trip-banner" style={{ marginTop: 20 }} onClick={() => {
-                const last = recentRides[0];
-                setSourceCoords({ lat: last.destCoords.lat, lng: last.destCoords.lng, address: last.destinationLandmark });
-                setDestCoords({ lat: last.sourceCoords.lat, lng: last.sourceCoords.lng, address: last.sourceLandmark });
-                setFilters(f => ({ ...f, source: last.destinationLandmark, destination: last.sourceLandmark }));
-                handleSearch();
-            }}>
-                <div style={{ fontSize: 24 }}>🔄</div>
-                <div>
-                    <p style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Need a return trip?</p>
-                    <p style={{ fontSize: 12, opacity: 0.8, margin: 0 }}>Quick search for your reverse route.</p>
-                </div>
-            </div>
-        )}
+        <div style={{ marginTop: 2 }}></div>
       </div>
 
 
