@@ -435,6 +435,9 @@ export default function PostRide() {
   const handleManualSubmit = async (e) => {
     if (e) e.preventDefault();
     if (!sourceCoords || !destCoords) return setError('Select both locations');
+    if (sourceCoords.lat === destCoords.lat && sourceCoords.lng === destCoords.lng) {
+      return setError('No two locations can be the same');
+    }
     setLoading(true); setError(''); setSuccess('');
     try {
       const r = await api.post('/pools/create', { 

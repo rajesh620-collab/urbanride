@@ -177,6 +177,7 @@ export default function SearchRide() {
   const [filters, setFilters]               = useState({ source: '', destination: '', femaleOnly: false });
   const [sourceCoords, setSourceCoords]     = useState(null);
   const [destCoords, setDestCoords]         = useState(null);
+  const [error, setError]                   = useState('');
   const [rides, setRides]                   = useState([]);
   const [pools, setPools]                   = useState([]);
   const [searched, setSearched]             = useState(false);
@@ -262,6 +263,12 @@ export default function SearchRide() {
   const handleSearch = async e => {
     if (e) e.preventDefault();
     if (!filters.source || !filters.destination) return;
+    
+    if (filters.source === filters.destination) {
+      setError('No two locations can be the same');
+      return;
+    }
+    setError('');
     
     setLoading(true);
     setSearched(true);
@@ -399,6 +406,17 @@ export default function SearchRide() {
               hideMapToggle={true}
             />
           </div>
+
+          {error && (
+            <div style={{
+              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+              borderRadius: 12, padding: '12px 16px', marginTop: 16,
+              display: 'flex', alignItems: 'center', gap: 10, animation: 'shake 0.4s'
+            }}>
+              <span style={{ fontSize: 18 }}>⚠️</span>
+              <p style={{ fontSize: 13, color: '#EF4444', fontWeight: 600, margin: 0 }}>{error}</p>
+            </div>
+          )}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, flexWrap: 'wrap', gap: 12 }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
