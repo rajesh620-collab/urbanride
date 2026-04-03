@@ -42,42 +42,42 @@ function Toast({ msg, type, onClose }) {
   );
 }
 
-function VehiclePicker({ selected, onChange, disabled }) {
+function VehiclePicker({ onSelect }) {
   return (
-    <div style={{ marginBottom: 24, maxWidth: 500, margin: '0 auto 24px' }}>
-      <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--charcoal)', marginBottom: 20, textAlign: 'left', marginLeft: 4 }}>
+    <div style={{ marginBottom: 24, maxWidth: 460, margin: '0 auto 24px' }}>
+      <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--charcoal)', marginBottom: 24, textAlign: 'left', letterSpacing: '-0.5px' }}>
         Select your vehicle
       </h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {VEHICLES.map(v => (
-          <button key={v.key} onClick={() => !disabled && onChange(v.key)} style={{
-            width: '100%', padding: '12px 20px', border: `2.5px solid ${selected === v.key ? 'var(--charcoal)' : 'var(--border)'}`,
-            borderRadius: 20, background: 'var(--card-bg)',
-            cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all .2s cubic-bezier(1, 0, 0, 1)', fontFamily: 'inherit',
-            display: 'flex', alignItems: 'center', gap: 16, textAlign: 'left',
-            boxShadow: selected === v.key ? '0 8px 30px rgba(0,0,0,0.1)' : 'none',
+          <button key={v.key} onClick={() => onSelect(v.key)} className="vehicle-card-item" style={{
+            width: '100%', padding: '14px 22px', border: `2px solid var(--border)`,
+            borderRadius: 24, background: 'var(--card-bg)',
+            cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', fontFamily: 'inherit',
+            display: 'flex', alignItems: 'center', gap: 20, textAlign: 'left',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
             position: 'relative'
-          }}>
-            {/* Vehicle Image */}
-            <div style={{ width: 80, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'var(--charcoal)'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.03)'; }}
+          >
+            {/* 3D Vehicle Image */}
+            <div style={{ width: 90, height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <img src={v.icon} alt={v.label} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
             </div>
 
             {/* Labels */}
             <div style={{ flex: 1 }}>
-              <p style={{ fontWeight: 800, fontSize: 18, color: 'var(--charcoal)', margin: 0 }}>{v.label}</p>
+              <p style={{ fontWeight: 800, fontSize: 19, color: 'var(--charcoal)', margin: 0 }}>{v.label}</p>
               <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4, fontWeight: 500 }}>{v.subtext}</p>
             </div>
 
-            {/* Radio Indicator */}
+            {/* Radio Circle */}
             <div style={{
-              width: 26, height: 26, borderRadius: '50%',
-              border: `2px solid ${selected === v.key ? 'var(--charcoal)' : '#94A3B8'}`,
+              width: 24, height: 24, borderRadius: '50%',
+              border: `2px solid #CBD5E1`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'all .2s'
-            }}>
-              {selected === v.key && <div style={{ width: 14, height: 14, borderRadius: '50%', background: 'var(--charcoal)' }} />}
-            </div>
+            }} />
           </button>
         ))}
       </div>
@@ -112,7 +112,7 @@ function OnlineBar({ isOnline, onToggle, vehicleType }) {
           </span>
         </div>
         <p style={{ color: 'rgba(255,255,255,.55)', fontSize: 12 }}>
-          {isOnline ? `${v?.icon} ${v?.label} · Accepting rides` : 'Tap to go online & start earning'}
+          {isOnline ? `${v?.icon === '/assets/bike.png' ? '🏍️' : v?.icon === '/assets/auto.png' ? '🛺' : '🚗'} ${v?.label} · Accepting rides` : 'Tap to go online & start earning'}
         </p>
       </div>
       <div style={{
@@ -151,11 +151,7 @@ function RequestCard({ ride, onAccept, onReject, acting }) {
       }} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 42, height: 42, borderRadius: '50%',
-            background: `${v.color}22`, border: `2px solid ${v.color}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
-          }}>{v.icon}</div>
+          <img src={v.icon} alt={v.label} style={{ width: 42, height: 42, objectFit: 'contain' }} />
           <div>
             <p style={{ fontWeight: 700, fontSize: 14 }}>{ride.passengerName || 'Passenger'}</p>
             <p style={{ fontSize: 11, color: 'var(--muted)' }}>{v.label} · {ride.distanceKm} km · ~{ride.durationMin} min</p>
@@ -198,6 +194,7 @@ function ActiveRidePanel({ ride, onArrived, onVerifyOTP, onComplete, onCancel, a
   const [otpErr, setOtpErr] = useState('');
   const refs = [useRef(), useRef(), useRef(), useRef()];
   const meta = STATUS_META[ride.status] || STATUS_META.accepted;
+  const v = VEHICLES.find(x => x.key === ride.vehicleType);
   const steps = [
     { key: 'accepted', label: 'Accepted', icon: '✓' },
     { key: 'arrived',  label: 'Arrived',  icon: '📍' },
@@ -221,11 +218,12 @@ function ActiveRidePanel({ ride, onArrived, onVerifyOTP, onComplete, onCancel, a
   return (
     <div style={{ border: `2px solid ${meta.color}`, borderRadius: 18, overflow: 'hidden', marginBottom: 16, boxShadow: `0 6px 24px ${meta.color}22` }}>
       <div style={{ background: `${meta.color}18`, padding: '14px 18px', borderBottom: `1px solid ${meta.color}33`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: meta.color }}>{meta.label}</p>
-          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--charcoal)', marginTop: 2 }}>
-            {VEHICLES.find(v => v.key === ride.vehicleType)?.icon} {ride.pickupAddress?.split(',')[0]} → {ride.dropAddress?.split(',')[0]}
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <img src={v?.icon} alt="vehicle" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: meta.color }}>{meta.label}</p>
+            <p style={{ fontSize: 13, fontWeight: 600 }}>{ride.pickupAddress?.split(',')[0]} → {ride.dropAddress?.split(',')[0]}</p>
+          </div>
         </div>
         <p style={{ fontWeight: 800, fontSize: 20, color: 'var(--coral)' }}>{fmtFare(ride.fare)}</p>
       </div>
@@ -299,8 +297,7 @@ function ActiveRidePanel({ ride, onArrived, onVerifyOTP, onComplete, onCancel, a
         )}
         {!['completed', 'cancelled', 'in_progress'].includes(ride.status) && (
           <button onClick={() => onCancel(ride._id)} disabled={acting} style={{
-            flex: ride.status === 'arrived' ? 'none' : 1, padding: '12px 16px',
-            background: 'var(--cream-dark)', color: 'var(--muted)',
+            padding: '12px 16px', background: 'var(--cream-dark)', color: 'var(--muted)',
             border: '1.5px solid var(--border)', borderRadius: 10, fontWeight: 600, fontSize: 13,
             cursor: 'pointer', fontFamily: 'inherit',
           }}>Cancel</button>
@@ -310,34 +307,15 @@ function ActiveRidePanel({ ride, onArrived, onVerifyOTP, onComplete, onCancel, a
   );
 }
 
-function EarningsBadge({ earnings }) {
-  if (!earnings) return null;
-  return (
-    <div style={{
-      background: 'linear-gradient(135deg,#1C1917,#292524)',
-      borderRadius: 14, padding: '14px 18px', marginBottom: 14,
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    }}>
-      <div>
-        <p style={{ fontSize: 10, color: 'rgba(255,255,255,.4)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 2 }}>Today's Earnings</p>
-        <p style={{ fontSize: 26, fontWeight: 800, color: '#4ADE80' }}>{fmtFare(earnings.todayEarnings)}</p>
-      </div>
-      <div style={{ textAlign: 'right' }}>
-        <p style={{ fontSize: 10, color: 'rgba(255,255,255,.4)', marginBottom: 4 }}>Today's Rides</p>
-        <p style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>{earnings.todayRides}</p>
-      </div>
-    </div>
-  );
-}
-
 /* ── Main PostRide Page ──────────────────────────────────────────── */
 export default function PostRide() {
   const navigate = useNavigate();
-  const [vehicleType, setVehicleType] = useState('auto'); // Step 1
+  const [vehicleType, setVehicleType] = useState('auto');
+  const [step, setStep]               = useState(1); // 1: Vehicle picker, 2: Hub/Form
   const [activeMode, setActiveMode]   = useState('driver'); // 'driver' | 'manual'
-  const [tab, setTab]                 = useState('ride'); // for driver hub: 'ride' | 'earnings'
+  const [tab, setTab]                 = useState('ride');
 
-  // Driver Hub State
+  // Logic States
   const [isOnline, setIsOnline]     = useState(false);
   const [incomingRides, setIncoming] = useState([]);
   const [activeRide, setActiveRide] = useState(null);
@@ -347,7 +325,7 @@ export default function PostRide() {
   const [toast, setToast]           = useState({ msg: '', type: 'info' });
 
   // Manual Form State
-  const [form, setForm] = useState({ sourceLandmark: '', destinationLandmark: '', totalSeats: 4, farePerSeat: 0, baseTotalRideFare: 0, femaleOnly: false });
+  const [form, setForm] = useState({ totalSeats: 4, baseTotalRideFare: 0 });
   const [sourceCoords, setSourceCoords] = useState(null);
   const [destCoords, setDestCoords]     = useState(null);
   const [error, setError]               = useState('');
@@ -358,14 +336,12 @@ export default function PostRide() {
   const pollRef = useRef(null);
   const showToast = (msg, type = 'info') => setToast({ msg, type });
 
-  /* ── Initialization ── */
   useEffect(() => {
     api.get('/saved-routes').then(r => setSavedRoutes(r.data.data?.routes || []));
     loadEarnings();
     loadRides();
   }, []);
 
-  /* ── Driver Hub Logic ── */
   const loadEarnings = useCallback(async () => {
     try { const r = await api.get('/driver-rides/earnings'); setEarnings(r.data.data); } catch {}
   }, []);
@@ -442,192 +418,149 @@ export default function PostRide() {
     finally { setSimulating(false); }
   };
 
-  /* ── Manual Pool Logic ── */
   const handleManualSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (form.sourceLandmark === form.destinationLandmark) return setError('Same source and destination');
     if (!sourceCoords || !destCoords) return setError('Select both locations');
     setLoading(true); setError(''); setSuccess('');
     try {
-      await api.post('/rides', {
-        ...form,
-        vehicleType,
-        sourceCoords: { lat: sourceCoords.lat, lng: sourceCoords.lng, address: sourceCoords.address },
-        destCoords:   { lat: destCoords.lat,   lng: destCoords.lng,   address: destCoords.address   },
-        sourceLandmark:      sourceCoords.address,
-        destinationLandmark: destCoords.address,
-        farePerSeat: form.baseTotalRideFare || 100,
-        baseTotalRideFare: form.baseTotalRideFare || 100
-      });
-      setSuccess('Pooling ride posted! Redirecting...');
-      setTimeout(() => navigate('/my-rides'), 1500);
+      await api.post('/rides', { ...form, vehicleType, sourceCoords: { lat: sourceCoords.lat, lng: sourceCoords.lng, address: sourceCoords.address }, destCoords: { lat: destCoords.lat, lng: destCoords.lng, address: destCoords.address }, sourceLandmark: sourceCoords.address, destinationLandmark: destCoords.address, farePerSeat: form.baseTotalRideFare || 100, baseTotalRideFare: form.baseTotalRideFare || 100 });
+      setSuccess('Pooling ride posted!'); setTimeout(() => navigate('/my-rides'), 1500);
     } catch (err) { setError(err.response?.data?.message || 'Failed to post'); setLoading(false); }
   };
 
+  const selectedV = VEHICLES.find(v => v.key === vehicleType);
+
   return (
-    <div className="page-wrapper" style={{ paddingBottom: 80 }}>
+    <div className="page-wrapper" style={{ paddingBottom: 100 }}>
       <style>{`
         @keyframes dotPulse { 0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.5)} 50%{box-shadow:0 0 0 6px rgba(74,222,128,0)} }
-        @keyframes slideIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes slideIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes slideUpToast { from{opacity:0;transform:translateY(24px) translateX(-50%)} to{opacity:1;transform:translateY(0) translateX(-50%)} }
       `}</style>
-
-      {/* Header */}
+      
       <div style={{ marginBottom: 24 }}>
-        <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, padding: 0, marginBottom: 16 }}>
-          ← Back to Map
+        <button onClick={() => step === 2 ? setStep(1) : navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, padding: 0 }}>
+          ← {step === 2 ? 'Back to Selection' : 'Back to Map'}
         </button>
-        <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em' }}>Post a Ride</h2>
       </div>
 
-      {/* Step 1: Vehicle Selector — Always Visible */}
-      <VehiclePicker selected={vehicleType} onChange={setVehicleType} disabled={activeRide} />
-
-      {/* Step 2: Mode Selection / Driver Hub */}
-      <div className="card" style={{ padding: '24px 20px', borderRadius: 20 }}>
-
-        {/* Tab Switcher (Driver Hub Mode) */}
-        {activeMode === 'driver' && (
-          <div style={{ display: 'flex', gap: 6, background: 'var(--cream-dark)', padding: 4, borderRadius: 12, width: 'fit-content', marginBottom: 18 }}>
-            {[{ k: 'ride', lbl: '🛺 Active Hub' }, { k: 'earnings', lbl: '💰 Earnings' }].map(t => (
-              <button key={t.k} onClick={() => setTab(t.k)} style={{
-                padding: '8px 16px', border: 'none', borderRadius: 9, fontSize: 12, fontWeight: 700,
-                background: tab === t.k ? 'var(--white)' : 'transparent',
-                color: tab === t.k ? 'var(--charcoal)' : 'var(--muted)',
-                cursor: 'pointer', fontFamily: 'inherit', transition: 'all .25s',
-                boxShadow: tab === t.k ? 'var(--shadow-sm)' : 'none',
-              }}>{t.lbl}</button>
-            ))}
-          </div>
-        )}
-
-        {/* Mode Title */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h3 style={{ fontSize: 18, fontWeight: 800 }}>{activeMode === 'driver' ? 'On-Demand Driving' : 'Plan Custom Route'}</h3>
-          <button onClick={() => setActiveMode(activeMode === 'driver' ? 'manual' : 'driver')} style={{
-            background: 'var(--coral-pale)', border: 'none', padding: '6px 12px', borderRadius: 10,
-            color: 'var(--coral)', fontWeight: 700, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit'
+      {step === 1 ? (
+        /* ── STEP 1: VEHICLE PICKER ── */
+        <VehiclePicker onSelect={(v) => { setVehicleType(v); setStep(2); }} />
+      ) : (
+        /* ── STEP 2: ACTIVE HUB / FORM ── */
+        <div style={{ animation: 'slideIn 0.3s ease-out' }}>
+          
+          {/* Chosen Vehicle Summary Bar */}
+          <div style={{
+            background: 'var(--white)', padding: '16px 20px', borderRadius: 20, marginBottom: 20,
+            display: 'flex', alignItems: 'center', gap: 16, border: '1.5px solid var(--border)',
+            boxShadow: 'var(--shadow-sm)'
           }}>
-            {activeMode === 'driver' ? 'Switch to Pooling →' : 'Back to Driver Hub'}
-          </button>
-        </div>
+            <img src={selectedV?.icon} style={{ width: 64, height: 64, objectFit: 'contain' }} alt="vehicle" />
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>Active Vehicle</p>
+              <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--charcoal)' }}>{selectedV?.label}</p>
+            </div>
+            <button onClick={() => setStep(1)} style={{ background: 'var(--cream)', border: 'none', padding: '8px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, color: 'var(--charcoal)', cursor: 'pointer' }}>Change</button>
+          </div>
 
-        {activeMode === 'driver' ? (
-          /* ── DRIVER HUB SECTION ── */
-          tab === 'ride' ? (
-            <div style={{ animation: 'slideIn .3s ease' }}>
-              <OnlineBar isOnline={isOnline} onToggle={() => setIsOnline(!isOnline)} vehicleType={vehicleType} />
+          <div className="card" style={{ padding: '24px 20px', borderRadius: 24 }}>
+             {/* Tab Switcher */}
+             <div style={{ display: 'flex', gap: 6, background: 'var(--cream-dark)', padding: 4, borderRadius: 14, width: 'fit-content', marginBottom: 24 }}>
+                {[{ k: 'driver', lbl: '🛺 Active Hub' }, { k: 'manual', lbl: '📍 Plan Route' }].map(m => (
+                  <button key={m.k} onClick={() => setActiveMode(m.k)} style={{
+                    padding: '10px 18px', border: 'none', borderRadius: 10, fontSize: 12, fontWeight: 700,
+                    background: activeMode === m.k ? 'var(--white)' : 'transparent',
+                    color: activeMode === m.k ? 'var(--charcoal)' : 'var(--muted)',
+                    cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.25s',
+                    boxShadow: activeMode === m.k ? 'var(--shadow-sm)' : 'none',
+                  }}>{m.lbl}</button>
+                ))}
+             </div>
 
-              {activeRide ? (
-                <ActiveRidePanel ride={activeRide} onArrived={handleArrived} onVerifyOTP={handleVerifyOTP} onComplete={handleComplete} onCancel={handleCancel} acting={acting} />
-              ) : isOnline ? (
+             {activeMode === 'driver' ? (
+                /* Driver Hub View */
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '.07em' }}>
-                      Rides Nearby {incomingRides.length > 0 && `(${incomingRides.length})`}
-                    </p>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={loadRides} style={{ background: 'var(--cream)', border: '1px solid var(--border)', borderRadius: 8, padding: '5px 10px', fontSize: 11, color: 'var(--muted)', cursor: 'pointer', fontFamily: 'inherit' }}>↻ Refresh</button>
-                      <button onClick={handleSimulate} disabled={simulating} style={{ background: 'var(--coral)', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                        + Simulate
+                  <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+                    {['ride', 'earnings'].map(t => (
+                      <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: 8, border: 'none', background: tab === t ? 'var(--coral-pale)' : 'transparent', color: tab === t ? 'var(--coral)' : 'var(--muted)', fontSize: 12, fontWeight: 700, cursor: 'pointer', borderRadius: 8 }}>
+                        {t === 'ride' ? 'Ride' : 'Earnings'}
                       </button>
-                    </div>
+                    ))}
                   </div>
-                  {incomingRides.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--cream)', borderRadius: 16, border: '1.5px dashed var(--border)' }}>
-                      <div style={{ fontSize: 40, marginBottom: 12 }}>📡</div>
-                      <p style={{ fontWeight: 700, fontSize: 14 }}>Waiting for passengers...</p>
-                      <p style={{ color: 'var(--muted)', fontSize: 12, marginTop: 4 }}>Keep the page open to receive real-time pings.</p>
+                  {tab === 'ride' ? (
+                    <>
+                      <OnlineBar isOnline={isOnline} onToggle={() => setIsOnline(!isOnline)} vehicleType={vehicleType} />
+                      {activeRide ? (
+                        <ActiveRidePanel ride={activeRide} onArrived={handleArrived} onVerifyOTP={handleVerifyOTP} onComplete={handleComplete} onCancel={handleCancel} acting={acting} />
+                      ) : (
+                        <>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                             <p style={{ fontSize: 12, fontWeight: 800 }}>Requests Nearby</p>
+                             <button onClick={handleSimulate} disabled={!isOnline || simulating} style={{ background: 'var(--coral)', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>+ Simulate</button>
+                          </div>
+                          {incomingRides.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--cream)', borderRadius: 20, border: '1.5px dashed var(--border)' }}>
+                               <p style={{ fontSize: 40, marginBottom: 12 }}>{isOnline ? '📡' : '🏁'}</p>
+                               <p style={{ fontWeight: 800 }}>{isOnline ? 'Searching for rides...' : 'Ready to Earn?'}</p>
+                            </div>
+                          ) : incomingRides.map(r => <RequestCard key={r._id} ride={r} onAccept={handleAccept} onReject={handleReject} acting={acting} />)}
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <div style={{ animation: 'slideIn 0.3s ease' }}>
+                        <div style={{ background: 'linear-gradient(135deg,#1C1917,#292524)', borderRadius: 18, padding: 20, marginBottom: 16 }}>
+                           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Today's Total</p>
+                           <p style={{ fontSize: 32, fontWeight: 800, color: '#4ADE80', marginTop: 4 }}>{fmtFare(earnings?.todayEarnings)}</p>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                           <div style={{ background: 'var(--cream)', padding: 16, borderRadius: 14 }}>
+                              <p style={{ fontSize: 11, color: 'var(--muted)' }}>Total Rides</p>
+                              <p style={{ fontSize: 20, fontWeight: 800 }}>{earnings?.totalRides || 0}</p>
+                           </div>
+                           <div style={{ background: 'var(--cream)', padding: 16, borderRadius: 14 }}>
+                              <p style={{ fontSize: 11, color: 'var(--muted)' }}>Lifetime</p>
+                              <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--coral)' }}>{fmtFare(earnings?.totalEarnings)}</p>
+                           </div>
+                        </div>
                     </div>
-                  ) : incomingRides.map(r => (
-                    <RequestCard key={r._id} ride={r} onAccept={handleAccept} onReject={handleReject} acting={acting} />
-                  ))}
+                  )}
                 </>
-              ) : (
-                /* Offline State card */
-                <div style={{ textAlign: 'center', padding: '48px 20px', background: 'var(--cream)', borderRadius: 18, border: '1px solid var(--border)' }}>
-                   <div style={{ fontSize: 50, marginBottom: 12 }}>🏁</div>
-                   <p style={{ fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Ready to Earn?</p>
-                   <p style={{ color: 'var(--muted)', fontSize: 13, lineHeight: 1.6, maxWidth: 220, margin: '0 auto' }}>
-                     Go online to start receiving on-demand ride requests with {VEHICLES.find(v => v.key === vehicleType)?.icon}.
-                   </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            /* Earnings Hub inside Driver Hub */
-            <div style={{ animation: 'slideIn .3s ease' }}>
-                <EarningsBadge earnings={earnings} />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-                  <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
-                    <p style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Total Rides</p>
-                    <p style={{ fontSize: 24, fontWeight: 800 }}>{earnings?.totalRides || 0}</p>
+             ) : (
+                /* Manual Pool Form */
+                <form onSubmit={handleManualSubmit}>
+                  {error && <div className="alert-error" style={{ marginBottom: 16 }}>{error}</div>}
+                  <LocationPicker value={sourceCoords} onChange={setSourceCoords} label="Pickup Location" mode="pickup" />
+                  <div style={{ height: 24, marginLeft: 22, borderLeft: '2px dashed var(--border)' }} />
+                  <LocationPicker value={destCoords} onChange={setDestCoords} label="Destination" mode="dropoff" />
+                  
+                  {sourceCoords && destCoords && (
+                    <div style={{ marginTop: 20 }}>
+                       <RouteMap sourceCoords={sourceCoords} destCoords={destCoords} height={180} />
+                       <div style={{ marginTop: 18 }}>
+                         <label style={{ fontSize: 12, fontWeight: 800, display: 'block', marginBottom: 8 }}>Estimated Fare Recommendation</label>
+                         <FareEstimator sourceCoords={sourceCoords} destCoords={destCoords} onFareSelect={f => setForm(p => ({ ...p, baseTotalRideFare: f * 4 }))} />
+                         <input type="number" value={form.baseTotalRideFare} onChange={e => setForm({...form, baseTotalRideFare: e.target.value})} style={{ width: '100%', padding: 12, borderRadius: 10, border: '1.5px solid var(--border)', marginTop: 12, fontWeight: 700 }} placeholder="Set trip cost" />
+                       </div>
+                    </div>
+                  )}
+
+                  <div style={{ marginTop: 20 }}>
+                    <label style={{ fontSize: 12, fontWeight: 800, display: 'block', marginBottom: 10 }}>Seats Available</label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {[1,2,3,4].map(n => (
+                        <button key={n} type="button" onClick={() => setForm({...form, totalSeats: n})} style={{ flex: 1, padding: 10, borderRadius: 10, border: `2px solid ${form.totalSeats === n ? 'var(--coral)' : 'var(--border)'}`, background: form.totalSeats === n ? 'var(--coral-pale)' : 'transparent', color: form.totalSeats === n ? 'var(--coral)' : 'var(--muted)', fontWeight: 700, cursor: 'pointer' }}>{n}</button>
+                      ))}
+                    </div>
                   </div>
-                  <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
-                    <p style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Lifetime Earned</p>
-                    <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--coral)' }}>{fmtFare(earnings?.totalEarnings)}</p>
-                  </div>
-                </div>
-                <button onClick={loadEarnings} style={{ width: '100%', padding: 12, background: 'var(--cream-dark)', border: '1px solid var(--border)', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700 }}>↻ Update Statement</button>
-            </div>
-          )
-        ) : (
-          /* ── MANUAL POOLING FORM ── */
-          <form onSubmit={handleManualSubmit} style={{ animation: 'slideIn .3s ease' }}>
-            {error   && <div className="alert-error" style={{ marginBottom: 16 }}>{error}</div>}
-            <LocationPicker value={sourceCoords} onChange={setSourceCoords} label="Pickup Point" mode="pickup" />
-            <div style={{ height: 28, position: 'relative', marginLeft: 22 }}>
-              <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 2, background: 'var(--border)', borderStyle: 'dashed' }} />
-            </div>
-            <LocationPicker value={destCoords} onChange={setDestCoords} label="Drop-off Destination" mode="dropoff" />
 
-            {sourceCoords && destCoords && (
-              <div style={{ marginTop: 20 }}>
-                <RouteMap sourceCoords={sourceCoords} destCoords={destCoords} height={180} />
-                <div style={{ marginTop: 18 }}>
-                   <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: 8 }}>Estimated Pooling Fare</label>
-                   <FareEstimator sourceCoords={sourceCoords} destCoords={destCoords} onFareSelect={f => setForm(prev => ({ ...prev, baseTotalRideFare: f * 4 }))} />
-                </div>
-                <div style={{ marginTop: 16 }}>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: 8 }}>Total Trip Cost (₹)</label>
-                  <input type="number" name="baseTotalRideFare" value={form.baseTotalRideFare} onChange={e => setForm({...form, baseTotalRideFare: e.target.value})} placeholder="Set total fare" required style={{ width: '100%', padding: 12, borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 16, fontWeight: 600 }} />
-                </div>
-              </div>
-            )}
-
-            <div style={{ marginTop: 20 }}>
-               <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: 8 }}>Available Guest Seats</label>
-               <div style={{ display: 'flex', gap: 10 }}>
-                 {[1,2,3,4].map(n => (
-                   <button key={n} type="button" onClick={() => setForm({...form, totalSeats: n})} style={{
-                     flex: 1, padding: 10, borderRadius: 10, border: `2px solid ${form.totalSeats === n ? 'var(--coral)' : 'var(--border)'}`,
-                     background: form.totalSeats === n ? 'var(--coral-pale)' : 'var(--card-bg)', color: form.totalSeats === n ? 'var(--coral)' : 'var(--muted)',
-                     fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit'
-                   }}>{n}</button>
-                 ))}
-               </div>
-            </div>
-
-            <button type="submit" className="btn-primary" disabled={loading || !sourceCoords || !destCoords} style={{ marginTop: 24, fontSize: 15 }}>
-              {loading ? 'Posting...' : 'List Pooling Ride'}
-            </button>
-            {success && <div className="alert-success" style={{ marginTop: 16 }}>{success}</div>}
-          </form>
-        )}
-      </div>
-
-      {/* Saved Routes for Pooling */}
-      {activeMode === 'manual' && savedRoutes.length > 0 && (
-         <div style={{ marginTop: 20, padding: '0 4px' }}>
-           <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 12 }}>⭐ Quick Routes</p>
-           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-             {savedRoutes.map(r => (
-               <div key={r._id} className="route-chip" style={{ background: 'var(--white)', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: 12, fontSize: 12, fontWeight: 600, cursor: 'pointer' }} onClick={() => { setSourceCoords({ lat: r.sourceCoords.lat, lng: r.sourceCoords.lng, address: r.sourceLandmark }); setDestCoords({ lat: r.destCoords.lat, lng: r.destCoords.lng, address: r.destinationLandmark }); }}>
-                 {r.label}
-               </div>
-             ))}
-           </div>
-         </div>
+                  <button type="submit" className="btn-primary" disabled={loading || !sourceCoords || !destCoords} style={{ marginTop: 24 }}>{loading ? 'Posting...' : 'Confirm Pooling Ride'}</button>
+                </form>
+             )}
+          </div>
+        </div>
       )}
 
       <Toast msg={toast.msg} type={toast.type} onClose={() => setToast({ msg: '', type: 'info' })} />
