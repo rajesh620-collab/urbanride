@@ -58,6 +58,12 @@ export default function WaitingScreen() {
          </div>
          <h2 style={{ fontSize: 24, fontWeight: 800 }}>{pool.status === 'waiting' ? 'Waiting for passengers...' : pool.status === 'finding_driver' ? 'Finding a driver...' : 'Driver Assigned!'}</h2>
          <p style={{ color: 'var(--muted)', marginTop: 8 }}>{pool.sourceCoords.address?.split(',')[0]} → {pool.destCoords.address?.split(',')[0]}</p>
+         
+         {pool.departureTime && (
+           <div style={{ marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--coral)', fontWeight: 700, fontSize: 13, background: 'var(--coral-pale)', padding: '6px 14px', borderRadius: 20, animation: 'slideIn 0.3s' }}>
+             <span>🕒 {new Date(pool.departureTime).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} at {new Date(pool.departureTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+           </div>
+         )}
       </div>
 
       <div className="card" style={{ padding: 24, borderRadius: 24, marginBottom: 20 }}>
