@@ -585,25 +585,68 @@ export default function PostRide() {
                     </div>
                   )}
 
-                  {/* Date & Time Selection */}
-                  <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 12 }}>
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>Departure Date</label>
-                      <input 
-                        type="date" 
-                        value={departureDate} 
-                        onChange={e => setDepartureDate(e.target.value)}
-                        min={new Date().toISOString().split('T')[0]}
-                        style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1.5px solid var(--border)', background: 'var(--card-bg)', color: 'var(--charcoal)', fontWeight: 600, fontSize: 14, outline: 'none' }} 
-                      />
+                  {/* iOS Style Date & Time Selection */}
+                  <div style={{ marginTop: 24 }}>
+                    <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--charcoal)', marginBottom: 12, display: 'block' }}>Departure Schedule</label>
+                    
+                    {/* Date Scroller */}
+                    <div style={{ 
+                      display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, 
+                      msOverflowStyle: 'none', scrollbarWidth: 'none' 
+                    }}>
+                      {(() => {
+                        const days = [];
+                        for(let i=0; i<7; i++) {
+                          const d = new Date(); d.setDate(d.getDate() + i);
+                          days.push({
+                            full: d.toISOString().split('T')[0],
+                            day: d.toLocaleDateString('en-US', { day: 'numeric' }),
+                            weekday: i === 0 ? 'Today' : i === 1 ? 'Tmro' : d.toLocaleDateString('en-US', { weekday: 'short' })
+                          });
+                        }
+                        return days.map(d => {
+                          const isSelected = departureDate === d.full;
+                          return (
+                            <div key={d.full} 
+                              onClick={() => setDepartureDate(d.full)}
+                              style={{
+                                minWidth: 64, height: 80, borderRadius: 18,
+                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                background: isSelected ? 'var(--coral)' : 'var(--cream)',
+                                color: isSelected ? '#fff' : 'var(--charcoal)',
+                                cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                transform: isSelected ? 'scale(1.05)' : 'scale(1)',
+                                boxShadow: isSelected ? '0 8px 20px rgba(229,90,63,0.3)' : 'none',
+                                border: `1.5px solid ${isSelected ? 'var(--coral)' : 'transparent'}`
+                              }}
+                            >
+                              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4, opacity: isSelected ? 0.9 : 0.6 }}>{d.weekday}</span>
+                              <span style={{ fontSize: 20, fontWeight: 800 }}>{d.day}</span>
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>Start Time</label>
+
+                    {/* Time Picker Container */}
+                    <div style={{ 
+                      marginTop: 18, background: 'var(--cream)', borderRadius: 20, padding: '16px 20px', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between' 
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 40, height: 40, background: 'var(--card-bg)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>⏰</div>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--charcoal)' }}>Pick Time</span>
+                      </div>
                       <input 
                         type="time" 
                         value={departureTime} 
                         onChange={e => setDepartureTime(e.target.value)}
-                        style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1.5px solid var(--border)', background: 'var(--card-bg)', color: 'var(--charcoal)', fontWeight: 600, fontSize: 14, outline: 'none' }} 
+                        style={{ 
+                          border: 'none', background: 'var(--card-bg)', padding: '10px 16px', 
+                          borderRadius: 14, fontSize: 18, fontWeight: 900, color: 'var(--coral)',
+                          fontFamily: 'monospace', outline: 'none', cursor: 'pointer',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                        }} 
                       />
                     </div>
                   </div>
