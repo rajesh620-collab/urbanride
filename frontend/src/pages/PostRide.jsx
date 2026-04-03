@@ -8,9 +8,9 @@ import { getSocket } from '../hooks/useWebSocket';
 
 /* ── Constants ─────────────────────────────────────── */
 const VEHICLES = [
-  { key: 'bike', label: 'Bike',  icon: '🏍️', color: '#F59E0B', desc: 'Fast · Budget' },
-  { key: 'auto', label: 'Auto',  icon: '🛺', color: '#10B981', desc: 'Comfortable' },
-  { key: 'car',  label: 'Car',   icon: '🚗', color: '#6366F1', desc: 'Premium · AC' },
+  { key: 'bike', label: 'Bike',  subtext: 'Bike Taxi & Delivery', icon: '/assets/bike.png', color: '#F59E0B' },
+  { key: 'auto', label: 'Auto',  subtext: 'Auto Lite, etc',       icon: '/assets/auto.png', color: '#F59E0B' },
+  { key: 'car',  label: 'Cab',   subtext: 'Airport Cabs, etc',   icon: '/assets/cab.png',  color: '#F59E0B' },
 ];
 
 const STATUS_META = {
@@ -44,24 +44,40 @@ function Toast({ msg, type, onClose }) {
 
 function VehiclePicker({ selected, onChange, disabled }) {
   return (
-    <div style={{ marginBottom: 24 }}>
-      <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--muted)', marginBottom: 12 }}>
-        Step 1: Choose Your Vehicle
-      </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+    <div style={{ marginBottom: 24, maxWidth: 500, margin: '0 auto 24px' }}>
+      <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--charcoal)', marginBottom: 20, textAlign: 'left', marginLeft: 4 }}>
+        Select your vehicle
+      </h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {VEHICLES.map(v => (
           <button key={v.key} onClick={() => !disabled && onChange(v.key)} style={{
-            padding: '16px 8px', border: `2px solid ${selected === v.key ? v.color : 'var(--border)'}`,
-            borderRadius: 16, background: selected === v.key ? `${v.color}10` : 'var(--card-bg)',
-            cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all .25s', fontFamily: 'inherit',
-            transform: selected === v.key ? 'scale(1.02)' : 'scale(1)',
-            boxShadow: selected === v.key ? `0 6px 16px ${v.color}25` : 'var(--shadow-sm)',
-            position: 'relative', overflow: 'hidden'
+            width: '100%', padding: '12px 20px', border: `2.5px solid ${selected === v.key ? 'var(--charcoal)' : 'var(--border)'}`,
+            borderRadius: 20, background: 'var(--card-bg)',
+            cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all .2s cubic-bezier(1, 0, 0, 1)', fontFamily: 'inherit',
+            display: 'flex', alignItems: 'center', gap: 16, textAlign: 'left',
+            boxShadow: selected === v.key ? '0 8px 30px rgba(0,0,0,0.1)' : 'none',
+            position: 'relative'
           }}>
-            {selected === v.key && <div style={{ position: 'absolute', top: 0, right: 0, width: 20, height: 20, background: v.color, color: '#fff', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0 0 0 10px' }}>✓</div>}
-            <div style={{ fontSize: 32, marginBottom: 6 }}>{v.icon}</div>
-            <p style={{ fontWeight: 700, fontSize: 13, color: selected === v.key ? v.color : 'var(--charcoal)' }}>{v.label}</p>
-            <p style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>{v.desc}</p>
+            {/* Vehicle Image */}
+            <div style={{ width: 80, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <img src={v.icon} alt={v.label} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
+            </div>
+
+            {/* Labels */}
+            <div style={{ flex: 1 }}>
+              <p style={{ fontWeight: 800, fontSize: 18, color: 'var(--charcoal)', margin: 0 }}>{v.label}</p>
+              <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4, fontWeight: 500 }}>{v.subtext}</p>
+            </div>
+
+            {/* Radio Indicator */}
+            <div style={{
+              width: 26, height: 26, borderRadius: '50%',
+              border: `2px solid ${selected === v.key ? 'var(--charcoal)' : '#94A3B8'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all .2s'
+            }}>
+              {selected === v.key && <div style={{ width: 14, height: 14, borderRadius: '50%', background: 'var(--charcoal)' }} />}
+            </div>
           </button>
         ))}
       </div>
