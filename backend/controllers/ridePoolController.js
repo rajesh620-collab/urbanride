@@ -17,7 +17,7 @@ exports.createPool = async (req, res) => {
     // Check if user already in a waiting/finding pool
     const existing = await RidePool.findOne({
       status: { $in: ['waiting', 'finding_driver', 'driver_assigned', 'started'] },
-      'members.user': req.userId
+      'members.user': req.user.id
     });
     if (existing) return res.status(400).json({ success: false, message: 'You are already in an active pool' });
 
@@ -26,8 +26,8 @@ exports.createPool = async (req, res) => {
 
     const pool = await RidePool.create({
       poolCode,
-      creator: req.userId,
-      members: [{ user: req.userId, joinedAt: Date.now() }],
+      creator: req.user.id,
+      members: [{ user: req.user.id, joinedAt: Date.now() }],
       vehicleType: vehicleType || 'auto',
       sourceCoords,
       destCoords,
@@ -52,11 +52,11 @@ exports.joinPool = async (req, res) => {
     if (pool.members.length >= pool.maxParticipants) return res.status(400).json({ success: false, message: 'Pool is full' });
 
     // Check if user already a member
-    if (pool.members.some(m => m.user.toString() === req.userId)) {
+    if (pool.members.some(m => m.user.toString() === req.user.id)) {
       return res.status(400).json({ success: false, message: 'Already joined' });
     }
-
-    pool.members.push({ user: req.userId, joinedAt: Date.now() });
+ 
+    pool.members.push({ user: req.user.id, joinedAt: Date.now() });
     await pool.save();
 
     // Broadcast update to all current members
@@ -129,8 +129,8 @@ exports.acceptPoolRide = async (req, res) => {
     if (!pool) return res.status(404).json({ success: false, message: 'Pool not found' });
     if (pool.status !== 'finding_driver') return res.status(400).json({ success: false, message: 'Ride already taken or cancelled' });
 
-    const driver = await User.findById(req.userId);
-    pool.driver = req.userId;
+    const driver = await User.findById(req.user.id);
+    pool.driver = req.user.id;
     pool.driverInfo = {
        name: driver.name,
        vehicleNumber: `TS 0${Math.floor(Math.random()*9)} AB ${Math.floor(Math.random()*9000+1000)}`,
