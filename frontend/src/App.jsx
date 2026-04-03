@@ -12,6 +12,7 @@ import MyRides from './pages/MyRides';
 import LandingPage from './pages/LandingPage';
 import RateRide from './pages/RateRide';
 import DriverNavigation from './pages/DriverNavigation';
+import WaitingScreen from './pages/WaitingScreen';
 import PoolDetail from './pages/PoolDetail';
 import DriverPools from './pages/DriverPools';
 import DriverBroadcast from './pages/DriverBroadcast';
@@ -58,6 +59,7 @@ function AppContent() {
         <Route path="/driver/dashboard"  element={<ProtectedRoute><DriverDashboard /></ProtectedRoute>} />
         <Route path="/wallet"            element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
 
+        <Route path="/waiting/:poolId" element={<ProtectedRoute><WaitingScreen /></ProtectedRoute>} />
         <Route path="*"              element={<Navigate to="/" replace />} />
       </Routes>
     </>

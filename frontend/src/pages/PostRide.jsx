@@ -174,7 +174,7 @@ function RequestCard({ ride, onAccept, onReject, acting }) {
           borderRadius: 10, background: 'var(--cream-dark)', color: 'var(--muted)',
           fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
         }}>✕ Reject</button>
-        <button onClick={() => onAccept(ride._id)} disabled={acting || countdown === 0} style={{
+        <button onClick={() => onAccept(ride._id, ride.isPool)} disabled={acting || countdown === 0} style={{
           flex: 2, padding: 12, border: 'none', borderRadius: 10,
           background: acting ? 'var(--cream-dark)' : 'linear-gradient(135deg,#059669,#10B981)',
           color: acting ? 'var(--muted)' : '#fff', fontWeight: 700, fontSize: 14,
@@ -336,11 +336,23 @@ export default function PostRide() {
   const pollRef = useRef(null);
   const showToast = (msg, type = 'info') => setToast({ msg, type });
 
+  const [nearbyPools, setNearbyPools] = useState([]);
+
   useEffect(() => {
     api.get('/saved-routes').then(r => setSavedRoutes(r.data.data?.routes || []));
     loadEarnings();
     loadRides();
   }, []);
+
+  const loadNearbyPools = useCallback(async (coords) => {
+    if (!coords) return;
+    try {
+      const r = await api.get(`/pools/search?lat=${coords.lat}&lng=${coords.lng}`);
+      setNearbyPools(r.data.data?.pools || []);
+    } catch {}
+  }, []);
+
+  useEffect(() => { loadNearbyPools(sourceCoords); }, [sourceCoords, loadNearbyPools]);
 
   const loadEarnings = useCallback(async () => {
     try { const r = await api.get('/driver-rides/earnings'); setEarnings(r.data.data); } catch {}
@@ -373,12 +385,14 @@ export default function PostRide() {
     return () => { s.off('new_ride_request', onNew); s.off('ride_completed'); };
   }, [isOnline, loadRides, loadEarnings]);
 
-  const handleAccept = async (id) => {
+  const handleAccept = async (id, isPool) => {
     setActing(true);
     try {
-      const r = await api.patch(`/driver-rides/${id}/accept`);
-      setActiveRide(r.data.data?.ride); setIncoming([]);
-      showToast(`Accepted! OTP: ${r.data.data?.otp}`, 'success');
+      const endpoint = isPool ? `/pools/${id}/accept` : `/driver-rides/${id}/accept`;
+      const r = await api.patch(endpoint);
+      const rideData = isPool ? r.data.data : r.data.data?.ride;
+      setActiveRide(rideData); setIncoming([]);
+      showToast(`Accepted! OTP: ${isPool ? rideData.otp : r.data.data?.otp}`, 'success');
     } catch (e) { showToast(e.response?.data?.message || 'Failed', 'error'); }
     finally { setActing(false); }
   };
@@ -423,9 +437,26 @@ export default function PostRide() {
     if (!sourceCoords || !destCoords) return setError('Select both locations');
     setLoading(true); setError(''); setSuccess('');
     try {
-      await api.post('/rides', { ...form, vehicleType, sourceCoords: { lat: sourceCoords.lat, lng: sourceCoords.lng, address: sourceCoords.address }, destCoords: { lat: destCoords.lat, lng: destCoords.lng, address: destCoords.address }, sourceLandmark: sourceCoords.address, destinationLandmark: destCoords.address, farePerSeat: form.baseTotalRideFare || 100, baseTotalRideFare: form.baseTotalRideFare || 100 });
-      setSuccess('Pooling ride posted!'); setTimeout(() => navigate('/my-rides'), 1500);
-    } catch (err) { setError(err.response?.data?.message || 'Failed to post'); setLoading(false); }
+      const r = await api.post('/pools/create', { 
+        vehicleType, 
+        sourceCoords: { lat: sourceCoords.lat, lng: sourceCoords.lng, address: sourceCoords.address }, 
+        destCoords: { lat: destCoords.lat, lng: destCoords.lng, address: destCoords.address },
+        distanceKm: 5, durationMin: 15
+      });
+      setSuccess('Pool created! Redirecting to waiting room...');
+      setTimeout(() => navigate(`/waiting/${r.data.data._id}`), 1200);
+    } catch (err) { setError(err.response?.data?.message || 'Failed to create pool'); setLoading(false); }
+  };
+
+  const handleJoinPool = async (pid) => {
+    setLoading(true);
+    try {
+      await api.post(`/pools/${pid}/join`);
+      navigate(`/waiting/${pid}`);
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to join', 'error');
+      setLoading(false);
+    }
   };
 
   const selectedV = VEHICLES.find(v => v.key === vehicleType);
@@ -556,7 +587,31 @@ export default function PostRide() {
                     </div>
                   </div>
 
-                  <button type="submit" className="btn-primary" disabled={loading || !sourceCoords || !destCoords} style={{ marginTop: 24 }}>{loading ? 'Posting...' : 'Confirm Pooling Ride'}</button>
+                  <button type="submit" className="btn-primary" disabled={loading || !sourceCoords || !destCoords} style={{ marginTop: 24, fontSize: 16 }}>{loading ? 'Processing...' : '🚀 Create New Pool'}</button>
+
+                  {nearbyPools.length > 0 && (
+                    <div style={{ marginTop: 32, animation: 'slideIn 0.4s' }}>
+                       <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
+                          Nearby Active Pools
+                       </h4>
+                       {nearbyPools.map(p => (
+                         <div key={p._id} className="card-soft" style={{ padding: 16, borderRadius: 18, marginBottom: 12, border: '1.5px solid var(--border)', background: 'var(--white)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                  <div style={{ width: 36, height: 36, background: 'var(--coral-pale)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--coral)', border: '1px solid white' }}>{p.poolCode?.slice(-1)}</div>
+                                  <div>
+                                    <p style={{ fontWeight: 700, fontSize: 13 }}>{p.creator?.name}'s Pool</p>
+                                    <p style={{ fontSize: 11, color: 'var(--muted)' }}>To: {p.destCoords?.address?.split(',')[0]}</p>
+                                  </div>
+                               </div>
+                               <span style={{ fontSize: 11, fontWeight: 800, background: 'var(--cream)', padding: '4px 8px', borderRadius: 8, height: 'fit-content' }}>{p.members?.length}/{p.maxParticipants}</span>
+                            </div>
+                            <button type="button" onClick={() => handleJoinPool(p._id)} style={{ width: '100%', padding: '10px 0', borderRadius: 10, background: 'var(--charcoal)', color: 'white', border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Join this Pool (Split Fare)</button>
+                         </div>
+                       ))}
+                    </div>
+                  )}
                 </form>
              )}
           </div>

@@ -8,42 +8,64 @@ const ridePoolSchema = new mongoose.Schema({
     trim: true,
     uppercase: true
   },
-  sourceLandmark: { type: String, required: true },
-  destinationLandmark: { type: String, required: true },
-  sourceCoords: {
-    lat: { type: Number },
-    lng: { type: Number }
-  },
-  destCoords: {
-    lat: { type: Number },
-    lng: { type: Number }
-  },
-  leader: {
+  creator: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
   members: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    joinedAt: { type: Date, default: Date.now }
   }],
+  vehicleType: {
+    type: String,
+    enum: ['bike', 'auto', 'car'],
+    default: 'auto'
+  },
+  sourceCoords: {
+    lat: Number,
+    lng: Number,
+    address: String
+  },
+  destCoords: {
+    lat: Number,
+    lng: Number,
+    address: String
+  },
+  distanceKm: Number,
+  durationMin: Number,
+  totalFare: Number,
+  minParticipants: {
+    type: Number,
+    default: 2
+  },
   maxParticipants: {
     type: Number,
     default: 4
   },
   status: {
     type: String,
-    enum: ['waiting', 'active', 'picked_up', 'completed', 'cancelled'],
+    enum: ['waiting', 'finding_driver', 'driver_assigned', 'started', 'completed', 'cancelled'],
     default: 'waiting'
   },
+  driver: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  driverInfo: {
+    name: String,
+    vehicleNumber: String,
+    phone: String
+  },
+  otp: String,
   createdAt: {
     type: Date,
     default: Date.now
   }
-});
+}, { timestamps: true });
 
-// Index for geo-matching (simplified for landmarks first)
-ridePoolSchema.index({ sourceLandmark: 1, destinationLandmark: 1, status: 1 });
+// Index for geo-matching
+ridePoolSchema.index({ 'sourceCoords.lat': 1, 'sourceCoords.lng': 1, status: 1 });
 ridePoolSchema.index({ poolCode: 1 });
 
 module.exports = mongoose.model('RidePool', ridePoolSchema);

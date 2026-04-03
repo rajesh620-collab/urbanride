@@ -90,6 +90,12 @@ setupWebSocket(server);
 // ── Start ───────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5001;
 
+// ── Background Monitors ─────────────────────────────────────────
+const { monitorPools } = require("./controllers/ridePoolController");
+setInterval(() => {
+  monitorPools().catch(err => console.error("[Monitor Error]", err));
+}, 15000); // Check every 15s
+
 server.listen(PORT, () => {
   console.log(`
   ╔═══════════════════════════════════════╗

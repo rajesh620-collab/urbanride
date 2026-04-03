@@ -24,14 +24,12 @@ function CreatePoolModal({ landmarks, onClose }) {
     setLoading(true);
     try {
       const res = await api.post('/pools/create', {
-        sourceLandmark: source,
-        destinationLandmark: destination,
-        sourceCoords: sourceCoords ? { lat: sourceCoords.lat, lng: sourceCoords.lng } : undefined,
-        destCoords:   destCoords   ? { lat: destCoords.lat,   lng: destCoords.lng   } : undefined,
+        sourceCoords: sourceCoords ? { lat: sourceCoords.lat, lng: sourceCoords.lng, address: sourceCoords.address } : undefined,
+        destCoords:   destCoords   ? { lat: destCoords.lat,   lng: destCoords.lng,   address: destCoords.address   } : undefined,
         maxParticipants: maxP
       });
       const pool = res.data.data;
-      navigate(`/pool/${pool._id}`);
+      navigate(`/waiting/${pool._id}`);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create pool');
       setLoading(false);
@@ -103,8 +101,8 @@ function JoinPoolModal({ onClose }) {
     setError('');
     setLoading(true);
     try {
-      const res = await api.post('/pools/join', { poolCode: code.trim().toUpperCase() });
-      navigate(`/pool/${res.data.data._id}`);
+      const res = await api.get(`/pools/join/code/${code.trim().toUpperCase()}`);
+      navigate(`/waiting/${res.data.data._id}`);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to join pool');
       setLoading(false);
@@ -180,6 +178,7 @@ export default function SearchRide() {
   const [sourceCoords, setSourceCoords]     = useState(null);
   const [destCoords, setDestCoords]         = useState(null);
   const [rides, setRides]                   = useState([]);
+  const [pools, setPools]                   = useState([]);
   const [searched, setSearched]             = useState(false);
   const [loading, setLoading]               = useState(false);
   const [pendingSaved, setPendingSaved]     = useState(false);
@@ -280,6 +279,12 @@ export default function SearchRide() {
         const res = await api.get('/rides/search', { params });
         const foundRides = res.data.data?.rides || res.data.rides || [];
         setRides(foundRides);
+
+        // Fetch Nearby Pools as well
+        if (sourceCoords) {
+           const poolRes = await api.get(`/pools/search?lat=${sourceCoords.lat}&lng=${sourceCoords.lng}`);
+           setPools(poolRes.data.data?.pools || []);
+        }
 
         if (foundRides.length === 0) {
           // Auto-save interest
@@ -570,7 +575,8 @@ export default function SearchRide() {
           )}
 
           {rides.map(ride => (
-            <div key={ride._id} style={{
+             /* ... existing ride card ... */
+             <div key={ride._id} style={{
               background: 'var(--card-bg)', border: '1px solid var(--border)',
               borderRadius: 'var(--radius-md)', padding: 20, marginBottom: 12,
               transition: 'box-shadow 0.2s, transform 0.2s', cursor: 'pointer'
@@ -593,25 +599,34 @@ export default function SearchRide() {
                 <div style={{ fontSize: 13, color: 'var(--muted)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   <span>💺 {ride.availableSeats} seat{ride.availableSeats !== 1 ? 's' : ''}</span>
                   <span>👤 {ride.driverName}</span>
-                  {ride.distanceMeters && (
-                    <span>📏 {(ride.distanceMeters / 1000).toFixed(1)} km</span>
-                  )}
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--coral)', marginBottom: 2 }}>₹{ride.farePerSeat}</p>
-                  {ride.confirmedCount > 0 ? (
-                    <p style={{ fontSize: 9, color: 'var(--success)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      ⚡ Shared Price ({ride.confirmedCount + 1} users)
-                    </p>
-                  ) : (
-                    <p style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      👤 Solo Price
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
           ))}
+
+          {pools.length > 0 && (
+             <div style={{ marginTop: 30 }}>
+                <p style={{ fontSize: 12, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 16 }}>Available Pool Groups</p>
+                {pools.map(p => (
+                  <div key={p._id} onClick={() => navigate(`/waiting/${p._id}`)} style={{ background: 'linear-gradient(135deg, var(--card-bg), var(--cream))', border: '2px solid var(--coral)', borderRadius: 20, padding: 20, marginBottom: 12, cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,90,63,0.1)' }}>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                           <div style={{ width: 40, height: 40, background: 'var(--coral)', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{p.poolCode?.charAt(0)}</div>
+                           <div>
+                              <p style={{ fontWeight: 800, fontSize: 14 }}>{p.creator?.name}'s Pool</p>
+                              <p style={{ fontSize: 11, color: 'var(--muted)' }}>Destination: {p.destCoords?.address?.split(',')[0]}</p>
+                           </div>
+                        </div>
+                        <span style={{ background: 'var(--white)', padding: '5px 10px', borderRadius: 10, fontSize: 12, fontWeight: 800, border: '1px solid var(--border)' }}>{p.members?.length} / {p.maxParticipants} Joined</span>
+                     </div>
+                     <button className="btn-primary" style={{ width: '100%', fontSize: 13 }}>Split Fare & Join Group</button>
+                  </div>
+                ))}
+             </div>
+          )}
         </div>
       )}
     </div>

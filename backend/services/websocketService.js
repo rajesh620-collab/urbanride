@@ -16,6 +16,10 @@ const driverLocations = new Map(); // rideId → { lat, lng, heading, speed, upd
 const driverBroadcasts = new Map(); // userId → { name, lat, lng, updatedAt }
 let ioInstance = null;
 
+function getIO() {
+  return ioInstance;
+}
+
 function setupWebSocket(httpServer) {
   const io = new Server(httpServer, {
     cors: { origin: '*', methods: ['GET', 'POST'] }
@@ -151,6 +155,15 @@ function notifyUser(userId, event, data) {
   return false;
 }
 
+function notifyUserByModel(userId, event, data) {
+  const socket = connectedUsers.get(String(userId));
+  if (socket) {
+    socket.emit(event, data);
+    return true;
+  }
+  return false;
+}
+
 /**
  * Broadcast an event to everyone in a ride room.
  */
@@ -197,10 +210,8 @@ function getAllBroadcastingDrivers() {
 module.exports = {
   setupWebSocket,
   notifyUser,
-  notifyRideRoom,
-  broadcast,
-  isUserOnline,
-  getDriverLocation,
   clearDriverLocation,
-  getAllBroadcastingDrivers
+  getAllBroadcastingDrivers,
+  getIO,
+  notifyUserByModel
 };
