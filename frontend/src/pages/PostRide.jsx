@@ -6,19 +6,68 @@ import FareEstimator from '../components/FareEstimator';
 import RouteMap from '../components/RouteMap';
 import { getSocket } from '../hooks/useWebSocket';
 
-/* ── Driver Hub constants ─────────────────────────────────────── */
+/* ── Constants ─────────────────────────────────────── */
 const VEHICLES = [
   { key: 'bike', label: 'Bike',  icon: '🏍️', color: '#F59E0B', desc: 'Fast · Budget' },
   { key: 'auto', label: 'Auto',  icon: '🛺', color: '#10B981', desc: 'Comfortable' },
   { key: 'car',  label: 'Car',   icon: '🚗', color: '#6366F1', desc: 'Premium · AC' },
 ];
+
 const STATUS_META = {
   accepted:    { label: 'Ride Accepted',       color: '#3B82F6' },
   arrived:     { label: 'Arrived at Pickup',   color: '#8B5CF6' },
   in_progress: { label: 'Ride In Progress',    color: '#EF4444' },
   completed:   { label: 'Completed',           color: '#10B981' },
 };
+
 function fmtFare(n) { return `₹${(n || 0).toFixed(0)}`; }
+
+/* ── Shared UI Components ────────────────────────────────────────── */
+
+function Toast({ msg, type, onClose }) {
+  useEffect(() => { if (msg) { const t = setTimeout(onClose, 4000); return () => clearTimeout(t); } }, [msg]);
+  if (!msg) return null;
+  const c = { success: ['#ECFDF5','#10B981','#065F46'], error: ['#FEF2F2','#EF4444','#991B1B'], info: ['#EFF6FF','#3B82F6','#1E40AF'], ride: ['#FFF7ED','#F97316','#C2410C'] }[type] || ['#EFF6FF','#3B82F6','#1E40AF'];
+  return (
+    <div style={{
+      position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 9999,
+      minWidth: 280, maxWidth: 340, background: c[0], border: `2px solid ${c[1]}`,
+      borderRadius: 14, padding: '12px 16px', boxShadow: '0 8px 28px rgba(0,0,0,.18)',
+      display: 'flex', gap: 10, alignItems: 'center',
+      animation: 'slideUpToast .3s cubic-bezier(.34,1.56,.64,1)',
+    }}>
+      <p style={{ flex: 1, fontSize: 13, fontWeight: 600, color: c[2] }}>{msg}</p>
+      <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c[2], fontSize: 16 }}>×</button>
+    </div>
+  );
+}
+
+function VehiclePicker({ selected, onChange, disabled }) {
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--muted)', marginBottom: 12 }}>
+        Step 1: Choose Your Vehicle
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+        {VEHICLES.map(v => (
+          <button key={v.key} onClick={() => !disabled && onChange(v.key)} style={{
+            padding: '16px 8px', border: `2px solid ${selected === v.key ? v.color : 'var(--border)'}`,
+            borderRadius: 16, background: selected === v.key ? `${v.color}10` : 'var(--card-bg)',
+            cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all .25s', fontFamily: 'inherit',
+            transform: selected === v.key ? 'scale(1.02)' : 'scale(1)',
+            boxShadow: selected === v.key ? `0 6px 16px ${v.color}25` : 'var(--shadow-sm)',
+            position: 'relative', overflow: 'hidden'
+          }}>
+            {selected === v.key && <div style={{ position: 'absolute', top: 0, right: 0, width: 20, height: 20, background: v.color, color: '#fff', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0 0 0 10px' }}>✓</div>}
+            <div style={{ fontSize: 32, marginBottom: 6 }}>{v.icon}</div>
+            <p style={{ fontWeight: 700, fontSize: 13, color: selected === v.key ? v.color : 'var(--charcoal)' }}>{v.label}</p>
+            <p style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>{v.desc}</p>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 /* ── Driver Hub Sub-components ──────────────────────────────────── */
 
@@ -63,31 +112,6 @@ function OnlineBar({ isOnline, onToggle, vehicleType }) {
   );
 }
 
-function VehiclePicker({ selected, onChange, disabled }) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--muted)', marginBottom: 10 }}>
-        Vehicle Type
-      </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-        {VEHICLES.map(v => (
-          <button key={v.key} onClick={() => !disabled && onChange(v.key)} style={{
-            padding: '12px 6px', border: `2px solid ${selected === v.key ? v.color : 'var(--border)'}`,
-            borderRadius: 14, background: selected === v.key ? `${v.color}18` : 'var(--card-bg)',
-            cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all .25s', fontFamily: 'inherit',
-            transform: selected === v.key ? 'scale(1.04)' : 'scale(1)',
-            boxShadow: selected === v.key ? `0 4px 14px ${v.color}30` : 'var(--shadow-sm)',
-          }}>
-            <div style={{ fontSize: 26, marginBottom: 4 }}>{v.icon}</div>
-            <p style={{ fontWeight: 700, fontSize: 12, color: selected === v.key ? v.color : 'var(--charcoal)' }}>{v.label}</p>
-            <p style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>{v.desc}</p>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function RequestCard({ ride, onAccept, onReject, acting }) {
   const [countdown, setCountdown] = useState(30);
   useEffect(() => {
@@ -100,7 +124,7 @@ function RequestCard({ ride, onAccept, onReject, acting }) {
       background: 'var(--card-bg)', border: '2px solid var(--coral)',
       borderRadius: 18, padding: 18, marginBottom: 14,
       boxShadow: '0 6px 24px rgba(204,120,92,.2)',
-      animation: 'slideUp .35s cubic-bezier(.34,1.56,.64,1)',
+      animation: 'slideIn .35s cubic-bezier(.34,1.56,.64,1)',
       position: 'relative', overflow: 'hidden',
     }}>
       <div style={{
@@ -180,7 +204,6 @@ function ActiveRidePanel({ ride, onArrived, onVerifyOTP, onComplete, onCancel, a
 
   return (
     <div style={{ border: `2px solid ${meta.color}`, borderRadius: 18, overflow: 'hidden', marginBottom: 16, boxShadow: `0 6px 24px ${meta.color}22` }}>
-      {/* Header */}
       <div style={{ background: `${meta.color}18`, padding: '14px 18px', borderBottom: `1px solid ${meta.color}33`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: meta.color }}>{meta.label}</p>
@@ -191,7 +214,6 @@ function ActiveRidePanel({ ride, onArrived, onVerifyOTP, onComplete, onCancel, a
         <p style={{ fontWeight: 800, fontSize: 20, color: 'var(--coral)' }}>{fmtFare(ride.fare)}</p>
       </div>
 
-      {/* Steps */}
       <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center' }}>
         {steps.map((s, i) => {
           const done = i < ci; const active = s.key === ride.status;
@@ -213,7 +235,6 @@ function ActiveRidePanel({ ride, onArrived, onVerifyOTP, onComplete, onCancel, a
         })}
       </div>
 
-      {/* OTP input when arrived */}
       {ride.status === 'arrived' && (
         <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', background: '#F5F3FF' }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: '#6D28D9', marginBottom: 10, textTransform: 'uppercase' }}>🔐 Enter Passenger OTP</p>
@@ -239,7 +260,6 @@ function ActiveRidePanel({ ride, onArrived, onVerifyOTP, onComplete, onCancel, a
         </div>
       )}
 
-      {/* Actions */}
       <div style={{ padding: '14px 18px', display: 'flex', gap: 10 }}>
         {ride.status === 'accepted' && (
           <button onClick={() => onArrived(ride._id)} disabled={acting} style={{
@@ -269,12 +289,6 @@ function ActiveRidePanel({ ride, onArrived, onVerifyOTP, onComplete, onCancel, a
             cursor: 'pointer', fontFamily: 'inherit',
           }}>Cancel</button>
         )}
-        {ride.status === 'completed' && (
-          <div style={{
-            flex: 1, padding: 12, borderRadius: 10, background: '#ECFDF5',
-            border: '2px solid #10B981', textAlign: 'center', fontWeight: 700, fontSize: 14, color: '#059669',
-          }}>✓ Completed · {fmtFare(ride.fare)} earned</div>
-        )}
       </div>
     </div>
   );
@@ -291,51 +305,51 @@ function EarningsBadge({ earnings }) {
       <div>
         <p style={{ fontSize: 10, color: 'rgba(255,255,255,.4)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 2 }}>Today's Earnings</p>
         <p style={{ fontSize: 26, fontWeight: 800, color: '#4ADE80' }}>{fmtFare(earnings.todayEarnings)}</p>
-        <p style={{ fontSize: 11, color: 'rgba(255,255,255,.35)', marginTop: 2 }}>{earnings.todayRides} ride{earnings.todayRides !== 1 ? 's' : ''} today</p>
       </div>
       <div style={{ textAlign: 'right' }}>
-        <p style={{ fontSize: 10, color: 'rgba(255,255,255,.4)', marginBottom: 4 }}>Total Earned</p>
-        <p style={{ fontSize: 18, fontWeight: 700, color: '#E8A98A' }}>{fmtFare(earnings.totalEarnings)}</p>
-        <p style={{ fontSize: 10, color: 'rgba(255,255,255,.3)', marginTop: 2 }}>{earnings.totalRides} all-time</p>
+        <p style={{ fontSize: 10, color: 'rgba(255,255,255,.4)', marginBottom: 4 }}>Today's Rides</p>
+        <p style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>{earnings.todayRides}</p>
       </div>
     </div>
   );
 }
 
-function Toast({ msg, type, onClose }) {
-  useEffect(() => { if (msg) { const t = setTimeout(onClose, 4000); return () => clearTimeout(t); } }, [msg]);
-  if (!msg) return null;
-  const c = { success: ['#ECFDF5','#10B981','#065F46'], error: ['#FEF2F2','#EF4444','#991B1B'], info: ['#EFF6FF','#3B82F6','#1E40AF'], ride: ['#FFF7ED','#F97316','#C2410C'] }[type] || ['#EFF6FF','#3B82F6','#1E40AF'];
-  return (
-    <div style={{
-      position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 9999,
-      minWidth: 280, maxWidth: 340, background: c[0], border: `2px solid ${c[1]}`,
-      borderRadius: 14, padding: '12px 16px', boxShadow: '0 8px 28px rgba(0,0,0,.18)',
-      display: 'flex', gap: 10, alignItems: 'center',
-      animation: 'slideUp .3s cubic-bezier(.34,1.56,.64,1)',
-    }}>
-      <p style={{ flex: 1, fontSize: 13, fontWeight: 600, color: c[2] }}>{msg}</p>
-      <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c[2], fontSize: 16 }}>×</button>
-    </div>
-  );
-}
+/* ── Main PostRide Page ──────────────────────────────────────────── */
+export default function PostRide() {
+  const navigate = useNavigate();
+  const [vehicleType, setVehicleType] = useState('auto'); // Step 1
+  const [activeMode, setActiveMode]   = useState('driver'); // 'driver' | 'manual'
+  const [tab, setTab]                 = useState('ride'); // for driver hub: 'ride' | 'earnings'
 
-/* ── Driver Hub Panel (self-contained) ──────────────────────────── */
-function DriverHubPanel() {
-  const [isOnline, setIsOnline]       = useState(false);
-  const [vehicleType, setVehicleType] = useState('auto');
-  const [incomingRides, setIncoming]  = useState([]);
-  const [activeRide, setActiveRide]   = useState(null);
-  const [earnings, setEarnings]       = useState(null);
-  const [acting, setActing]           = useState(false);
-  const [simulating, setSimulating]   = useState(false);
-  const [loading, setLoading]         = useState(true);
-  const [tab, setTab]                 = useState('ride'); // 'ride' | 'earnings'
-  const [toast, setToast]             = useState({ msg: '', type: 'info' });
+  // Driver Hub State
+  const [isOnline, setIsOnline]     = useState(false);
+  const [incomingRides, setIncoming] = useState([]);
+  const [activeRide, setActiveRide] = useState(null);
+  const [earnings, setEarnings]     = useState(null);
+  const [acting, setActing]         = useState(false);
+  const [simulating, setSimulating] = useState(false);
+  const [toast, setToast]           = useState({ msg: '', type: 'info' });
+
+  // Manual Form State
+  const [form, setForm] = useState({ sourceLandmark: '', destinationLandmark: '', totalSeats: 4, farePerSeat: 0, baseTotalRideFare: 0, femaleOnly: false });
+  const [sourceCoords, setSourceCoords] = useState(null);
+  const [destCoords, setDestCoords]     = useState(null);
+  const [error, setError]               = useState('');
+  const [success, setSuccess]           = useState('');
+  const [loading, setLoading]           = useState(false);
+  const [savedRoutes, setSavedRoutes]   = useState([]);
+
   const pollRef = useRef(null);
-
   const showToast = (msg, type = 'info') => setToast({ msg, type });
 
+  /* ── Initialization ── */
+  useEffect(() => {
+    api.get('/saved-routes').then(r => setSavedRoutes(r.data.data?.routes || []));
+    loadEarnings();
+    loadRides();
+  }, []);
+
+  /* ── Driver Hub Logic ── */
   const loadEarnings = useCallback(async () => {
     try { const r = await api.get('/driver-rides/earnings'); setEarnings(r.data.data); } catch {}
   }, []);
@@ -346,21 +360,17 @@ function DriverHubPanel() {
       const all = r.data.data?.rides || [];
       const active = all.find(x => ['accepted','arrived','otp_verified','in_progress'].includes(x.status));
       setActiveRide(active || null);
-      if (!active) {
-        try {
-          const avail = await api.get(`/driver-rides/available?vehicleType=${vehicleType}`);
-          setIncoming(avail.data.data?.rides || []);
-        } catch { setIncoming([]); }
+      if (!active && isOnline) {
+        const avail = await api.get(`/driver-rides/available?vehicleType=${vehicleType}`);
+        setIncoming(avail.data.data?.rides || []);
       } else { setIncoming([]); }
-    } catch {} finally { setLoading(false); }
-  }, [vehicleType]);
-
-  useEffect(() => { loadRides(); loadEarnings(); }, [loadRides, loadEarnings]);
+    } catch {}
+  }, [vehicleType, isOnline]);
 
   useEffect(() => {
     if (pollRef.current) clearInterval(pollRef.current);
     if (isOnline) pollRef.current = setInterval(loadRides, 8000);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    return () => clearInterval(pollRef.current);
   }, [isOnline, loadRides]);
 
   useEffect(() => {
@@ -377,20 +387,19 @@ function DriverHubPanel() {
       const r = await api.patch(`/driver-rides/${id}/accept`);
       setActiveRide(r.data.data?.ride); setIncoming([]);
       showToast(`Accepted! OTP: ${r.data.data?.otp}`, 'success');
-      await loadRides();
     } catch (e) { showToast(e.response?.data?.message || 'Failed', 'error'); }
     finally { setActing(false); }
   };
   const handleReject = (id) => { setIncoming(p => p.filter(r => r._id !== id)); showToast('Rejected', 'info'); };
   const handleArrived = async (id) => {
     setActing(true);
-    try { await api.patch(`/driver-rides/${id}/arrived`); showToast('Marked arrived! Ask for OTP.', 'success'); await loadRides(); }
+    try { await api.patch(`/driver-rides/${id}/arrived`); showToast('Marked arrived!', 'success'); await loadRides(); }
     catch (e) { showToast(e.response?.data?.message || 'Error', 'error'); }
     finally { setActing(false); }
   };
   const handleVerifyOTP = async (id, code, setErr) => {
     setActing(true);
-    try { await api.patch(`/driver-rides/${id}/verify-otp`, { otp: code }); showToast('OTP verified! Ride started.', 'success'); await loadRides(); }
+    try { await api.patch(`/driver-rides/${id}/verify-otp`, { otp: code }); showToast('OTP verified!', 'success'); await loadRides(); }
     catch (e) { const m = e.response?.data?.message || 'Incorrect OTP'; setErr(m); showToast(m, 'error'); }
     finally { setActing(false); }
   };
@@ -410,321 +419,202 @@ function DriverHubPanel() {
     finally { setActing(false); }
   };
   const handleSimulate = async () => {
+    if (!isOnline) return showToast('Please go online first', 'info');
     setSimulating(true);
-    try { await api.post('/driver-rides/simulate-request', { vehicleType }); showToast('New ride request simulated!', 'ride'); await loadRides(); }
+    try { await api.post('/driver-rides/simulate-request', { vehicleType }); showToast('New request simulated!', 'ride'); await loadRides(); }
     catch { showToast('Simulation failed', 'error'); }
     finally { setSimulating(false); }
   };
 
-  if (loading) return <div style={{ textAlign: 'center', padding: 40 }}><div className="spinner" /></div>;
+  /* ── Manual Pool Logic ── */
+  const handleManualSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (form.sourceLandmark === form.destinationLandmark) return setError('Same source and destination');
+    if (!sourceCoords || !destCoords) return setError('Select both locations');
+    setLoading(true); setError(''); setSuccess('');
+    try {
+      await api.post('/rides', {
+        ...form,
+        vehicleType,
+        sourceCoords: { lat: sourceCoords.lat, lng: sourceCoords.lng, address: sourceCoords.address },
+        destCoords:   { lat: destCoords.lat,   lng: destCoords.lng,   address: destCoords.address   },
+        sourceLandmark:      sourceCoords.address,
+        destinationLandmark: destCoords.address,
+        farePerSeat: form.baseTotalRideFare || 100,
+        baseTotalRideFare: form.baseTotalRideFare || 100
+      });
+      setSuccess('Pooling ride posted! Redirecting...');
+      setTimeout(() => navigate('/my-rides'), 1500);
+    } catch (err) { setError(err.response?.data?.message || 'Failed to post'); setLoading(false); }
+  };
 
   return (
-    <>
+    <div className="page-wrapper" style={{ paddingBottom: 80 }}>
       <style>{`
         @keyframes dotPulse { 0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.5)} 50%{box-shadow:0 0 0 6px rgba(74,222,128,0)} }
-        @keyframes slideUp { from{opacity:0;transform:translateY(20px) translateX(-50%)} to{opacity:1;transform:translateY(0) translateX(-50%)} }
+        @keyframes slideIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes slideUpToast { from{opacity:0;transform:translateY(24px) translateX(-50%)} to{opacity:1;transform:translateY(0) translateX(-50%)} }
       `}</style>
 
-      {/* Sub-tabs */}
-      <div style={{ display: 'flex', gap: 4, background: 'var(--cream-dark)', padding: 3, borderRadius: 10, width: 'fit-content', marginBottom: 16 }}>
-        {[{ k: 'ride', lbl: '🛺 Ride' }, { k: 'earnings', lbl: '💰 Earnings' }].map(t => (
-          <button key={t.k} onClick={() => setTab(t.k)} style={{
-            padding: '6px 14px', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600,
-            background: tab === t.k ? 'var(--white)' : 'transparent',
-            color: tab === t.k ? 'var(--charcoal)' : 'var(--muted)',
-            cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s',
-            boxShadow: tab === t.k ? 'var(--shadow-sm)' : 'none',
-          }}>{t.lbl}</button>
-        ))}
+      {/* Header */}
+      <div style={{ marginBottom: 24 }}>
+        <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, padding: 0, marginBottom: 16 }}>
+          ← Back to Map
+        </button>
+        <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em' }}>Post a Ride</h2>
       </div>
 
-      {tab === 'ride' ? (
-        <>
-          <OnlineBar isOnline={isOnline} onToggle={() => setIsOnline(p => !p)} vehicleType={vehicleType} />
-          {!activeRide && <VehiclePicker selected={vehicleType} onChange={v => { setVehicleType(v); setIncoming([]); }} disabled={false} />}
+      {/* Step 1: Vehicle Selector — Always Visible */}
+      <VehiclePicker selected={vehicleType} onChange={setVehicleType} disabled={activeRide} />
 
-          {activeRide && (
-            <ActiveRidePanel ride={activeRide} onArrived={handleArrived} onVerifyOTP={handleVerifyOTP} onComplete={handleComplete} onCancel={handleCancel} acting={acting} />
-          )}
+      {/* Step 2: Mode Selection / Driver Hub */}
+      <div className="card" style={{ padding: '24px 20px', borderRadius: 20 }}>
 
-          {isOnline && !activeRide && (
-            <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--muted)' }}>Incoming Requests</p>
-                  {incomingRides.length > 0 && <span style={{ background: 'var(--coral)', color: '#fff', borderRadius: 20, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{incomingRides.length}</span>}
+        {/* Tab Switcher (Driver Hub Mode) */}
+        {activeMode === 'driver' && (
+          <div style={{ display: 'flex', gap: 6, background: 'var(--cream-dark)', padding: 4, borderRadius: 12, width: 'fit-content', marginBottom: 18 }}>
+            {[{ k: 'ride', lbl: '🛺 Active Hub' }, { k: 'earnings', lbl: '💰 Earnings' }].map(t => (
+              <button key={t.k} onClick={() => setTab(t.k)} style={{
+                padding: '8px 16px', border: 'none', borderRadius: 9, fontSize: 12, fontWeight: 700,
+                background: tab === t.k ? 'var(--white)' : 'transparent',
+                color: tab === t.k ? 'var(--charcoal)' : 'var(--muted)',
+                cursor: 'pointer', fontFamily: 'inherit', transition: 'all .25s',
+                boxShadow: tab === t.k ? 'var(--shadow-sm)' : 'none',
+              }}>{t.lbl}</button>
+            ))}
+          </div>
+        )}
+
+        {/* Mode Title */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h3 style={{ fontSize: 18, fontWeight: 800 }}>{activeMode === 'driver' ? 'On-Demand Driving' : 'Plan Custom Route'}</h3>
+          <button onClick={() => setActiveMode(activeMode === 'driver' ? 'manual' : 'driver')} style={{
+            background: 'var(--coral-pale)', border: 'none', padding: '6px 12px', borderRadius: 10,
+            color: 'var(--coral)', fontWeight: 700, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit'
+          }}>
+            {activeMode === 'driver' ? 'Switch to Pooling →' : 'Back to Driver Hub'}
+          </button>
+        </div>
+
+        {activeMode === 'driver' ? (
+          /* ── DRIVER HUB SECTION ── */
+          tab === 'ride' ? (
+            <div style={{ animation: 'slideIn .3s ease' }}>
+              <OnlineBar isOnline={isOnline} onToggle={() => setIsOnline(!isOnline)} vehicleType={vehicleType} />
+
+              {activeRide ? (
+                <ActiveRidePanel ride={activeRide} onArrived={handleArrived} onVerifyOTP={handleVerifyOTP} onComplete={handleComplete} onCancel={handleCancel} acting={acting} />
+              ) : isOnline ? (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '.07em' }}>
+                      Rides Nearby {incomingRides.length > 0 && `(${incomingRides.length})`}
+                    </p>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button onClick={loadRides} style={{ background: 'var(--cream)', border: '1px solid var(--border)', borderRadius: 8, padding: '5px 10px', fontSize: 11, color: 'var(--muted)', cursor: 'pointer', fontFamily: 'inherit' }}>↻ Refresh</button>
+                      <button onClick={handleSimulate} disabled={simulating} style={{ background: 'var(--coral)', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        + Simulate
+                      </button>
+                    </div>
+                  </div>
+                  {incomingRides.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--cream)', borderRadius: 16, border: '1.5px dashed var(--border)' }}>
+                      <div style={{ fontSize: 40, marginBottom: 12 }}>📡</div>
+                      <p style={{ fontWeight: 700, fontSize: 14 }}>Waiting for passengers...</p>
+                      <p style={{ color: 'var(--muted)', fontSize: 12, marginTop: 4 }}>Keep the page open to receive real-time pings.</p>
+                    </div>
+                  ) : incomingRides.map(r => (
+                    <RequestCard key={r._id} ride={r} onAccept={handleAccept} onReject={handleReject} acting={acting} />
+                  ))}
+                </>
+              ) : (
+                /* Offline State card */
+                <div style={{ textAlign: 'center', padding: '48px 20px', background: 'var(--cream)', borderRadius: 18, border: '1px solid var(--border)' }}>
+                   <div style={{ fontSize: 50, marginBottom: 12 }}>🏁</div>
+                   <p style={{ fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Ready to Earn?</p>
+                   <p style={{ color: 'var(--muted)', fontSize: 13, lineHeight: 1.6, maxWidth: 220, margin: '0 auto' }}>
+                     Go online to start receiving on-demand ride requests with {VEHICLES.find(v => v.key === vehicleType)?.icon}.
+                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button onClick={loadRides} style={{ background: 'var(--cream)', border: '1px solid var(--border)', borderRadius: 8, padding: '5px 10px', fontSize: 11, color: 'var(--muted)', cursor: 'pointer', fontFamily: 'inherit' }}>↻ Refresh</button>
-                  <button onClick={handleSimulate} disabled={simulating} style={{ background: 'var(--coral)', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: simulating ? .7 : 1 }}>
-                    {simulating ? '...' : '+ Simulate'}
-                  </button>
+              )}
+            </div>
+          ) : (
+            /* Earnings Hub inside Driver Hub */
+            <div style={{ animation: 'slideIn .3s ease' }}>
+                <EarningsBadge earnings={earnings} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+                  <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
+                    <p style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Total Rides</p>
+                    <p style={{ fontSize: 24, fontWeight: 800 }}>{earnings?.totalRides || 0}</p>
+                  </div>
+                  <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
+                    <p style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Lifetime Earned</p>
+                    <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--coral)' }}>{fmtFare(earnings?.totalEarnings)}</p>
+                  </div>
+                </div>
+                <button onClick={loadEarnings} style={{ width: '100%', padding: 12, background: 'var(--cream-dark)', border: '1px solid var(--border)', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700 }}>↻ Update Statement</button>
+            </div>
+          )
+        ) : (
+          /* ── MANUAL POOLING FORM ── */
+          <form onSubmit={handleManualSubmit} style={{ animation: 'slideIn .3s ease' }}>
+            {error   && <div className="alert-error" style={{ marginBottom: 16 }}>{error}</div>}
+            <LocationPicker value={sourceCoords} onChange={setSourceCoords} label="Pickup Point" mode="pickup" />
+            <div style={{ height: 28, position: 'relative', marginLeft: 22 }}>
+              <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 2, background: 'var(--border)', borderStyle: 'dashed' }} />
+            </div>
+            <LocationPicker value={destCoords} onChange={setDestCoords} label="Drop-off Destination" mode="dropoff" />
+
+            {sourceCoords && destCoords && (
+              <div style={{ marginTop: 20 }}>
+                <RouteMap sourceCoords={sourceCoords} destCoords={destCoords} height={180} />
+                <div style={{ marginTop: 18 }}>
+                   <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: 8 }}>Estimated Pooling Fare</label>
+                   <FareEstimator sourceCoords={sourceCoords} destCoords={destCoords} onFareSelect={f => setForm(prev => ({ ...prev, baseTotalRideFare: f * 4 }))} />
+                </div>
+                <div style={{ marginTop: 16 }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: 8 }}>Total Trip Cost (₹)</label>
+                  <input type="number" name="baseTotalRideFare" value={form.baseTotalRideFare} onChange={e => setForm({...form, baseTotalRideFare: e.target.value})} placeholder="Set total fare" required style={{ width: '100%', padding: 12, borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 16, fontWeight: 600 }} />
                 </div>
               </div>
-              {incomingRides.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '32px 20px', background: 'var(--cream)', borderRadius: 14, border: '1.5px dashed var(--border)' }}>
-                  <p style={{ fontSize: 36, marginBottom: 10 }}>{VEHICLES.find(v => v.key === vehicleType)?.icon}</p>
-                  <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>Waiting for Requests</p>
-                  <p style={{ color: 'var(--muted)', fontSize: 12 }}>Click <strong>+ Simulate</strong> to test with a demo request</p>
-                </div>
-              ) : incomingRides.map(r => (
-                <RequestCard key={r._id} ride={r} onAccept={handleAccept} onReject={handleReject} acting={acting} />
-              ))}
-            </>
-          )}
+            )}
 
-          {!isOnline && !activeRide && (
-            <div style={{ textAlign: 'center', padding: '32px 20px', background: 'var(--cream)', borderRadius: 14, border: '1px solid var(--border)' }}>
-              <p style={{ fontSize: 42, marginBottom: 10 }}>{VEHICLES.find(v => v.key === vehicleType)?.icon}</p>
-              <p style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Start Earning</p>
-              <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 16, lineHeight: 1.5 }}>Toggle Online above to receive ride requests from nearby passengers.</p>
+            <div style={{ marginTop: 20 }}>
+               <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: 8 }}>Available Guest Seats</label>
+               <div style={{ display: 'flex', gap: 10 }}>
+                 {[1,2,3,4].map(n => (
+                   <button key={n} type="button" onClick={() => setForm({...form, totalSeats: n})} style={{
+                     flex: 1, padding: 10, borderRadius: 10, border: `2px solid ${form.totalSeats === n ? 'var(--coral)' : 'var(--border)'}`,
+                     background: form.totalSeats === n ? 'var(--coral-pale)' : 'var(--card-bg)', color: form.totalSeats === n ? 'var(--coral)' : 'var(--muted)',
+                     fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit'
+                   }}>{n}</button>
+                 ))}
+               </div>
             </div>
-          )}
-        </>
-      ) : (
-        <>
-          <EarningsBadge earnings={earnings} />
-          {earnings && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-              {[
-                { lbl: "Today's Rides",  val: earnings.todayRides,              color: '#10B981' },
-                { lbl: 'Total Rides',    val: earnings.totalRides,              color: '#F59E0B' },
-                { lbl: "Today's Total",  val: fmtFare(earnings.todayEarnings),  color: '#6366F1' },
-                { lbl: 'Lifetime',       val: fmtFare(earnings.totalEarnings),  color: 'var(--coral)' },
-              ].map(({ lbl, val, color }) => (
-                <div key={lbl} style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 12, padding: 14 }}>
-                  <p style={{ fontSize: 20, fontWeight: 800, color }}>{val}</p>
-                  <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>{lbl}</p>
-                </div>
-              ))}
-            </div>
-          )}
-          <button onClick={loadEarnings} style={{ width: '100%', padding: 12, background: 'var(--cream-dark)', border: '1px solid var(--border)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: 'var(--muted)' }}>↻ Refresh Earnings</button>
-        </>
+
+            <button type="submit" className="btn-primary" disabled={loading || !sourceCoords || !destCoords} style={{ marginTop: 24, fontSize: 15 }}>
+              {loading ? 'Posting...' : 'List Pooling Ride'}
+            </button>
+            {success && <div className="alert-success" style={{ marginTop: 16 }}>{success}</div>}
+          </form>
+        )}
+      </div>
+
+      {/* Saved Routes for Pooling */}
+      {activeMode === 'manual' && savedRoutes.length > 0 && (
+         <div style={{ marginTop: 20, padding: '0 4px' }}>
+           <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 12 }}>⭐ Quick Routes</p>
+           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+             {savedRoutes.map(r => (
+               <div key={r._id} className="route-chip" style={{ background: 'var(--white)', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: 12, fontSize: 12, fontWeight: 600, cursor: 'pointer' }} onClick={() => { setSourceCoords({ lat: r.sourceCoords.lat, lng: r.sourceCoords.lng, address: r.sourceLandmark }); setDestCoords({ lat: r.destCoords.lat, lng: r.destCoords.lng, address: r.destinationLandmark }); }}>
+                 {r.label}
+               </div>
+             ))}
+           </div>
+         </div>
       )}
 
       <Toast msg={toast.msg} type={toast.type} onClose={() => setToast({ msg: '', type: 'info' })} />
-    </>
-  );
-}
-
-/* ── Main PostRide Page ──────────────────────────────────────────── */
-export default function PostRide() {
-  const navigate = useNavigate();
-  const [activeOption, setActiveOption] = useState(null); // null | 'quick' | 'manual' | 'driver'
-  const [landmarks, setLandmarks] = useState([]);
-  const [form, setForm] = useState({ sourceLandmark: '', destinationLandmark: '', totalSeats: 4, farePerSeat: 0, baseTotalRideFare: 0, femaleOnly: false });
-  const [sourceCoords, setSourceCoords] = useState(null);
-  const [destCoords, setDestCoords]     = useState(null);
-  const [error, setError]     = useState('');
-  const [success, setSuccess] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [detecting, setDetecting] = useState(false);
-  const [savedRoutes, setSavedRoutes] = useState([]);
-  const [recentRides, setRecentRides] = useState([]);
-
-  useEffect(() => {
-    api.get('/landmarks').then(r => setLandmarks(r.data.data?.landmarks || r.data.landmarks || []));
-    api.get('/saved-routes').then(r => setSavedRoutes(r.data.data?.routes || []));
-    api.get('/rides/my').then(r => setRecentRides(r.data.data?.rides?.slice(0, 5) || []));
-  }, []);
-
-  const handleSaveRoute = async () => {
-    if (!sourceCoords || !destCoords) return;
-    try {
-      const r = await api.post('/saved-routes', { sourceLandmark: sourceCoords.address, destinationLandmark: destCoords.address, sourceCoords: { lat: sourceCoords.lat, lng: sourceCoords.lng }, destCoords: { lat: destCoords.lat, lng: destCoords.lng } });
-      setSavedRoutes([r.data.data.route, ...savedRoutes]); setSuccess('Route saved!');
-    } catch (e) { setError(e.response?.data?.message || 'Could not save route'); }
-  };
-
-  const resetOptions = () => { setActiveOption(null); setSourceCoords(null); setDestCoords(null); setForm({ sourceLandmark: '', destinationLandmark: '', totalSeats: 4, farePerSeat: 0, baseTotalRideFare: 0, femaleOnly: false }); };
-
-  const handleQuickOption = () => {
-    if (!navigator.geolocation) return setError('Geolocation not supported');
-    setDetecting(true); setActiveOption('quick');
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords: { latitude: lat, longitude: lng } }) => {
-        try {
-          const r = await api.get('/maps/reverse-geocode', { params: { lat, lng } });
-          const addr = r.data.data.shortAddress;
-          setSourceCoords({ lat, lng, address: addr }); setForm(f => ({ ...f, sourceLandmark: addr }));
-        } catch { setSourceCoords({ lat, lng, address: 'Current Location' }); setForm(f => ({ ...f, sourceLandmark: 'Current Location' })); }
-        setDetecting(false);
-      },
-      () => { setError('Location access denied'); setDetecting(false); setActiveOption(null); },
-      { enableHighAccuracy: true }
-    );
-  };
-
-  const handleChange = e => { const v = e.target.type === 'checkbox' ? e.target.checked : e.target.value; setForm({ ...form, [e.target.name]: v }); };
-  const handleSourceChange = loc => { setSourceCoords(loc); setForm(f => ({ ...f, sourceLandmark: loc.address })); };
-  const handleDestChange = loc => { setDestCoords(loc); setForm(f => ({ ...f, destinationLandmark: loc.address })); };
-
-  const handleSubmit = async e => {
-    if (e) e.preventDefault();
-    if (activeOption === 'manual' && form.sourceLandmark === form.destinationLandmark) return setError('Source and destination cannot be the same');
-    if (activeOption === 'manual' && (!sourceCoords || !destCoords)) return setError('Please select both pickup and destination');
-    if (!form.baseTotalRideFare && activeOption === 'manual') return setError('Please set the trip fare');
-    setLoading(true); setError(''); setSuccess('');
-    try {
-      await api.post('/rides', { ...form, sourceCoords: sourceCoords ? { lat: sourceCoords.lat, lng: sourceCoords.lng, address: sourceCoords.address } : undefined, destCoords: destCoords ? { lat: destCoords.lat, lng: destCoords.lng, address: destCoords.address } : undefined, sourceLandmark: sourceCoords?.address || 'Current Location', destinationLandmark: destCoords?.address || 'Nearby / Broadcast', farePerSeat: form.baseTotalRideFare || 100, baseTotalRideFare: form.baseTotalRideFare || 100 });
-      setSuccess('Ride posted! Waiting for acceptance...');
-      setTimeout(() => navigate('/my-rides'), 1500);
-    } catch (err) { setError(err.response?.data?.message || 'Failed to post ride'); setLoading(false); }
-  };
-
-  /* Option cards */
-  const OPTIONS = [
-    { key: 'quick',  icon: '📡', iconBg: 'var(--coral-pale)', title: 'Quick Post from My Location', desc: 'Share your current coordinates and wait for nearby ride requests.', onClick: handleQuickOption },
-    { key: 'manual', icon: '📍', iconBg: 'var(--cream-dark)',  title: 'Plan a Custom Route',         desc: 'Select a specific pickup and destination point manually.',          onClick: () => setActiveOption('manual') },
-    { key: 'driver', icon: '🛺', iconBg: 'linear-gradient(135deg,#074D2A22,#1066340A)', title: 'Driver Hub — On-Demand Rides', desc: 'Go online, pick your vehicle type, and accept ride requests in real time.', onClick: () => setActiveOption('driver'), highlight: true },
-  ];
-
-  return (
-    <div className="page-wrapper">
-      <style>{`
-        @keyframes slideUp { from{opacity:0;transform:translateY(20px) translateX(-50%)} to{opacity:1;transform:translateY(0) translateX(-50%)} }
-        .option-card:hover { transform: translateY(-4px) !important; box-shadow: var(--shadow-md) !important; }
-      `}</style>
-
-      <div style={{ marginBottom: 28 }}>
-        <button onClick={() => activeOption ? resetOptions() : navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, padding: 0, marginBottom: 16 }}>
-          ← {activeOption ? 'Change Method' : 'Back'}
-        </button>
-        <h2 style={{ fontSize: 26, letterSpacing: '-0.02em' }}>Post a Ride</h2>
-        <p style={{ color: 'var(--muted)', fontSize: 14, marginTop: 4 }}>Choose how you want to share your journey</p>
-      </div>
-
-      {/* ── Option selector ── */}
-      {!activeOption && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {OPTIONS.map(opt => (
-            <div key={opt.key} onClick={opt.onClick} className="card option-card" style={{
-              cursor: 'pointer', padding: 22, textAlign: 'left',
-              display: 'flex', alignItems: 'center', gap: 18,
-              transition: 'transform .2s, box-shadow .2s',
-              border: opt.highlight ? '2px solid var(--success)' : '1px solid var(--border)',
-              background: opt.highlight ? 'linear-gradient(135deg,var(--card-bg) 80%,#ECFDF5)' : 'var(--card-bg)',
-            }}>
-              <div style={{ width: 54, height: 54, borderRadius: 14, background: opt.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>{opt.icon}</div>
-              <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: 16, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {opt.title}
-                  {opt.highlight && <span style={{ fontSize: 10, background: '#10B981', color: '#fff', padding: '2px 8px', borderRadius: 20, fontWeight: 700, letterSpacing: '.04em' }}>NEW</span>}
-                </h3>
-                <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.4 }}>{opt.desc}</p>
-              </div>
-              <span style={{ color: 'var(--muted)', fontSize: 18 }}>›</span>
-            </div>
-          ))}
-
-          {savedRoutes.length > 0 && (
-            <div style={{ marginTop: 4 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 10 }}>Your Saved Routes</p>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {savedRoutes.map(route => (
-                  <div key={route._id} className="route-chip" onClick={() => { setSourceCoords({ lat: route.sourceCoords.lat, lng: route.sourceCoords.lng, address: route.sourceLandmark }); setDestCoords({ lat: route.destCoords.lat, lng: route.destCoords.lng, address: route.destinationLandmark }); setForm(f => ({ ...f, sourceLandmark: route.sourceLandmark, destinationLandmark: route.destinationLandmark })); setActiveOption('manual'); }}>
-                    ⭐ {route.label}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {recentRides.length > 0 && (
-            <div className="return-trip-banner" style={{ marginTop: 12 }} onClick={() => { const l = recentRides[0]; setSourceCoords({ lat: l.destCoords.lat, lng: l.destCoords.lng, address: l.destinationLandmark }); setDestCoords({ lat: l.sourceCoords.lat, lng: l.sourceCoords.lng, address: l.sourceLandmark }); setForm(f => ({ ...f, sourceLandmark: l.destinationLandmark, destinationLandmark: l.sourceLandmark })); setActiveOption('manual'); }}>
-              <div style={{ fontSize: 24 }}>🔄</div>
-              <div><p style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Plan your return trip?</p><p style={{ fontSize: 12, opacity: .8, margin: 0 }}>Reversed route based on your last ride.</p></div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Driver Hub Panel ── */}
-      {activeOption === 'driver' && (
-        <div className="card" style={{ padding: '24px 20px' }}>
-          <DriverHubPanel />
-        </div>
-      )}
-
-      {/* ── Pool ride form (quick / manual) ── */}
-      {(activeOption === 'quick' || activeOption === 'manual') && (
-        <div className="card">
-          {error   && <div className="alert-error">{error}</div>}
-          {success && <div className="alert-success">{success}</div>}
-          <form onSubmit={handleSubmit}>
-            {activeOption === 'quick' ? (
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ padding: '12px 16px', background: 'var(--coral-pale)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--coral)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 18 }}>📍</span>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--coral)' }}>Current Pickup</p>
-                    <p style={{ fontSize: 14, fontWeight: 500 }}>{detecting ? 'Detecting your location...' : (sourceCoords?.address || 'Detecting...')}</p>
-                  </div>
-                </div>
-                <div style={{ padding: 16, background: 'var(--cream)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)', textAlign: 'center' }}>
-                  <p style={{ fontSize: 14, color: 'var(--charcoal)', fontWeight: 500 }}>Broadcast visibility active</p>
-                  <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>Your live location is shared. You will be notified of nearby passengers.</p>
-                </div>
-              </div>
-            ) : (
-              <>
-                <LocationPicker value={sourceCoords} onChange={handleSourceChange} label="Pickup Location" mode="pickup" />
-                <div style={{ textAlign: 'center', margin: '0 0 10px', color: 'var(--border)', fontSize: 20 }}>↓</div>
-                <LocationPicker value={destCoords} onChange={handleDestChange} label="Destination" mode="dropoff" />
-              </>
-            )}
-
-            {sourceCoords?.lat && destCoords?.lat && (
-              <div style={{ marginBottom: 20 }}><RouteMap sourceCoords={sourceCoords} destCoords={destCoords} height={180} /></div>
-            )}
-
-            <hr className="divider" />
-
-            {sourceCoords?.lat && destCoords?.lat ? (
-              <>
-                <div className="field">
-                  <label>System Total Fare Recommendation</label>
-                  <FareEstimator sourceCoords={sourceCoords} destCoords={destCoords} onFareSelect={fare => setForm(f => ({ ...f, baseTotalRideFare: fare * 4, farePerSeat: fare * 4 }))} />
-                </div>
-                <div className="field">
-                  <label>Total Trip Cost to be shared (₹)</label>
-                  <input type="number" name="baseTotalRideFare" value={form.baseTotalRideFare} onChange={handleChange} placeholder="Set the total fare for this trip" required min={1} />
-                  <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>This cost will be split equally among all confirmed passengers.</p>
-                  <button type="button" onClick={handleSaveRoute} style={{ marginTop: 10, background: 'none', border: 'none', color: 'var(--coral)', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>⭐ Save this route for later</button>
-                </div>
-              </>
-            ) : activeOption === 'manual' ? (
-              <div style={{ padding: 16, textAlign: 'center', background: 'var(--cream)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)', marginBottom: 18 }}>
-                <p style={{ fontSize: 13, color: 'var(--muted)' }}>Select destination to calculate fare</p>
-              </div>
-            ) : null}
-
-            <div className="field">
-              <label>Available Seats</label>
-              <select name="totalSeats" value={form.totalSeats} onChange={handleChange}>
-                {[1,2,3,4].map(n => <option key={n} value={n}>{n} seat{n > 1 ? 's' : ''}</option>)}
-              </select>
-            </div>
-
-            <div style={{ padding: '14px 16px', background: 'var(--cream)', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <p style={{ fontWeight: 500, fontSize: 14 }}>Female passengers only</p>
-                <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>Limit requests to female riders</p>
-              </div>
-              <label style={{ position: 'relative', width: 44, height: 24, cursor: 'pointer' }}>
-                <input type="checkbox" name="femaleOnly" checked={form.femaleOnly} onChange={handleChange} style={{ opacity: 0, width: 0, height: 0 }} />
-                <span style={{ position: 'absolute', inset: 0, background: form.femaleOnly ? 'var(--coral)' : 'var(--border)', borderRadius: 12, transition: 'background .2s' }} />
-                <span style={{ position: 'absolute', top: 3, left: form.femaleOnly ? 23 : 3, width: 18, height: 18, background: 'white', borderRadius: '50%', transition: 'left .2s' }} />
-              </label>
-            </div>
-
-            <button type="submit" className="btn-primary" disabled={loading || !sourceCoords || (activeOption === 'manual' && !destCoords) || !!success} style={{ marginTop: 24 }}>
-              {loading ? 'Posting...' : 'Post Ride Now'}
-            </button>
-          </form>
-        </div>
-      )}
     </div>
   );
 }
