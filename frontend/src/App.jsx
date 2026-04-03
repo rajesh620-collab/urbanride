@@ -16,6 +16,7 @@ import PoolDetail from './pages/PoolDetail';
 import DriverPools from './pages/DriverPools';
 import DriverBroadcast from './pages/DriverBroadcast';
 import DriverRequests from './pages/DriverRequests';
+import DriverDashboard from './pages/DriverDashboard';
 import Wallet from './pages/Wallet';
 
 
@@ -53,8 +54,9 @@ function AppContent() {
         <Route path="/pool/:id"      element={<ProtectedRoute><PoolDetail /></ProtectedRoute>} />
         <Route path="/driver/pools"  element={<ProtectedRoute><DriverPools /></ProtectedRoute>} />
         <Route path="/driver/broadcast" element={<ProtectedRoute><DriverBroadcast /></ProtectedRoute>} />
-        <Route path="/driver/requests"  element={<ProtectedRoute><DriverRequests /></ProtectedRoute>} />
-        <Route path="/wallet"           element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
+        <Route path="/driver/requests"   element={<ProtectedRoute><DriverRequests /></ProtectedRoute>} />
+        <Route path="/driver/dashboard"  element={<ProtectedRoute><DriverDashboard /></ProtectedRoute>} />
+        <Route path="/wallet"            element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
 
         <Route path="*"              element={<Navigate to="/" replace />} />
       </Routes>

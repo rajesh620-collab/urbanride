@@ -58,8 +58,9 @@ safeRoute("/api/ratings",      "./routes/ratings");
 safeRoute("/api/fare",         "./routes/fare");
 safeRoute("/api/maps",         "./routes/maps");
 safeRoute("/api/pools",        "./routes/pools");
-safeRoute("/api/wallet",       "./routes/wallet");
-safeRoute("/api/saved-routes", "./routes/savedRoutes");
+safeRoute("/api/wallet",        "./routes/wallet");
+safeRoute("/api/saved-routes",  "./routes/savedRoutes");
+safeRoute("/api/driver-rides",  "./routes/driverRides");
 
 // Debug endpoint to check route status
 app.get("/api/debug/routes", (req, res) => {
