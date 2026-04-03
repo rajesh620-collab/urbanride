@@ -12,12 +12,17 @@ const calculateBaseFare = (km, type) => {
 
 exports.createPool = async (req, res) => {
   try {
-    const { sourceCoords, destCoords, vehicleType, distanceKm, durationMin } = req.body;
+    const { sourceCoords, destCoords, vehicleType, distanceKm, durationMin, maxParticipants } = req.body;
+    const userId = req.user?.id || req.user?._id || req.userId;
+
+    if (!userId) {
+       return res.status(401).json({ success: false, message: 'User identification failed. Please re-login.' });
+    }
     
     // Check if user already in a waiting/finding pool
     const existing = await RidePool.findOne({
       status: { $in: ['waiting', 'finding_driver', 'driver_assigned', 'started'] },
-      'members.user': req.user.id
+      'members.user': userId
     });
     if (existing) return res.status(400).json({ success: false, message: 'You are already in an active pool' });
 
@@ -26,19 +31,24 @@ exports.createPool = async (req, res) => {
 
     const pool = await RidePool.create({
       poolCode,
-      creator: req.user.id,
-      members: [{ user: req.user.id, joinedAt: Date.now() }],
+      creator: userId,
+      members: [{ user: userId, joinedAt: Date.now() }],
       vehicleType: vehicleType || 'auto',
       sourceCoords,
       destCoords,
       distanceKm: distanceKm || 5,
       durationMin: durationMin || 15,
       totalFare,
+      maxParticipants: maxParticipants || 4,
       status: 'waiting'
     });
 
     res.status(201).json({ success: true, data: pool });
   } catch (error) {
+    if (error.name === 'ValidationError') {
+       const msgs = Object.values(error.errors).map(e => e.message);
+       return res.status(400).json({ success: false, message: `Validation failed: ${msgs.join(', ')}` });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -51,12 +61,14 @@ exports.joinPool = async (req, res) => {
     if (pool.status !== 'waiting') return res.status(400).json({ success: false, message: 'Pool is no longer joining' });
     if (pool.members.length >= pool.maxParticipants) return res.status(400).json({ success: false, message: 'Pool is full' });
 
+    const userId = req.user?.id || req.user?._id || req.userId;
+
     // Check if user already a member
-    if (pool.members.some(m => m.user.toString() === req.user.id)) {
+    if (pool.members.some(m => m.user.toString() === userId)) {
       return res.status(400).json({ success: false, message: 'Already joined' });
     }
  
-    pool.members.push({ user: req.user.id, joinedAt: Date.now() });
+    pool.members.push({ user: userId, joinedAt: Date.now() });
     await pool.save();
 
     // Broadcast update to all current members
@@ -129,8 +141,9 @@ exports.acceptPoolRide = async (req, res) => {
     if (!pool) return res.status(404).json({ success: false, message: 'Pool not found' });
     if (pool.status !== 'finding_driver') return res.status(400).json({ success: false, message: 'Ride already taken or cancelled' });
 
-    const driver = await User.findById(req.user.id);
-    pool.driver = req.user.id;
+    const userId = req.user?.id || req.user?._id || req.userId;
+    const driver = await User.findById(userId);
+    pool.driver = userId;
     pool.driverInfo = {
        name: driver.name,
        vehicleNumber: `TS 0${Math.floor(Math.random()*9)} AB ${Math.floor(Math.random()*9000+1000)}`,
