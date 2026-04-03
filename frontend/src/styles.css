@@ -342,6 +342,10 @@ input, select, button {
 .leaflet-container {
   font-family: 'Montserrat', sans-serif;
   border-radius: inherit;
+  filter: saturate(0.85) contrast(1.05) brightness(0.98);
+}
+[data-theme="dark"] .leaflet-container {
+  filter: saturate(0.75) contrast(1.1) brightness(0.9);
 }
 .leaflet-control-attribution {
   font-size: 9px !important;
@@ -998,3 +1002,9 @@ html { scroll-behavior: smooth; }
   transition: opacity 0.2s;
 }
 .return-trip-banner:hover { opacity: 0.9; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}

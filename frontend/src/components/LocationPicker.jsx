@@ -52,6 +52,7 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
   const [showMap, setShowMap] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   const [landmarks, setLandmarks] = useState([]);
+  const [geoError, setGeoError] = useState('');
   const searchTimeout = useRef(null);
 
   const color = mode === 'pickup' ? '#4CAF50' : '#E74C3C';
@@ -90,10 +91,21 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
     });
   }, []);
 
+  // Check if location is in India (rough bounding box)
+  const isIndia = (lat, lng) => {
+    return (lat > 8.0 && lat < 38.0) && (lng > 68.0 && lng < 98.0);
+  };
+
   // Reverse geocode when value changes
   useEffect(() => {
     if (value?.lat && value?.lng) {
-      reverseGeocode(value.lat, value.lng);
+      if (isIndia(value.lat, value.lng)) {
+        setGeoError('');
+        reverseGeocode(value.lat, value.lng);
+      } else {
+        setGeoError('Currently, UrbanRide is only available in India.');
+        setAddress('Outside India');
+      }
     }
   }, [value?.lat, value?.lng]);
 
@@ -113,6 +125,11 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
   };
 
   const handleMapClick = useCallback(({ lat, lng }) => {
+    if (!isIndia(lat, lng)) {
+      setGeoError('Currently, UrbanRide is only available in India.');
+      return;
+    }
+    setGeoError('');
     reverseGeocode(lat, lng);
   }, []);
 
@@ -138,6 +155,11 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
   };
 
   const selectResult = (result) => {
+    if (!isIndia(result.lat, result.lng)) {
+      setGeoError('Currently, UrbanRide is only available in India.');
+      return;
+    }
+    setGeoError('');
     setSearchResults([]);
     setSearchQuery('');
     setAddress(result.shortName);
@@ -173,6 +195,17 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
         textTransform: 'uppercase', letterSpacing: '0.06em',
         color: 'var(--muted)', marginBottom: 6
       }}>{label}</label>
+
+      {geoError && (
+        <div style={{
+          background: 'rgba(239,68,68,0.08)', border: '1.2px solid rgba(239,68,68,0.2)',
+          borderRadius: 12, padding: '10px 14px', marginBottom: 14,
+          display: 'flex', alignItems: 'center', gap: 10, animation: 'shake 0.4s ease-in-out'
+        }}>
+          <span style={{ fontSize: 16 }}>🇮🇳</span>
+          <p style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, margin: 0 }}>{geoError}</p>
+        </div>
+      )}
 
       {/* Search + GPS row */}
       <div style={{ display: 'flex', gap: 8 }}>

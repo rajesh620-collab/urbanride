@@ -144,19 +144,31 @@ export default function RouteMap({
           </Marker>
         )}
 
-        {/* Route polyline */}
+        {/* Route polyline with glow effect */}
         {route && (
-          <Polyline
-            positions={route}
-            pathOptions={{
-              color: dark ? '#E0926E' : '#CC785C',
-              weight: 4,
-              opacity: 0.8,
-              dashArray: null,
-              lineCap: 'round',
-              lineJoin: 'round'
-            }}
-          />
+          <>
+            <Polyline
+              positions={route}
+              pathOptions={{
+                color: 'var(--coral)',
+                weight: 8,
+                opacity: 0.2,
+                lineCap: 'round',
+                lineJoin: 'round'
+              }}
+            />
+            <Polyline
+              positions={route}
+              pathOptions={{
+                color: 'var(--coral)',
+                weight: 4,
+                opacity: 1,
+                lineCap: 'round',
+                lineJoin: 'round',
+                smoothFactor: 2
+              }}
+            />
+          </>
         )}
       </MapContainer>
 
