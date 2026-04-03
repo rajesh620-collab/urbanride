@@ -209,9 +209,13 @@ function getAllBroadcastingDrivers() {
 
 module.exports = {
   setupWebSocket,
-  notifyUser,
-  clearDriverLocation,
-  getAllBroadcastingDrivers,
   getIO,
-  notifyUserByModel
+  notifyUser,
+  notifyUserByModel, // Alias for semantic clarity in models
+  notifyRideRoom,
+  broadcast,
+  isUserOnline,
+  getDriverLocation,
+  clearDriverLocation,
+  getAllBroadcastingDrivers
 };

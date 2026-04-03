@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/ridePoolController');
-const { protect } = require('../middleware/authMiddleware');
+const auth = require('../middleware/auth');
 
-router.post('/create', protect, controller.createPool);
-router.post('/:poolId/join', protect, controller.joinPool);
-router.get('/search', protect, controller.searchPools);
-router.get('/join/code/:code', protect, controller.getPoolByCode);
-router.get('/:poolId', protect, controller.getPoolStatus);
-router.patch('/:poolId/accept', protect, controller.acceptPoolRide);
+router.post('/create', auth, controller.createPool);
+router.post('/:poolId/join', auth, controller.joinPool);
+router.get('/search', auth, controller.searchPools);
+router.get('/join/code/:code', auth, controller.getPoolByCode);
+router.get('/:poolId', auth, controller.getPoolStatus);
+router.patch('/:poolId/accept', auth, controller.acceptPoolRide);
 
 module.exports = router;
