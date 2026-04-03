@@ -668,9 +668,23 @@ export default function PostRide() {
                           }} style={{ background: 'none', border: 'none', fontSize: 20, color: 'var(--coral)', cursor: 'pointer', padding: 4 }}>▼</button>
                         </div>
 
-                        <div style={{ marginLeft: 12, padding: '8px 14px', background: 'var(--card-bg)', borderRadius: 14, fontSize: 13, fontWeight: 800, color: 'var(--coral)', textTransform: 'uppercase', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            const [h, m] = departureTime.split(':');
+                            const hour = parseInt(h);
+                            const nextHour = hour >= 12 ? hour - 12 : hour + 12;
+                            setDepartureTime(`${nextHour.toString().padStart(2,'0')}:${m}`);
+                          }}
+                          style={{ 
+                            marginLeft: 12, padding: '10px 16px', background: 'var(--coral)', 
+                            borderRadius: 16, fontSize: 13, fontWeight: 800, color: '#fff', 
+                            textTransform: 'uppercase', boxShadow: '0 4px 12px rgba(229,90,63,0.3)',
+                            border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                          }}
+                        >
                           {parseInt(departureTime.split(':')[0]) >= 12 ? 'PM' : 'AM'}
-                        </div>
+                        </button>
                       </div>
                     </div>
                   </div>
