@@ -251,10 +251,12 @@ export default function LocationPicker({
           {/* Smart Search Dropdown */}
           {inputFocused && (
             <div style={{
-              position: 'absolute', top: '100%', left: 0, right: 0,
+              position: 'absolute', top: '100%', left: 0, 
               background: 'var(--card-bg)', border: '1px solid var(--border)',
               borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow-md)',
-              zIndex: 1000, maxHeight: 250, overflowY: 'auto', marginTop: 4
+              zIndex: 1000, maxHeight: 250, overflowY: 'auto', marginTop: 4,
+              minWidth: minimal ? 400 : '100%', width: minimal ? 'auto' : '100%',
+              maxWidth: minimal ? 550 : '100%'
             }}>
               {/* Smart Actions (only when query is short) */}
               {searchQuery.length < 3 && (
