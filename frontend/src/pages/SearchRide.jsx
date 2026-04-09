@@ -195,6 +195,8 @@ export default function SearchRide() {
   const [recentRides, setRecentRides] = useState([]);
   const [scheduledPools, setScheduledPools] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [searchDate, setSearchDate] = useState('Today');
+  const [searchP, setSearchP] = useState(1);
 
 
   useEffect(() => {
@@ -435,151 +437,124 @@ export default function SearchRide() {
         </div>
       )}
 
-      {/* Search card */}
-      <div className="card" style={{ marginBottom: 24 }}>
-        <form onSubmit={handleSearch}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* FROM */}
-            <LocationPicker
-              value={sourceCoords}
-              onChange={(loc) => {
-                setSourceCoords(loc);
-                setFilters(f => ({ ...f, source: loc.address }));
-              }}
-              label="From (Pickup)"
-              mode="pickup"
-              hideGps={true}
-              hideMapToggle={true}
-            />
+      {/* Horizontal Unified Search Bar */}
+      <div className="unified-search-bar">
+        {/* Leaving From */}
+        <div style={{ flex: 1.5, position: 'relative' }}>
+          <LocationPicker
+            value={sourceCoords}
+            onChange={(loc) => { setSourceCoords(loc); setFilters(f => ({ ...f, source: loc.address })); }}
+            mode="pickup"
+            hideGps hideMapToggle
+            minimal
+            placeholder="Leaving from"
+          />
+        </div>
 
-            {/* Connector */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '-4px 0' }}>
-              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-              <span style={{ fontSize: 18, color: 'var(--coral)' }}>↓</span>
-              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-            </div>
+        <div className="search-divider" />
 
-            {/* TO */}
-            <LocationPicker
-              value={destCoords}
-              onChange={(loc) => {
-                setDestCoords(loc);
-                setFilters(f => ({ ...f, destination: loc.address }));
-              }}
-              label="To (Destination)"
-              mode="dropoff"
-              hideGps={true}
-              hideMapToggle={true}
-            />
-          </div>
+        {/* Going To */}
+        <div style={{ flex: 1.5, position: 'relative' }}>
+          <LocationPicker
+            value={destCoords}
+            onChange={(loc) => { setDestCoords(loc); setFilters(f => ({ ...f, destination: loc.address })); }}
+            mode="dropoff"
+            hideGps hideMapToggle
+            minimal
+            placeholder="Going to"
+          />
+        </div>
 
-          {error && (
-            <div style={{
-              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
-              borderRadius: 12, padding: '12px 16px', marginTop: 16,
-              display: 'flex', alignItems: 'center', gap: 10, animation: 'shake 0.4s'
-            }}>
-              <span style={{ fontSize: 18 }}>⚠️</span>
-              <p style={{ fontSize: 13, color: '#EF4444', fontWeight: 600, margin: 0 }}>{error}</p>
-            </div>
-          )}
+        <div className="search-divider" />
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, flexWrap: 'wrap', gap: 12 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
-              <input type="checkbox" name="femaleOnly" checked={filters.femaleOnly}
-                onChange={handleChange} style={{ accentColor: 'var(--coral)', width: 15, height: 15 }} />
-              <span style={{ color: 'var(--charcoal)' }}>Female-only rides</span>
-            </label>
-          </div>
-
-          {sourceCoords && destCoords && (
-            <div style={{ marginTop: 24 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-                Select Service
-              </p>
-
-              {(() => {
-                const cabTypes = [
-                  { name: 'Cab XL',      emoji: '🚐', minMult: 1.20, maxMult: 1.45, desc: '6-seater SUV' },
-                  { name: 'Auto',        emoji: '🛺', minMult: 0.55, maxMult: 0.70, desc: '3-wheeler · Open' },
-                  { name: 'Cab Non AC',  emoji: '🚕', minMult: 0.75, maxMult: 0.90, desc: 'Budget sedan' },
-                  { name: 'Cab Premium', emoji: '🚘', minMult: 1.00, maxMult: 1.20, desc: 'AC sedan' },
-                ];
-                const base = fareData?.suggestedFare || 0;
-                return (
-                  <div style={{
-                    borderRadius: 'var(--radius-md)', overflow: 'hidden',
-                    border: '1.5px solid var(--border)'
-                  }}>
-                    {cabTypes.map((cab, idx) => {
-                      const isSelected = selectedCabType === cab.name;
-                      const minFare = base > 0 ? Math.round(base * cab.minMult) : null;
-                      const maxFare = base > 0 ? Math.round(base * cab.maxMult) : null;
-                      return (
-                        <div
-                          key={cab.name}
-                          onClick={() => { setSelectedCabType(cab.name); handleSearch(); }}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 14,
-                            padding: '15px 16px',
-                            background: isSelected ? 'rgba(229,90,63,0.07)' : 'var(--card-bg)',
-                            borderLeft: isSelected ? '3px solid var(--coral)' : '3px solid transparent',
-                            borderBottom: idx < cabTypes.length - 1 ? '1px solid var(--border)' : 'none',
-                            cursor: 'pointer',
-                            transition: 'background 0.15s',
-                          }}
-                        >
-                          <span style={{ fontSize: 28, lineHeight: 1, minWidth: 32, textAlign: 'center' }}>{cab.emoji}</span>
-                          <div style={{ flex: 1 }}>
-                            <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 2, color: 'var(--charcoal)' }}>{cab.name}</p>
-                            <p style={{ fontSize: 11, color: 'var(--muted)' }}>{cab.desc}</p>
-                          </div>
-                          <div style={{ textAlign: 'right', minWidth: 90 }}>
-                            {fareLoading ? (
-                              <div style={{ display: 'inline-block', width: 70, height: 14, borderRadius: 6, background: 'var(--border)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-                            ) : minFare ? (
-                              <p style={{ fontWeight: 700, fontSize: 14, color: isSelected ? 'var(--coral)' : 'var(--charcoal)' }}>
-                                ₹{minFare} – ₹{maxFare}
-                              </p>
-                            ) : (
-                              <p style={{ fontSize: 13, color: 'var(--muted)' }}>–</p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-            </div>
-          )}
-        </form>
-
-        {/* ── Ride Pool Section ── */}
-        <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 20 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
-            Group Ride Pool
-          </p>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => setShowJoinModal(true)}
-              className="btn-outline"
-              style={{ flex: '1 1 140px', padding: '11px 16px', fontSize: 13 }}
-            >
-              Join by Code
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowCreateModal(true)}
-              className="btn-secondary"
-              style={{ flex: '1 1 160px', padding: '11px 16px', fontSize: 13 }}
-            >
-              Create Ride Pool
-            </button>
+        {/* Date Selector */}
+        <div className="search-field-item" onClick={() => setSearchDate(searchDate === 'Today' ? 'Tomorrow' : 'Today')}>
+          <span style={{ fontSize: 22 }}>📅</span>
+          <div>
+            <p style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Date</p>
+            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--charcoal)', whiteSpace: 'nowrap' }}>{searchDate}</p>
           </div>
         </div>
+
+        <div className="search-divider" />
+
+        {/* Passenger Selector */}
+        <div className="search-field-item" onClick={() => setSearchP(p => p < 4 ? p + 1 : 1)}>
+          <span style={{ fontSize: 22 }}>👤</span>
+          <div>
+            <p style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Passengers</p>
+            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--charcoal)', whiteSpace: 'nowrap' }}>{searchP} passenger</p>
+          </div>
+        </div>
+
+        {/* Search Button */}
+        <button 
+          onClick={() => handleSearch()}
+          disabled={loading}
+          className="search-btn-primary"
+        >
+          {loading ? '...' : 'Search'}
+        </button>
       </div>
+
+      {error && (
+        <div style={{
+          background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+          borderRadius: 16, padding: '14px 20px', marginBottom: 28,
+          display: 'flex', alignItems: 'center', gap: 12, animation: 'shake 0.4s'
+        }}>
+          <span style={{ fontSize: 20 }}>⚠️</span>
+          <p style={{ fontSize: 14, color: '#EF4444', fontWeight: 700, margin: 0 }}>{error}</p>
+        </div>
+      )}
+
+      {sourceCoords && destCoords && (
+        <div style={{ marginBottom: 32 }}>
+          <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>
+            Recommended Service
+          </p>
+
+          <div style={{
+            borderRadius: 24, overflow: 'hidden',
+            border: '1px solid var(--border)', background: 'var(--card-bg)',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            {[
+              { name: 'Ride Pool', emoji: '🚐', desc: 'Share & Save', premium: true },
+              { name: 'Auto',      emoji: '🛺', desc: 'Quick budget' },
+              { name: 'Cab',       emoji: '🚕', desc: 'Private AC' }
+            ].map((cab, idx, arr) => (
+              <div
+                key={cab.name}
+                onClick={() => { setSelectedCabType(cab.name); handleSearch(); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '18px 24px',
+                  background: selectedCabType === cab.name ? 'var(--coral-pale)' : 'transparent',
+                  borderBottom: idx < arr.length - 1 ? '1px solid var(--border)' : 'none',
+                  cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                <span style={{ fontSize: 32 }}>{cab.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: 800, fontSize: 15, color: 'var(--charcoal)' }}>{cab.name}</p>
+                  <p style={{ fontSize: 12, color: 'var(--muted)' }}>{cab.desc}</p>
+                </div>
+                {cab.premium && <span style={{ fontSize: 10, fontWeight: 900, color: 'var(--coral)', background: 'rgba(229,90,63,0.1)', padding: '4px 8px', borderRadius: 8 }}>POPULAR</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Help Section ── */}
+      {!searched && (
+        <div style={{ textAlign: 'center', marginBottom: 40, padding: 32, background: 'var(--cream-dark)', borderRadius: 32 }}>
+           <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Can't find your route?</p>
+           <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 20 }}>Create your own ride pool and let others join you.</p>
+           <button onClick={() => setShowCreateModal(true)} className="btn-primary" style={{ padding: '12px 28px' }}>Create Ride Pool</button>
+        </div>
+      )}
 
       {/* Discovery State */}
       {isDiscovering && (

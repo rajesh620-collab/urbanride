@@ -42,7 +42,11 @@ function MapRecenter({ position }) {
   return null;
 }
 
-export default function LocationPicker({ value, onChange, label = 'Select Location', mode = 'pickup', onLocationDetected, hideGps = false, hideMapToggle = false }) {
+export default function LocationPicker({ 
+  value, onChange, label = 'Select Location', mode = 'pickup', 
+  onLocationDetected, hideGps = false, hideMapToggle = false,
+  minimal = false, placeholder = "Search location..."
+}) {
   const { dark } = useTheme();
   const [address, setAddress] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -189,12 +193,14 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
   const inputDisplayValue = inputFocused ? searchQuery : (address || searchQuery || '');
 
   return (
-    <div style={{ marginBottom: 18 }}>
-      <label style={{
-        display: 'block', fontSize: 12, fontWeight: 600,
-        textTransform: 'uppercase', letterSpacing: '0.06em',
-        color: 'var(--muted)', marginBottom: 6
-      }}>{label}</label>
+    <div style={{ marginBottom: minimal ? 0 : 18 }}>
+      {!minimal && (
+        <label style={{
+          display: 'block', fontSize: 12, fontWeight: 600,
+          textTransform: 'uppercase', letterSpacing: '0.06em',
+          color: 'var(--muted)', marginBottom: 6
+        }}>{label}</label>
+      )}
 
       {geoError && (
         <div style={{
@@ -208,22 +214,31 @@ export default function LocationPicker({ value, onChange, label = 'Select Locati
       )}
 
       {/* Search + GPS row */}
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        {minimal && (
+          <div style={{ 
+            fontSize: 20, color: 'var(--muted)', display: 'flex', alignItems: 'center', 
+            opacity: 0.6, marginRight: 8 
+          }}>
+             {mode === 'pickup' ? '⭕' : '📍'}
+          </div>
+        )}
         <div style={{ flex: 1, position: 'relative' }}>
           <input
             type="text"
             autoComplete="off"
-            placeholder={inputFocused ? "Start typing..." : "Search a location or drop a pin..."}
+            placeholder={inputFocused ? "Start typing..." : placeholder}
             value={inputDisplayValue}
             onChange={e => handleSearch(e.target.value)}
             onFocus={() => { setInputFocused(true); setShowMap(true); setSearchQuery(''); }}
             onBlur={() => { setInputFocused(false); setTimeout(() => setSearchResults([]), 200); }}
             style={{
-              width: '100%', padding: '11px 14px',
-              border: `1.5px solid ${value?.lat ? color : 'var(--border)'}`,
-              borderRadius: 'var(--radius-sm)', fontSize: 14,
+              width: '100%', padding: minimal ? '6px 0' : '11px 14px',
+              border: minimal ? 'none' : `1.5px solid ${value?.lat ? color : 'var(--border)'}`,
+              borderRadius: minimal ? 0 : 'var(--radius-sm)', fontSize: 16,
+              fontWeight: 500,
               color: 'var(--charcoal)',
-              background: 'var(--input-bg)',
+              background: 'transparent',
               outline: 'none', transition: 'border-color 0.2s',
               boxSizing: 'border-box'
             }}
