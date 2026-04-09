@@ -4,6 +4,7 @@ const controller = require('../controllers/ridePoolController');
 const auth = require('../middleware/auth');
 
 router.get('/my', auth, controller.getMyPools);
+router.get('/scheduled', auth, controller.getAllScheduledPools);
 router.post('/create', auth, controller.createPool);
 router.post('/:poolId/join', auth, controller.joinPool);
 router.get('/search', auth, controller.searchPools);

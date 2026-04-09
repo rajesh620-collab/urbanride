@@ -193,15 +193,21 @@ export default function SearchRide() {
   const [selectedCabType, setSelectedCabType] = useState('Cab XL');
   const [savedRoutes, setSavedRoutes] = useState([]);
   const [recentRides, setRecentRides] = useState([]);
+  const [scheduledPools, setScheduledPools] = useState([]);
+  const [initialLoading, setInitialLoading] = useState(true);
 
 
   useEffect(() => {
-    api.get('/landmarks').then(res => {
+    setInitialLoading(true);
+    const p1 = api.get('/landmarks').then(res => {
       const lm = res.data.data?.landmarks || res.data.landmarks;
       setLandmarks(lm || []);
     });
-    api.get('/saved-routes').then(res => setSavedRoutes(res.data.data?.routes || []));
-    api.get('/rides/my').then(res => setRecentRides(res.data.data?.rides?.slice(0, 5) || []));
+    const p2 = api.get('/saved-routes').then(res => setSavedRoutes(res.data.data?.routes || []));
+    const p3 = api.get('/rides/my').then(res => setRecentRides(res.data.data?.rides?.slice(0, 5) || []));
+    const p4 = api.get('/pools/scheduled').then(res => setScheduledPools(res.data.data?.pools || []));
+    
+    Promise.all([p1, p2, p3, p4]).finally(() => setInitialLoading(false));
   }, []);
 
 
@@ -320,6 +326,66 @@ export default function SearchRide() {
       )}
       {showJoinModal && (
         <JoinPoolModal onClose={() => setShowJoinModal(false)} />
+      )}
+
+      {/* Scheduled Rides Scroller (Discover Mode) */}
+      {!searched && (
+        <div style={{ marginBottom: 30 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div>
+              <h3 style={{ fontSize: 18, fontWeight: 800 }}>Upcoming Rides</h3>
+              <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>Pre-planned by expert drivers</p>
+            </div>
+            <button style={{ background: 'var(--coral-pale)', color: 'var(--coral)', border: 'none', padding: '6px 14px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>See All</button>
+          </div>
+
+          <div style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 15, msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+            {initialLoading ? [1,2,3].map(i => (
+              <div key={i} className="skeleton" style={{ minWidth: 260, height: 160, borderRadius: 24, flexShrink: 0 }} />
+            )) : scheduledPools.length === 0 ? (
+              <div style={{ width: '100%', padding: 30, background: 'var(--cream)', borderRadius: 24, textAlign: 'center', border: '1.5px dashed var(--border)' }}>
+                 <p style={{ fontSize: 13, color: 'var(--muted)' }}>No pre-planned rides today. Be the first!</p>
+              </div>
+            ) : scheduledPools.map(p => (
+              <div key={p._id} 
+                onClick={() => navigate(`/waiting/${p._id}`)}
+                style={{ 
+                  minWidth: 280, background: 'var(--card-bg)', border: '1px solid var(--border)', 
+                  borderRadius: 24, padding: 18, flexShrink: 0, boxShadow: 'var(--shadow-sm)',
+                  cursor: 'pointer', transition: 'transform 0.2s', position: 'relative', overflow: 'hidden'
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                <div style={{ position: 'absolute', top: 0, right: 0, padding: '4px 12px', background: 'var(--coral)', color: '#fff', fontSize: 10, fontWeight: 800, borderRadius: '0 0 0 12px' }}>SCHEDULED</div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--coral-pale)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--coral)' }}>
+                    {p.creator?.name?.[0] || 'D'}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 700 }}>{p.creator?.name || 'Driver'}</p>
+                    <p style={{ fontSize: 11, color: 'var(--success)', fontWeight: 600 }}>★ 4.8 Verified</p>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                     <span style={{ fontSize: 14, fontWeight: 600 }}>{p.sourceCoords?.address?.split(',')[0]}</span>
+                     <span style={{ color: 'var(--coral)' }}>→</span>
+                     <span style={{ fontSize: 14, fontWeight: 600 }}>{p.destCoords?.address?.split(',')[0]}</span>
+                   </div>
+                   <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>🕒 {new Date(p.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(p.departureTime).toLocaleDateString([], { day: 'numeric', month: 'short' })}</p>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, background: 'var(--cream-dark)', padding: '4px 10px', borderRadius: 10 }}>💺 {p.maxParticipants - p.members.length} left</span>
+                  <span style={{ fontSize: 20, fontWeight: 900, color: 'var(--coral)' }}>₹{Math.round(p.totalFare / p.members.length)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       <div style={{ marginBottom: 28 }}>
@@ -552,12 +618,12 @@ export default function SearchRide() {
         </div>
       )}
 
-      {/* Results — fare shown only after booking confirmation (via RideDetail) */}
-      {!loading && rides.length > 0 && (
+      {/* Results List */}
+      {!loading && (rides.length > 0 || scheduledPools.length > 0) && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <p style={{ fontSize: 13, color: 'var(--muted)' }}>
-              {rides.length} ride{rides.length > 1 ? 's' : ''} available
+              {searched ? 'Search Results' : 'Recommended for you'}
             </p>
             {sourceCoords?.lat && destCoords?.lat && (
               <button type="button" onClick={() => setShowResultsMap(s => !s)} style={{
@@ -577,59 +643,50 @@ export default function SearchRide() {
             </div>
           )}
 
-          {rides.map(ride => (
-             /* ... existing ride card ... */
-             <div key={ride._id} style={{
-              background: 'var(--card-bg)', border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)', padding: 20, marginBottom: 12,
-              transition: 'box-shadow 0.2s, transform 0.2s', cursor: 'pointer'
-            }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
-              onClick={() => navigate(`/ride/${ride._id}`)}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontWeight: 600, fontSize: 15 }}>{ride.sourceLandmark}</span>
-                  <span style={{ color: 'var(--coral)', fontSize: 18 }}>→</span>
-                  <span style={{ fontWeight: 600, fontSize: 15 }}>{ride.destinationLandmark}</span>
-                </div>
-                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  {ride.femaleOnly && <span className="badge-female">Female only</span>}
-                  <span className={`badge-status status-${ride.status}`}>{ride.status}</span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                <div style={{ fontSize: 13, color: 'var(--muted)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  <span>💺 {ride.availableSeats} seat{ride.availableSeats !== 1 ? 's' : ''}</span>
-                  <span>👤 {ride.driverName}</span>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--coral)', marginBottom: 2 }}>₹{ride.farePerSeat}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {pools.length > 0 && (
-             <div style={{ marginTop: 30 }}>
-                <p style={{ fontSize: 12, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 16 }}>Available Pool Groups</p>
-                {pools.map(p => (
-                  <div key={p._id} onClick={() => navigate(`/waiting/${p._id}`)} style={{ background: 'linear-gradient(135deg, var(--card-bg), var(--cream))', border: '2px solid var(--coral)', borderRadius: 20, padding: 20, marginBottom: 12, cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,90,63,0.1)' }}>
-                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                           <div style={{ width: 40, height: 40, background: 'var(--coral)', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{p.poolCode?.charAt(0)}</div>
-                           <div>
-                              <p style={{ fontWeight: 800, fontSize: 14 }}>{p.creator?.name}'s Pool</p>
-                              <p style={{ fontSize: 11, color: 'var(--muted)' }}>Destination: {p.destCoords?.address?.split(',')[0]}</p>
-                           </div>
-                        </div>
-                        <span style={{ background: 'var(--white)', padding: '5px 10px', borderRadius: 10, fontSize: 12, fontWeight: 800, border: '1px solid var(--border)' }}>{p.members?.length} / {p.maxParticipants} Joined</span>
-                     </div>
-                     <button className="btn-primary" style={{ width: '100%', fontSize: 13 }}>Split Fare & Join Group</button>
+          {[...scheduledPools.filter(sp => {
+              if(!searched) return false;
+              const matchesSource = !filters.source || sp.sourceCoords?.address?.toLowerCase().includes(filters.source.toLowerCase());
+              const matchesDest = !filters.destination || sp.destCoords?.address?.toLowerCase().includes(filters.destination.toLowerCase());
+              return matchesSource && matchesDest;
+          }), ...rides].map((item, idx) => {
+             const isPool = !!item.poolCode || !!item.members;
+             return (
+              <div key={item._id} style={{
+                background: isPool ? 'rgba(229,90,63,0.03)' : 'var(--card-bg)', 
+                border: isPool ? '1.5px solid var(--coral)' : '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)', padding: 20, marginBottom: 12,
+                transition: 'box-shadow 0.2s, transform 0.2s', cursor: 'pointer',
+                position: 'relative'
+              }}
+              onClick={() => navigate(isPool ? `/waiting/${item._id}` : `/ride/${item._id}`)}>
+                {isPool && (
+                  <div style={{ position: 'absolute', top: -1, right: -1, padding: '3px 10px', background: 'var(--coral)', color: '#fff', fontSize: 9, fontWeight: 900, borderRadius: '0 8px 0 8px', letterSpacing: 0.5 }}>UPCOMING RIDE</div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 600, fontSize: 15 }}>{isPool ? item.sourceCoords?.address?.split(',')[0] : item.sourceLandmark}</span>
+                    <span style={{ color: 'var(--coral)', fontSize: 18 }}>→</span>
+                    <span style={{ fontWeight: 600, fontSize: 15 }}>{isPool ? item.destCoords?.address?.split(',')[0] : item.destinationLandmark}</span>
                   </div>
-                ))}
-             </div>
-          )}
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    {item.femaleOnly && <span className="badge-female">Female only</span>}
+                    <span className={`badge-status status-${item.status}`}>{item.status}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                  <div style={{ fontSize: 13, color: 'var(--muted)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                    <span>💺 {isPool ? (item.maxParticipants - item.members.length) : item.availableSeats} seat{(isPool ? (item.maxParticipants - item.members.length) : item.availableSeats) !== 1 ? 's' : ''}</span>
+                    <span>👤 {isPool ? (item.creator?.name || 'Driver') : item.driverName}</span>
+                    {isPool && <span style={{ color: 'var(--coral)', fontWeight: 700 }}>🕒 {new Date(item.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--coral)', marginBottom: 2 }}>₹{isPool ? Math.round(item.totalFare / item.members.length) : item.farePerSeat}</p>
+                  </div>
+                </div>
+              </div>
+             );
+          })}
+
         </div>
       )}
     </div>

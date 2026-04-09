@@ -203,6 +203,22 @@ exports.getMyPools = async (req, res) => {
     }
 };
 
+exports.getAllScheduledPools = async (req, res) => {
+    try {
+      const pools = await RidePool.find({
+        status: 'waiting',
+        departureTime: { $gt: new Date() }
+      })
+      .populate('creator', 'name gender')
+      .sort({ departureTime: 1 })
+      .limit(20);
+  
+      res.json({ success: true, data: { pools } });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 // Monitor function to trigger driver search for pools waiting > 30s
 exports.monitorPools = async () => {
     const threshold = new Date(Date.now() - 30 * 1000);
