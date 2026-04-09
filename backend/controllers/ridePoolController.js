@@ -190,6 +190,19 @@ exports.getPoolByCode = async (req, res) => {
     }
 };
 
+exports.getMyPools = async (req, res) => {
+    try {
+      const userId = req.user?.id || req.user?._id || req.userId;
+      const pools = await RidePool.find({ 'members.user': userId })
+        .populate('creator', 'name gender')
+        .sort({ departureTime: -1 });
+  
+      res.json({ success: true, data: { pools } });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 // Monitor function to trigger driver search for pools waiting > 30s
 exports.monitorPools = async () => {
     const threshold = new Date(Date.now() - 30 * 1000);

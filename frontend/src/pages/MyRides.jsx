@@ -23,13 +23,15 @@ export default function MyRides() {
   const [activeTab, setActiveTab]     = useState('posted');
   const [postedRides, setPostedRides] = useState([]);
   const [bookedRides, setBookedRides] = useState([]);
+  const [myPools, setMyPools]       = useState([]);
   const [loading, setLoading]         = useState(true);
 
   useEffect(() => {
-    Promise.all([api.get('/rides/my'), api.get('/bookings/my')])
-      .then(([p, b]) => {
+    Promise.all([api.get('/rides/my'), api.get('/bookings/my'), api.get('/pools/my')])
+      .then(([p, b, po]) => {
         setPostedRides(p.data.data?.rides || p.data.rides || []);
         setBookedRides(b.data.data?.bookings || b.data.bookings || []);
+        setMyPools(po.data.data?.pools || po.data.pools || []);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -70,7 +72,8 @@ export default function MyRides() {
       }}>
         {[
           { key: 'posted', label: `Posted (${postedRides.length})` },
-          { key: 'booked', label: `Booked (${bookedRides.length})` }
+          { key: 'booked', label: `Booked (${bookedRides.length})` },
+          { key: 'scheduled', label: `Scheduled (${myPools.filter(p => new Date(p.departureTime) > new Date()).length})` }
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
             padding: '8px 20px', border: 'none', cursor: 'pointer',
@@ -221,6 +224,64 @@ export default function MyRides() {
                       View Ride
                     </button>
                   )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Scheduled Pools */}
+      {activeTab === 'scheduled' && (
+        <div>
+          {myPools.filter(p => new Date(p.departureTime) > new Date()).length === 0 ? (
+            <div style={{
+              textAlign: 'center', padding: '48px 20px',
+              background: 'var(--card-bg)', borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border)'
+            }}>
+              <p style={{ fontSize: 32, marginBottom: 12 }}>📅</p>
+              <p style={{ fontWeight: 500, marginBottom: 6 }}>No scheduled rides</p>
+              <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 20 }}>
+                Plan your future trips and save more
+              </p>
+              <button className="btn-primary" style={{ width: 'auto', padding: '10px 24px' }}
+                onClick={() => navigate('/search')}>
+                Find a Pool
+              </button>
+            </div>
+          ) : (
+            myPools.filter(p => new Date(p.departureTime) > new Date()).map(p => (
+              <div key={p._id} style={{
+                background: 'var(--card-bg)', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)', padding: 20, marginBottom: 12,
+                cursor: 'pointer', transition: 'transform 0.2s'
+              }}
+              onClick={() => navigate(p.status === 'waiting' || p.status === 'finding_driver' ? `/waiting/${p._id}` : `/ride/${p._id}`)}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--charcoal)' }}>
+                      {p.sourceCoords.address?.split(',')[0]}
+                      <span style={{ color: 'var(--coral)', margin: '0 8px' }}>→</span>
+                      {p.destCoords.address?.split(',')[0]}
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+                       <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--coral)', background: 'var(--coral-pale)', padding: '2px 8px', borderRadius: 12 }}>
+                          🕒 {new Date(p.departureTime).toLocaleDateString([], { day: 'numeric', month: 'short' })} at {new Date(p.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                       </span>
+                    </div>
+                  </div>
+                  <span className={`badge-status status-${p.status}`} style={{ height: 'fit-content' }}>
+                    {p.status.replace('_', ' ')}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 14, borderTop: '1px dashed var(--border)' }}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--cream-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>👤</div>
+                      <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>{p.members.length} Passengers</span>
+                   </div>
+                   <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--success)' }}>₹{Math.round(p.totalFare / p.members.length)}</span>
                 </div>
               </div>
             ))
