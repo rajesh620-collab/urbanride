@@ -199,6 +199,11 @@ export default function SearchRide() {
   const [searchP, setSearchP] = useState(1);
   const [rideType, setRideType] = useState('instant'); 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showPaxDropdown, setShowPaxDropdown] = useState(false);
+  
+  // Scheduled search filters
+  const [schedSource, setSchedSource] = useState(null);
+  const [schedDest, setSchedDest] = useState(null);
 
 
   useEffect(() => {
@@ -422,6 +427,35 @@ export default function SearchRide() {
       </div>
 
 
+      {/* Quick Search Landmarks */}
+      {!searched && savedRoutes.length > 0 && (
+        <div style={{ marginBottom: 32, textAlign: 'center' }}>
+          <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 12 }}>Quick Search Saved Routes</p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {savedRoutes.map(route => (
+              <button
+                key={route._id}
+                onClick={() => {
+                  setSourceCoords({ lat: route.sourceCoords.lat, lng: route.sourceCoords.lng, address: route.sourceLandmark });
+                  setDestCoords({ lat: route.destCoords.lat, lng: route.destCoords.lng, address: route.destinationLandmark });
+                  setFilters(f => ({ ...f, source: route.sourceLandmark, destination: route.destinationLandmark }));
+                  handleSearch();
+                }}
+                style={{
+                  padding: '8px 16px', borderRadius: 12, border: '1px solid var(--border)',
+                  background: 'var(--card-bg)', color: 'var(--charcoal)', fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)'
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--coral)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+              >
+                ⭐ {route.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Live alert */}
       {liveAlert && (
         <div className="alert-success" style={{
@@ -474,9 +508,9 @@ export default function SearchRide() {
             <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500 }}>Search available rides near you — instant matches</p>
           </div>
 
-          <div className="unified-search-bar">
+          <div className="unified-search-bar" style={{ maxWidth: 1000, margin: '0 auto' }}>
             {/* Leaving From */}
-            <div style={{ flex: 1.5, position: 'relative' }}>
+            <div style={{ flex: 1.8, position: 'relative' }}>
               <LocationPicker
                 value={sourceCoords}
                 onChange={(loc) => { setSourceCoords(loc); setFilters(f => ({ ...f, source: loc.address })); }}
@@ -487,7 +521,7 @@ export default function SearchRide() {
             <div className="search-divider" />
 
             {/* Going To */}
-            <div style={{ flex: 1.5, position: 'relative' }}>
+            <div style={{ flex: 1.8, position: 'relative' }}>
               <LocationPicker
                 value={destCoords}
                 onChange={(loc) => { setDestCoords(loc); setFilters(f => ({ ...f, destination: loc.address })); }}
@@ -497,19 +531,39 @@ export default function SearchRide() {
 
             <div className="search-divider" />
 
-            <div className="search-field-item" onClick={() => setSearchDate(searchDate === 'Today' ? 'Tomorrow' : 'Today')}>
-              <span style={{ fontSize: 22 }}>📅</span>
-              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--charcoal)' }}>{searchDate} Today</p>
+            <div style={{ flex: 1, position: 'relative' }}>
+              <div 
+                className="search-field-item" 
+                onClick={() => setShowPaxDropdown(!showPaxDropdown)}
+                style={{ justifyContent: 'center' }}
+              >
+                <span style={{ fontSize: 22 }}>👥</span>
+                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--charcoal)' }}>{searchP} pax</p>
+                <span style={{ fontSize: 10, marginLeft: 6, transform: showPaxDropdown ? 'rotate(180deg)' : 'none', transition: '0.2s' }}>▼</span>
+              </div>
+              
+              {showPaxDropdown && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, right: 0, mt: 8,
+                  background: 'var(--card-bg)', borderRadius: 16, border: '1px solid var(--border)',
+                  boxShadow: 'var(--shadow-lg)', zIndex: 100, overflow: 'hidden'
+                }}>
+                  {[1, 2, 3, 4].map(num => (
+                    <div 
+                      key={num} 
+                      onClick={() => { setSearchP(num); setShowPaxDropdown(false); }}
+                      style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, fontWeight: 600, background: searchP === num ? 'var(--coral-pale)' : 'transparent', color: searchP === num ? 'var(--coral)' : 'var(--charcoal)' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--cream)'}
+                      onMouseLeave={e => e.currentTarget.style.background = searchP === num ? 'var(--coral-pale)' : 'transparent'}
+                    >
+                      {num} Passenger{num > 1 ? 's' : ''}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="search-divider" />
-
-            <div className="search-field-item" onClick={() => setSearchP(p => p < 4 ? p + 1 : 1)}>
-              <span style={{ fontSize: 22 }}>👤</span>
-              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--charcoal)' }}>{searchP} pax</p>
-            </div>
-
-            <button onClick={() => handleSearch()} disabled={loading} className="search-btn-primary">
+            <button onClick={() => handleSearch()} disabled={loading} className="search-btn-primary" style={{ padding: '0 40px' }}>
               {loading ? '...' : 'Search'}
             </button>
           </div>
@@ -518,10 +572,11 @@ export default function SearchRide() {
         /* Scheduled Mode */
         <div style={{ animation: 'fadeIn 0.35s ease-out' }}>
           <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--charcoal)', marginBottom: 12 }}>Pick Your Date</h1>
-            <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500, marginBottom: 28 }}>Browse rides scheduled for future dates by expert drivers</p>
+            <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--charcoal)', marginBottom: 12 }}>Check Scheduled Rides</h1>
+            <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500, marginBottom: 28 }}>Select a date and destination to find pre-planned routes</p>
             
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 16, justifyContent: 'center', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+            {/* Date Scroller */}
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 24, justifyContent: 'center', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
                {[0,1,2,3,4,5,6].map(i => {
                  const d = new Date(); d.setDate(d.getDate() + i);
                  const dateStr = d.toISOString().split('T')[0];
@@ -545,29 +600,57 @@ export default function SearchRide() {
                  );
                })}
             </div>
+
+            {/* Scheduled Specific Location Search */}
+            <div className="unified-search-bar" style={{ maxWidth: 800, margin: '0 auto', boxShadow: 'none', background: 'var(--cream-dark)', padding: '8px 12px' }}>
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <LocationPicker 
+                    value={schedSource} onChange={setSchedSource} 
+                    minimal hideGps hideMapToggle placeholder="From where?" mode="pickup"
+                  />
+                </div>
+                <div style={{ width: 1, height: 24, background: 'var(--border)' }} />
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <LocationPicker 
+                    value={schedDest} onChange={setSchedDest} 
+                    minimal hideGps hideMapToggle placeholder="To where?" mode="dropoff"
+                  />
+                </div>
+            </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 24, marginBottom: 40 }}>
-            {scheduledPools.filter(p => p.departureTime?.startsWith(selectedDate)).length === 0 ? (
+            {scheduledPools.filter(p => {
+              const matchesDate = p.departureTime?.startsWith(selectedDate);
+              const matchesSource = !schedSource || (p.sourceCoords?.address?.toLowerCase().includes(schedSource.address.toLowerCase()));
+              const matchesDest = !schedDest || (p.destCoords?.address?.toLowerCase().includes(schedDest.address.toLowerCase()));
+              return matchesDate && matchesSource && matchesDest;
+            }).length === 0 ? (
               <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '80px 40px', background: 'var(--cream-dark)', borderRadius: 40, border: '1.5px dashed var(--border)' }}>
                 <p style={{ fontSize: 56, marginBottom: 20 }}>🗓️</p>
-                <h3 style={{ fontWeight: 800, fontSize: 22, color: 'var(--charcoal)' }}>No pre-planned rides today</h3>
-                <p style={{ color: 'var(--muted)', fontSize: 15, marginTop: 10, maxWidth: 300, margin: '10px auto 0' }}>Expert drivers haven't posted any routes for this date yet. Check back soon!</p>
+                <h3 style={{ fontWeight: 800, fontSize: 22, color: 'var(--charcoal)' }}>No scheduled rides found</h3>
+                <p style={{ color: 'var(--muted)', fontSize: 15, marginTop: 10, maxWidth: 300, margin: '10px auto 0' }}>Try adjusting your destination or check back later.</p>
               </div>
             ) : (
               scheduledPools
-                .filter(p => p.departureTime?.startsWith(selectedDate))
+                .filter(p => {
+                  const matchesDate = p.departureTime?.startsWith(selectedDate);
+                  const matchesSource = !schedSource || (p.sourceCoords?.address?.toLowerCase().includes(schedSource.address.toLowerCase()));
+                  const matchesDest = !schedDest || (p.destCoords?.address?.toLowerCase().includes(schedDest.address.toLowerCase()));
+                  return matchesDate && matchesSource && matchesDest;
+                })
                 .map(pool => (
                   <div key={pool._id} className="card-soft" style={{ padding: 28, borderRadius: 32, position: 'relative', border: '1px solid var(--border)', transition: 'transform 0.2s' }}>
                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                           <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, var(--coral-pale), #ffffff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'var(--coral)', border: '1px solid var(--coral-pale)' }}>
+                           <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, var(--coral-pale), #ffffff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'var(--coral)', border: '1px solid var(--coral-pale)' }}>
                               {pool.creator?.name?.[0].toUpperCase()}
                            </div>
                            <div>
-                              <p style={{ fontWeight: 800, fontSize: 16 }}>{pool.creator?.name}</p>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                 <span style={{ fontSize: 10, color: '#059669', background: '#ecfdf5', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>VERIFIED</span>
+                              <p style={{ fontWeight: 800, fontSize: 17 }}>{pool.creator?.name}</p>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                                 <span style={{ fontSize: 10, color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: 6, fontWeight: 800 }}>EXPERT DRIVER</span>
+                                 <span style={{ fontSize: 12, color: '#F59E0B' }}>★ 4.9</span>
                               </div>
                            </div>
                         </div>
@@ -595,16 +678,16 @@ export default function SearchRide() {
                            <p style={{ fontSize: 15, fontWeight: 900 }}>{pool.departureTime ? new Date(pool.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Flexible'}</p>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                           <p style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 800, marginBottom: 4, letterSpacing: '0.02em' }}>SEATS LEFT</p>
-                           <p style={{ fontSize: 15, fontWeight: 900, color: '#059669' }}>{pool.maxParticipants - (pool.members?.length || 0)} available</p>
+                           <p style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 800, marginBottom: 4, letterSpacing: '0.02em' }}>AVAILABLE</p>
+                           <p style={{ fontSize: 15, fontWeight: 900, color: '#059669' }}>{pool.maxParticipants - (pool.members?.length || 0)} seats</p>
                         </div>
                      </div>
 
                      <button 
                         onClick={() => navigate(`/waiting/${pool._id}`)}
-                        style={{ width: '100%', padding: '18px', borderRadius: 24, border: 'none', background: '#007AFF', color: 'white', fontWeight: 900, fontSize: 16, cursor: 'pointer', boxShadow: '0 10px 20px rgba(0,122,255,0.2)', transition: 'transform 0.2s' }}
+                        style={{ width: '100%', padding: '20px', borderRadius: 24, border: 'none', background: '#007AFF', color: 'white', fontWeight: 900, fontSize: 16, cursor: 'pointer', boxShadow: '0 10px 20px rgba(0,122,255,0.2)', transition: 'transform 0.2s' }}
                      >
-                        Book This Ride
+                        Book Seat Now
                      </button>
                   </div>
                 ))

@@ -230,7 +230,11 @@ export default function LocationPicker({
             placeholder={inputFocused ? "Start typing..." : placeholder}
             value={inputDisplayValue}
             onChange={e => handleSearch(e.target.value)}
-            onFocus={() => { setInputFocused(true); setShowMap(true); setSearchQuery(''); }}
+            onFocus={() => { 
+                setInputFocused(true); 
+                if (!minimal) setShowMap(true); 
+                setSearchQuery(''); 
+            }}
             onBlur={() => { setInputFocused(false); setTimeout(() => setSearchResults([]), 200); }}
             style={{
               width: '100%', padding: minimal ? '6px 0' : '11px 14px',
@@ -371,7 +375,13 @@ export default function LocationPicker({
         <div style={{
           marginTop: 10, borderRadius: 'var(--radius-md)', overflow: 'hidden',
           border: '1.5px solid var(--border)', height: 250,
-          transition: 'all 0.3s ease'
+          transition: 'all 0.3s ease',
+          position: minimal ? 'absolute' : 'relative',
+          top: minimal ? '100%' : 'auto',
+          left: minimal ? 0 : 'auto',
+          right: minimal ? 0 : 'auto',
+          zIndex: minimal ? 1000 : 1,
+          boxShadow: minimal ? 'var(--shadow-lg)' : 'none'
         }}>
           <MapContainer
             center={value?.lat ? [value.lat, value.lng] : DEFAULT_CENTER}
