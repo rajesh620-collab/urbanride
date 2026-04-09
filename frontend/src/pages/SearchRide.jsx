@@ -197,6 +197,8 @@ export default function SearchRide() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [searchDate, setSearchDate] = useState('Today');
   const [searchP, setSearchP] = useState(1);
+  const [rideType, setRideType] = useState('instant'); 
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
 
   useEffect(() => {
@@ -437,65 +439,179 @@ export default function SearchRide() {
         </div>
       )}
 
-      {/* Horizontal Unified Search Bar */}
-      <div className="unified-search-bar">
-        {/* Leaving From */}
-        <div style={{ flex: 1.5, position: 'relative' }}>
-          <LocationPicker
-            value={sourceCoords}
-            onChange={(loc) => { setSourceCoords(loc); setFilters(f => ({ ...f, source: loc.address })); }}
-            mode="pickup"
-            hideGps hideMapToggle
-            minimal
-            placeholder="Leaving from"
-          />
+      {/* High-fidelity Discovery Toggle */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32 }}>
+        <div style={{
+          display: 'flex', background: 'var(--cream-dark)', padding: 5, borderRadius: 24, border: '1px solid var(--border)',
+          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+        }}>
+          {[
+            { id: 'instant', label: 'Instant Matches', icon: '⚡' },
+            { id: 'scheduled', label: 'Want a Scheduled Ride?', icon: '📅' }
+          ].map(type => (
+            <button
+              key={type.id}
+              onClick={() => { setRideType(type.id); setIsDiscovering(false); setSearched(false); }}
+              style={{
+                padding: '12px 28px', borderRadius: 20, border: 'none', fontSize: 14, fontWeight: 800,
+                cursor: 'pointer', transition: 'all 0.25s',
+                background: rideType === type.id ? '#007AFF' : 'transparent',
+                color: rideType === type.id ? '#fff' : 'var(--muted)',
+                boxShadow: rideType === type.id ? '0 6px 16px rgba(0,122,255,0.2)' : 'none',
+              }}
+            >
+              <span style={{ marginRight: 10, filter: rideType === type.id ? 'none' : 'grayscale(1)' }}>{type.icon}</span>
+              {type.label}
+            </button>
+          ))}
         </div>
-
-        <div className="search-divider" />
-
-        {/* Going To */}
-        <div style={{ flex: 1.5, position: 'relative' }}>
-          <LocationPicker
-            value={destCoords}
-            onChange={(loc) => { setDestCoords(loc); setFilters(f => ({ ...f, destination: loc.address })); }}
-            mode="dropoff"
-            hideGps hideMapToggle
-            minimal
-            placeholder="Going to"
-          />
-        </div>
-
-        <div className="search-divider" />
-
-        {/* Date Selector */}
-        <div className="search-field-item" onClick={() => setSearchDate(searchDate === 'Today' ? 'Tomorrow' : 'Today')}>
-          <span style={{ fontSize: 22 }}>📅</span>
-          <div>
-            <p style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Date</p>
-            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--charcoal)', whiteSpace: 'nowrap' }}>{searchDate}</p>
-          </div>
-        </div>
-
-        <div className="search-divider" />
-
-        {/* Passenger Selector */}
-        <div className="search-field-item" onClick={() => setSearchP(p => p < 4 ? p + 1 : 1)}>
-          <span style={{ fontSize: 22 }}>👤</span>
-          <div>
-            <p style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Passengers</p>
-            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--charcoal)', whiteSpace: 'nowrap' }}>{searchP} passenger</p>
-          </div>
-        </div>
-
-        {/* Search Button */}
-        <button 
-          onClick={() => handleSearch()}
-          disabled={loading}
-          className="search-btn-primary"
-        >
-          {loading ? '...' : 'Search'}
-        </button>
       </div>
+
+      {rideType === 'instant' ? (
+        <>
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
+            <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--charcoal)', marginBottom: 8 }}>Find a Ride</h1>
+            <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500 }}>Search available rides near you — instant matches</p>
+          </div>
+
+          <div className="unified-search-bar">
+            {/* Leaving From */}
+            <div style={{ flex: 1.5, position: 'relative' }}>
+              <LocationPicker
+                value={sourceCoords}
+                onChange={(loc) => { setSourceCoords(loc); setFilters(f => ({ ...f, source: loc.address })); }}
+                mode="pickup" hideGps hideMapToggle minimal placeholder="Leaving from"
+              />
+            </div>
+
+            <div className="search-divider" />
+
+            {/* Going To */}
+            <div style={{ flex: 1.5, position: 'relative' }}>
+              <LocationPicker
+                value={destCoords}
+                onChange={(loc) => { setDestCoords(loc); setFilters(f => ({ ...f, destination: loc.address })); }}
+                mode="dropoff" hideGps hideMapToggle minimal placeholder="Going to"
+              />
+            </div>
+
+            <div className="search-divider" />
+
+            <div className="search-field-item" onClick={() => setSearchDate(searchDate === 'Today' ? 'Tomorrow' : 'Today')}>
+              <span style={{ fontSize: 22 }}>📅</span>
+              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--charcoal)' }}>{searchDate} Today</p>
+            </div>
+
+            <div className="search-divider" />
+
+            <div className="search-field-item" onClick={() => setSearchP(p => p < 4 ? p + 1 : 1)}>
+              <span style={{ fontSize: 22 }}>👤</span>
+              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--charcoal)' }}>{searchP} pax</p>
+            </div>
+
+            <button onClick={() => handleSearch()} disabled={loading} className="search-btn-primary">
+              {loading ? '...' : 'Search'}
+            </button>
+          </div>
+        </>
+      ) : (
+        /* Scheduled Mode */
+        <div style={{ animation: 'fadeIn 0.35s ease-out' }}>
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--charcoal)', marginBottom: 12 }}>Pick Your Date</h1>
+            <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500, marginBottom: 28 }}>Browse rides scheduled for future dates by expert drivers</p>
+            
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 16, justifyContent: 'center', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+               {[0,1,2,3,4,5,6].map(i => {
+                 const d = new Date(); d.setDate(d.getDate() + i);
+                 const dateStr = d.toISOString().split('T')[0];
+                 const isSelected = selectedDate === dateStr;
+                 return (
+                   <button 
+                     key={dateStr}
+                     onClick={() => setSelectedDate(dateStr)}
+                     style={{
+                       padding: '14px 24px', borderRadius: 22, border: '1px solid var(--border)',
+                       background: isSelected ? '#007AFF' : 'var(--card-bg)',
+                       color: isSelected ? 'white' : 'var(--charcoal)',
+                       cursor: 'pointer', transition: 'all 0.2s',
+                       minWidth: 110, flexShrink: 0,
+                       boxShadow: isSelected ? '0 8px 20px rgba(0,122,255,0.25)' : 'none'
+                     }}
+                   >
+                     <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', opacity: 0.8, marginBottom: 4 }}>{d.toLocaleDateString(undefined, { weekday: 'short' })}</p>
+                     <p style={{ fontSize: 18, fontWeight: 900 }}>{d.getDate()} {d.toLocaleDateString(undefined, { month: 'short' })}</p>
+                   </button>
+                 );
+               })}
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 24, marginBottom: 40 }}>
+            {scheduledPools.filter(p => p.departureTime?.startsWith(selectedDate)).length === 0 ? (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '80px 40px', background: 'var(--cream-dark)', borderRadius: 40, border: '1.5px dashed var(--border)' }}>
+                <p style={{ fontSize: 56, marginBottom: 20 }}>🗓️</p>
+                <h3 style={{ fontWeight: 800, fontSize: 22, color: 'var(--charcoal)' }}>No pre-planned rides today</h3>
+                <p style={{ color: 'var(--muted)', fontSize: 15, marginTop: 10, maxWidth: 300, margin: '10px auto 0' }}>Expert drivers haven't posted any routes for this date yet. Check back soon!</p>
+              </div>
+            ) : (
+              scheduledPools
+                .filter(p => p.departureTime?.startsWith(selectedDate))
+                .map(pool => (
+                  <div key={pool._id} className="card-soft" style={{ padding: 28, borderRadius: 32, position: 'relative', border: '1px solid var(--border)', transition: 'transform 0.2s' }}>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                           <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, var(--coral-pale), #ffffff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'var(--coral)', border: '1px solid var(--coral-pale)' }}>
+                              {pool.creator?.name?.[0].toUpperCase()}
+                           </div>
+                           <div>
+                              <p style={{ fontWeight: 800, fontSize: 16 }}>{pool.creator?.name}</p>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                 <span style={{ fontSize: 10, color: '#059669', background: '#ecfdf5', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>VERIFIED</span>
+                              </div>
+                           </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                           <p style={{ fontSize: 10, fontWeight: 900, color: 'var(--muted)', marginBottom: 4, letterSpacing: '0.05em' }}>FARE / SEAT</p>
+                           <p style={{ fontSize: 22, fontWeight: 900, color: '#007AFF' }}>₹{Math.round(pool.farePerSeat || 0)}</p>
+                        </div>
+                     </div>
+                     
+                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 28, position: 'relative' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                           <div style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid #2A9D8F', flexShrink: 0 }} />
+                           <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--charcoal)' }}>{pool.sourceCoords?.address}</span>
+                        </div>
+                        <div style={{ marginLeft: 4, height: 24, width: 2, background: 'var(--border)', position: 'absolute', top: 12, left: 0 }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                           <div style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid var(--coral)', background: 'var(--coral)', flexShrink: 0 }} />
+                           <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--charcoal)' }}>{pool.destCoords?.address}</span>
+                        </div>
+                     </div>
+
+                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--cream)', padding: '16px 20px', borderRadius: 20, marginBottom: 24 }}>
+                        <div>
+                           <p style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 800, marginBottom: 4, letterSpacing: '0.02em' }}>START TIME</p>
+                           <p style={{ fontSize: 15, fontWeight: 900 }}>{pool.departureTime ? new Date(pool.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Flexible'}</p>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                           <p style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 800, marginBottom: 4, letterSpacing: '0.02em' }}>SEATS LEFT</p>
+                           <p style={{ fontSize: 15, fontWeight: 900, color: '#059669' }}>{pool.maxParticipants - (pool.members?.length || 0)} available</p>
+                        </div>
+                     </div>
+
+                     <button 
+                        onClick={() => navigate(`/waiting/${pool._id}`)}
+                        style={{ width: '100%', padding: '18px', borderRadius: 24, border: 'none', background: '#007AFF', color: 'white', fontWeight: 900, fontSize: 16, cursor: 'pointer', boxShadow: '0 10px 20px rgba(0,122,255,0.2)', transition: 'transform 0.2s' }}
+                     >
+                        Book This Ride
+                     </button>
+                  </div>
+                ))
+            )}
+          </div>
+        </div>
+      )}
 
       {error && (
         <div style={{
