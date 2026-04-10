@@ -286,8 +286,8 @@ input, select, button {
 
 /* ── Theme toggle ── */
 .theme-toggle {
-  background: #1C2229; /* Dark slate matching image */
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--cream);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 8px 16px;
   display: flex;
@@ -296,13 +296,30 @@ input, select, button {
   cursor: pointer;
   font-size: 15px;
   font-weight: 600;
-  color: #E8EBEF;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  color: var(--charcoal);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
 }
 .theme-toggle svg {
-  stroke: #E8EBEF;
+  stroke: var(--charcoal);
+  transition: stroke 0.3s ease;
 }
+
+[data-theme="dark"] .theme-toggle {
+  background: #1C2229;
+  color: #E2E8F0;
+  border-color: rgba(255,255,255,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+[data-theme="dark"] .theme-toggle svg {
+  stroke: #E2E8F0;
+}
+
 .theme-toggle:hover { 
+  background: var(--cream-dark);
+  filter: brightness(0.98);
+}
+[data-theme="dark"] .theme-toggle:hover {
   background: #262E37;
   filter: brightness(1.1);
 }
