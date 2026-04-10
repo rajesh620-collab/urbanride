@@ -76,7 +76,7 @@ function SettingsPanel({ onClose }) {
         <div style={settingRow}>
           <div>
             <p style={settingName}>Dark Mode</p>
-            <p style={settingDesc}>{dark ? 'Currently dark' : 'Currently light'}</p>
+            <p style={settingDesc}>{dark ? 'Currently dark' : 'Currently bright'}</p>
           </div>
           <ToggleSwitch checked={dark} onChange={toggle} />
         </div>

@@ -10,11 +10,19 @@ export function ThemeProvider({ children }) {
   });
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-    localStorage.setItem('theme', dark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'bright');
+    localStorage.setItem('theme', dark ? 'dark' : 'bright');
   }, [dark]);
 
-  const toggle = () => setDark(d => !d);
+  const toggle = () => {
+    document.documentElement.classList.add('theme-transitioning');
+    setDark(d => !d);
+    
+    // Remove the class after the transition duration
+    setTimeout(() => {
+      document.documentElement.classList.remove('theme-transitioning');
+    }, 500); // 500ms to be safe (matching or exceeding the CSS duration)
+  };
 
   return (
     <ThemeContext.Provider value={{ dark, toggle }}>
