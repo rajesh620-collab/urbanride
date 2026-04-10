@@ -184,12 +184,18 @@ export default function LandingPage() {
           </span>
         </div>
 
-        <div className="nav-links-landing" style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+        <div className="nav-links-landing" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {['Features', 'How It Works', 'Testimonials', 'FAQ'].map(item => (
-            <a key={item} href={`#${item.toLowerCase().replace(/ /g, '-')}`} style={{
-              color: 'var(--muted)', textDecoration: 'none', fontSize: 14, fontWeight: 500,
-              transition: 'color 0.2s',
-            }}>{item}</a>
+            <a 
+              key={item} 
+              href={`#${item.toLowerCase().replace(/ /g, '-')}`} 
+              className="nav-link-tactile"
+              style={{
+                color: 'var(--muted)', textDecoration: 'none', fontSize: 14, fontWeight: 500,
+              }}
+            >
+              {item}
+            </a>
           ))}
         </div>
 

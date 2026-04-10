@@ -1225,3 +1225,36 @@ html { scroll-behavior: smooth; }
     width: 100%;
   }
 }
+
+/* ── Nav Link Tactile ── */
+.nav-link-tactile {
+  padding: 8px 16px;
+  border-radius: 12px;
+  transition: 
+    transform var(--btn-trans-hover),
+    background-color var(--btn-trans-hover),
+    color var(--btn-trans-hover),
+    filter var(--btn-trans-hover);
+  will-change: transform;
+  display: inline-block;
+}
+
+.nav-link-tactile:hover {
+  transform: scale(1.08) translateY(-1px);
+  background: var(--coral-pale);
+  color: var(--coral) !important;
+}
+
+.nav-link-tactile:active {
+  transform: scale(0.96) translateY(0);
+  background: var(--coral-light);
+  color: white !important;
+  transition-duration: var(--btn-trans-active);
+}
+
+[data-theme="dark"] .nav-link-tactile:hover {
+  background: rgba(204,120,92,0.15);
+}
+[data-theme="dark"] .nav-link-tactile:active {
+  background: var(--coral);
+}
