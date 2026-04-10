@@ -34,6 +34,12 @@
   --shadow-lg: 0 8px 32px rgba(28, 25, 23, 0.12);
   --duration-theme: 500ms;
   --theme-transition: background-color var(--duration-theme) ease, color var(--duration-theme) ease, border-color var(--duration-theme) ease, box-shadow var(--duration-theme) ease, opacity var(--duration-theme) ease;
+
+  /* ── Tactile Button Tokens ── */
+  --btn-hover-scale: 1.05;
+  --btn-press-scale: 0.98;
+  --btn-trans-hover: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  --btn-trans-active: 100ms cubic-bezier(0.1, 0, 0, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -284,7 +290,7 @@ input, select, button {
 }
 .link-text:hover { text-decoration: underline; }
 
-/* ── Theme toggle ── */
+/* ── Theme toggle (Tactile) ── */
 .theme-toggle {
   background: var(--cream);
   border: 1px solid var(--border);
@@ -298,30 +304,119 @@ input, select, button {
   font-weight: 600;
   color: var(--charcoal);
   box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
+  transition: 
+    transform var(--btn-trans-hover),
+    box-shadow var(--btn-trans-hover),
+    background-color var(--btn-trans-hover),
+    color var(--btn-trans-hover),
+    stroke var(--btn-trans-hover),
+    filter var(--btn-trans-hover);
+  outline: none;
 }
+
 .theme-toggle svg {
   stroke: var(--charcoal);
-  transition: stroke 0.3s ease;
 }
 
 [data-theme="dark"] .theme-toggle {
   background: #1C2229;
   color: #E2E8F0;
   border-color: rgba(255,255,255,0.1);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 [data-theme="dark"] .theme-toggle svg {
   stroke: #E2E8F0;
 }
 
-.theme-toggle:hover { 
+.theme-toggle:hover, .theme-toggle:focus {
+  transform: scale(1.04) translateY(-1px);
+  box-shadow: var(--shadow-md);
   background: var(--cream-dark);
-  filter: brightness(0.98);
 }
-[data-theme="dark"] .theme-toggle:hover {
+[data-theme="dark"] .theme-toggle:hover, [data-theme="dark"] .theme-toggle:focus {
   background: #262E37;
-  filter: brightness(1.1);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.theme-toggle:active {
+  transform: scale(0.98) translateY(0);
+  box-shadow: var(--shadow-sm);
+  filter: brightness(0.92) translateZ(0); /* Richer feedback in light */
+}
+[data-theme="dark"] .theme-toggle:active {
+  filter: brightness(1.25) saturate(1.2) translateZ(0); /* Vivid feedback in dark */
+}
+
+/* ── Unified Tactile Button Interaction Foundation ── */
+/* This handles scale, elevation, and physics-based color shifts for all key buttons */
+
+.hero-cta-btn, 
+.hero-cta-outline, 
+.landing-btn-primary, 
+.landing-btn-ghost, 
+.primary-btn, 
+.secondary-btn,
+.store-btn {
+  transition: 
+    transform var(--btn-trans-hover),
+    box-shadow var(--btn-trans-hover),
+    background-color var(--btn-trans-hover),
+    filter var(--btn-trans-hover),
+    border-color var(--btn-trans-hover);
+  will-change: transform, box-shadow;
+  outline: none;
+}
+
+/* Hover: Lift + Brighten */
+.hero-cta-btn:hover, .hero-cta-btn:focus,
+.hero-cta-outline:hover, .hero-cta-outline:focus,
+.landing-btn-primary:hover, .landing-btn-primary:focus,
+.landing-btn-ghost:hover, .landing-btn-ghost:focus,
+.primary-btn:hover, .primary-btn:focus,
+.secondary-btn:hover, .secondary-btn:focus,
+.store-btn:hover, .store-btn:focus {
+  transform: scale(var(--btn-hover-scale)) translateY(-1.5px);
+  box-shadow: var(--shadow-md);
+  filter: brightness(1.08);
+}
+
+/* Specific Shadow for Ghost/Outline */
+.hero-cta-outline:hover, .hero-cta-outline:focus,
+.landing-btn-ghost:hover, .landing-btn-ghost:focus {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+/* Active: Press + Color Feedback */
+.hero-cta-btn:active, 
+.hero-cta-outline:active,
+.landing-btn-primary:active, 
+.landing-btn-ghost:active,
+.primary-btn:active, 
+.secondary-btn:active,
+.store-btn:active {
+  transform: scale(var(--btn-press-scale)) translateY(0);
+  box-shadow: var(--shadow-sm);
+  transition-duration: var(--btn-trans-active);
+  filter: brightness(0.9) saturate(1.15) !important; /* Richer/Darker in Bright Mode */
+}
+
+/* Theme Awareness for Active State */
+[data-theme="dark"] .hero-cta-btn:active, 
+[data-theme="dark"] .hero-cta-outline:active,
+[data-theme="dark"] .landing-btn-primary:active, 
+[data-theme="dark"] .landing-btn-ghost:active,
+[data-theme="dark"] .primary-btn:active, 
+[data-theme="dark"] .secondary-btn:active,
+[data-theme="dark"] .store-btn:active {
+  filter: brightness(1.2) saturate(1.25) !important; /* Vivid/Brighter in Dark Mode */
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .hero-cta-btn, .hero-cta-outline, .landing-btn-primary, .landing-btn-ghost, 
+  .primary-btn, .secondary-btn, .store-btn, .theme-toggle {
+    transform: none !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ── Star rating ── */
