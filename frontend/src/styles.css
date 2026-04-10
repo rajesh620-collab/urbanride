@@ -835,32 +835,46 @@ html { scroll-behavior: smooth; }
 .float-a { animation: floatA 3s ease-in-out infinite; }
 .float-b { animation: floatB 3.5s ease-in-out infinite; }
 
+/* ── Unified Tactile Card Base ── */
+.tactile-card {
+  transition: 
+    transform var(--btn-trans-hover),
+    box-shadow var(--btn-trans-hover),
+    filter var(--btn-trans-hover),
+    background-color var(--btn-trans-hover);
+  will-change: transform, box-shadow;
+  cursor: pointer;
+}
+
+.tactile-card:hover {
+  transform: translateY(-6px) scale(1.015);
+  box-shadow: var(--shadow-lg);
+  filter: brightness(1.03);
+}
+
+.tactile-card:active {
+  transform: translateY(0) scale(0.985);
+  box-shadow: var(--shadow-sm);
+  filter: brightness(0.95);
+  transition-duration: var(--btn-trans-active);
+}
+
+[data-theme="dark"] .tactile-card:active {
+  filter: brightness(1.15) saturate(1.1);
+}
+
 /* ── Feature cards ── */
 .feature-card {
   box-shadow: var(--shadow-sm);
-  cursor: default;
-}
-.feature-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--shadow-lg);
 }
 
 /* ── Step cards ── */
 .step-card {
 }
-.step-card:hover {
-  transform: translateY(-4px) !important;
-  box-shadow: var(--shadow-md) !important;
-}
 
 /* ── Testimonial cards ── */
 .testimonial-card {
   box-shadow: var(--shadow-sm);
-  cursor: default;
-}
-.testimonial-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
 }
 
 /* ── Store buttons ── */

@@ -107,11 +107,13 @@ function AnimatedCounter({ target, suffix = '' }) {
 /* ─── FAQ ACCORDION ─── */
 function FaqItem({ q, a, isOpen, onClick }) {
   return (
-    <div style={{
-      background: 'var(--card-bg)', borderRadius: 16, border: '1px solid var(--border)',
-      marginBottom: 12, overflow: 'hidden', transition: 'box-shadow 0.3s',
-      boxShadow: isOpen ? 'var(--shadow-md)' : 'var(--shadow-sm)',
-    }}>
+    <div 
+      className="faq-item tactile-card"
+      style={{
+        background: 'var(--card-bg)', borderRadius: 16, border: '1px solid var(--border)',
+        marginBottom: 12, overflow: 'hidden', 
+        boxShadow: isOpen ? 'var(--shadow-md)' : 'var(--shadow-sm)',
+      }}>
       <button onClick={onClick} style={{
         width: '100%', padding: '20px 24px', display: 'flex', justifyContent: 'space-between',
         alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer',
@@ -380,7 +382,7 @@ export default function LandingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, maxWidth: 1100, margin: '0 auto' }}>
           {features.map((f, i) => (
             <RevealOnScroll key={i} delay={i * 0.08}>
-              <div className="feature-card" style={{ background: 'var(--card-bg)', borderRadius: 20, border: '1px solid var(--feature-border)', position: 'relative', overflow: 'hidden' }}>
+              <div className="feature-card tactile-card" style={{ background: 'var(--card-bg)', borderRadius: 20, border: '1px solid var(--feature-border)', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 18, right: 18, background: `${f.color}18`, borderRadius: 8, padding: '3px 10px', zIndex: 2 }}>
                   <span style={{ fontSize: 10, fontWeight: 700, color: f.color, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{f.tagline}</span>
                 </div>
@@ -415,7 +417,7 @@ export default function LandingPage() {
           <div style={{ position: 'absolute', top: 56, left: '18%', right: '18%', height: 2, background: 'var(--border)', zIndex: 0 }} />
           {steps.map((s, i) => (
             <RevealOnScroll key={i} delay={i * 0.15}>
-              <div className="step-card" style={{
+              <div className="step-card tactile-card" style={{
                 background: 'var(--card-bg)', borderRadius: 20, padding: 32,
                 border: '1px solid var(--feature-border)', position: 'relative', zIndex: 1,
                 boxShadow: i === 1 ? '0 8px 32px rgba(42,157,143,0.12)' : 'var(--shadow-sm)',
@@ -519,7 +521,7 @@ export default function LandingPage() {
           <div className="testimonial-track">
             {[...testimonials, ...testimonials].map((t, i) => (
               <div key={i} className="testimonial-slide">
-                <div className="testimonial-card" style={{
+                <div className="testimonial-card tactile-card" style={{
                   background: 'var(--card-bg)', borderRadius: 20, padding: 24,
                   border: '1px solid var(--feature-border)', minWidth: 300, maxWidth: 300,
                 }}>
