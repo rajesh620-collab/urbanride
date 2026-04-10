@@ -85,11 +85,11 @@
 .theme-transitioning *::before,
 .theme-transitioning *::after {
   transition: 
-    background-color var(--duration-theme) ease !important,
-    color var(--duration-theme) ease !important,
-    border-color var(--duration-theme) ease !important,
-    box-shadow var(--duration-theme) ease !important,
-    opacity var(--duration-theme) ease !important,
+    background-color var(--duration-theme) ease,
+    color var(--duration-theme) ease,
+    border-color var(--duration-theme) ease,
+    box-shadow var(--duration-theme) ease,
+    opacity var(--duration-theme) ease,
     filter var(--duration-theme) ease !important;
 }
 
