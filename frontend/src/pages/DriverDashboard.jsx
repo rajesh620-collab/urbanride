@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
 import { getSocket } from '../hooks/useWebSocket';
 import { useAuth } from '../context/AuthContext';
+import RouteMap from '../components/RouteMap';
 
 /* ─── Constants ─────────────────────────────────────────────────── */
 const VEHICLE_OPTIONS = [
@@ -144,6 +145,7 @@ function VehicleSelector({ selected, onChange, disabled }) {
 /** Ride Request card (incoming request) */
 function RideRequestCard({ ride, onAccept, onReject, acting }) {
   const [countdown, setCountdown] = useState(30);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -243,6 +245,49 @@ function RideRequestCard({ ride, onAccept, onReject, acting }) {
           </span>
         </div>
       </div>
+      
+      {/* Route Preview Map */}
+      {showPreview && (
+        <div style={{ marginBottom: 14, animation: 'slideIn 0.3s ease' }}>
+          <RouteMap 
+            sourceCoords={{
+              lat: ride.pickupLocation?.coordinates?.[1] || ride.pickupLat,
+              lng: ride.pickupLocation?.coordinates?.[0] || ride.pickupLng,
+              address: ride.pickupAddress
+            }}
+            destCoords={{
+              lat: ride.dropLocation?.coordinates?.[1] || ride.dropLat,
+              lng: ride.dropLocation?.coordinates?.[0] || ride.dropLng,
+              address: ride.dropAddress
+            }}
+            height={220}
+          />
+        </div>
+      )}
+
+      {/* Toggle Preview Button */}
+      <button 
+        onClick={() => setShowPreview(!showPreview)}
+        style={{
+          width: '100%',
+          padding: '8px',
+          background: 'none',
+          border: '1px solid var(--border)',
+          borderRadius: 10,
+          fontSize: 12,
+          fontWeight: 600,
+          color: 'var(--coral)',
+          cursor: 'pointer',
+          marginBottom: 14,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          transition: 'all 0.2s'
+        }}
+      >
+        {showPreview ? '🗺️ Hide Map Preview' : '🗺️ View Route on Map'}
+      </button>
 
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: 10 }}>
@@ -403,6 +448,23 @@ function ActiveRidePanel({ ride, onArrived, onVerifyOTP, onComplete, onCancel, a
             );
           })}
         </div>
+      </div>
+
+      {/* Route Map Preview */}
+      <div style={{ padding: '0 20px 14px' }}>
+        <RouteMap 
+          sourceCoords={{
+            lat: ride.pickupLocation?.coordinates?.[1] || ride.pickupLat,
+            lng: ride.pickupLocation?.coordinates?.[0] || ride.pickupLng,
+            address: ride.pickupAddress
+          }}
+          destCoords={{
+            lat: ride.dropLocation?.coordinates?.[1] || ride.dropLat,
+            lng: ride.dropLocation?.coordinates?.[0] || ride.dropLng,
+            address: ride.dropAddress
+          }}
+          height={180}
+        />
       </div>
 
       {/* Route */}
