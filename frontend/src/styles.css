@@ -292,18 +292,17 @@ input, select, button {
 
 /* ── Theme toggle (Tactile) ── */
 .theme-toggle {
-  background: var(--cream);
+  background: transparent;
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 10px 24px;
+  padding: 8px 18px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   cursor: pointer;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--charcoal);
-  box-shadow: var(--shadow-sm);
   transition: 
     transform var(--btn-trans-hover),
     box-shadow var(--btn-trans-hover),
@@ -312,39 +311,41 @@ input, select, button {
     stroke var(--btn-trans-hover),
     filter var(--btn-trans-hover);
   outline: none;
-  min-height: 44px;
+  min-height: 40px;
 }
 
 .theme-toggle svg {
   stroke: var(--charcoal);
+  opacity: 0.8;
 }
 
 [data-theme="dark"] .theme-toggle {
-  background: #1C2229;
-  color: #E2E8F0;
+  background: transparent;
+  color: #B0B8C1; /* Softer text in dark mode */
   border-color: rgba(255,255,255,0.1);
 }
 [data-theme="dark"] .theme-toggle svg {
-  stroke: #E2E8F0;
+  stroke: #B0B8C1;
 }
 
 .theme-toggle:hover, .theme-toggle:focus {
   transform: scale(1.04) translateY(-1px);
-  box-shadow: var(--shadow-md);
   background: var(--cream-dark);
+  border-color: var(--coral-pale);
+  color: var(--charcoal);
 }
 [data-theme="dark"] .theme-toggle:hover, [data-theme="dark"] .theme-toggle:focus {
-  background: #262E37;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.2);
+  color: #E2E8F0;
 }
 
 .theme-toggle:active {
   transform: scale(0.98) translateY(0);
-  box-shadow: var(--shadow-sm);
-  filter: brightness(0.92) translateZ(0); /* Richer feedback in light */
+  filter: brightness(0.9) translateZ(0);
 }
 [data-theme="dark"] .theme-toggle:active {
-  filter: brightness(1.25) saturate(1.2) translateZ(0); /* Vivid feedback in dark */
+  filter: brightness(1.3) translateZ(0);
 }
 
 /* ── Unified Tactile Button Interaction Foundation ── */
@@ -788,17 +789,17 @@ html { scroll-behavior: smooth; }
 
 /* ── Landing nav buttons ── */
 .landing-btn-ghost {
-  padding: 10px 24px;
+  padding: 8px 20px;
   background: transparent;
   border: 1.5px solid var(--border);
   border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   color: var(--charcoal);
   font-family: 'Montserrat', sans-serif;
   transition: all 0.2s;
-  min-height: 44px;
+  min-height: 40px;
 }
 .landing-btn-ghost:hover {
   border-color: var(--coral);
