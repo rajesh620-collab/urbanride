@@ -294,11 +294,11 @@ input, select, button {
 .theme-toggle {
   background: var(--cream);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 8px 16px;
+  border-radius: 12px;
+  padding: 10px 24px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   cursor: pointer;
   font-size: 15px;
   font-weight: 600;
@@ -312,6 +312,7 @@ input, select, button {
     stroke var(--btn-trans-hover),
     filter var(--btn-trans-hover);
   outline: none;
+  min-height: 44px;
 }
 
 .theme-toggle svg {
@@ -787,16 +788,17 @@ html { scroll-behavior: smooth; }
 
 /* ── Landing nav buttons ── */
 .landing-btn-ghost {
-  padding: 9px 20px;
+  padding: 10px 24px;
   background: transparent;
   border: 1.5px solid var(--border);
-  border-radius: 10px;
-  font-size: 14px;
+  border-radius: 12px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   color: var(--charcoal);
   font-family: 'Montserrat', sans-serif;
   transition: all 0.2s;
+  min-height: 44px;
 }
 .landing-btn-ghost:hover {
   border-color: var(--coral);
@@ -804,17 +806,18 @@ html { scroll-behavior: smooth; }
 }
 
 .landing-btn-primary {
-  padding: 9px 22px;
+  padding: 10px 24px;
   background: var(--coral);
   border: none;
-  border-radius: 10px;
-  font-size: 14px;
+  border-radius: 12px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   color: white;
-  box-shadow: 0 2px 10px rgba(204,120,92,0.35);
+  box-shadow: 0 4px 12px rgba(204,120,92,0.3);
   font-family: 'Montserrat', sans-serif;
   transition: transform 0.2s, box-shadow 0.2s;
+  min-height: 44px;
 }
 .landing-btn-primary:hover {
   transform: scale(1.05);
