@@ -489,7 +489,7 @@ input, select, button {
   filter: saturate(0.85) contrast(1.05) brightness(0.98);
 }
 [data-theme="dark"] .leaflet-container {
-  filter: saturate(0.75) contrast(1.1) brightness(0.9);
+  filter: saturate(1.15) contrast(1.05) brightness(1.15);
 }
 .leaflet-control-attribution {
   font-size: 9px !important;
