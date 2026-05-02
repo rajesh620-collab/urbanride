@@ -192,6 +192,10 @@ export default function SearchRide() {
   const [fareLoading, setFareLoading]       = useState(false);
   const [selectedCabType, setSelectedCabType] = useState('Cab XL');
   const [savedRoutes, setSavedRoutes] = useState([]);
+  const [recentSearches, setRecentSearches] = useState(() => {
+    const saved = localStorage.getItem('recentSearches');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [recentRides, setRecentRides] = useState([]);
   const [scheduledPools, setScheduledPools] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -290,6 +294,15 @@ export default function SearchRide() {
     setIsDiscovering(true); // Pulse effect
     setLiveAlert(null);
 
+    // Save to recent searches
+    const newSearch = { source: filters.source, destination: filters.destination, sourceCoords, destCoords };
+    setRecentSearches(prev => {
+      const filtered = prev.filter(s => s.source !== newSearch.source || s.destination !== newSearch.destination);
+      const updated = [newSearch, ...filtered].slice(0, 3);
+      localStorage.setItem('recentSearches', JSON.stringify(updated));
+      return updated;
+    });
+
     // Simulate "Finding Drivers" phase for UX
     setTimeout(async () => {
       try {
@@ -361,6 +374,34 @@ export default function SearchRide() {
                 onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
               >
                 ⭐ {route.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Searches */}
+      {!searched && recentSearches.length > 0 && (
+        <div style={{ marginBottom: 32, textAlign: 'center' }}>
+          <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 12 }}>Recent Searches</p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {recentSearches.map((s, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  setSourceCoords(s.sourceCoords);
+                  setDestCoords(s.destCoords);
+                  setFilters(f => ({ ...f, source: s.source, destination: s.destination }));
+                  handleSearch();
+                }}
+                style={{
+                  padding: '8px 16px', borderRadius: 12, border: '1px solid var(--border)',
+                  background: 'var(--card-bg)', color: 'var(--charcoal)', fontSize: 12, fontWeight: 600,
+                  cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 6
+                }}
+              >
+                <span>🕒</span>
+                <span>{s.source?.split(',')[0]} → {s.destination?.split(',')[0]}</span>
               </button>
             ))}
           </div>

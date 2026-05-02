@@ -7,6 +7,7 @@ import RouteMap from '../components/RouteMap';
 import LiveTracking from '../components/LiveTracking';
 import RideChat from '../components/RideChat';
 import Confetti from '../components/Confetti';
+import SafetyToolkit from '../components/SafetyToolkit';
 
 const STATUS_STEPS = ['open', 'full', 'in_progress', 'completed'];
 const STATUS_LABELS = {
@@ -337,24 +338,15 @@ export default function RideDetail() {
     ...(inProgress ? [{ key: 'track', label: '📍 Live Track' }] : []),
   ];
 
-  // SOS handler — share ride details as emergency
-  const handleSOS = () => {
-    const txt = encodeURIComponent(
-      `🆘 SOS! I'm in UrbanRide from ${ride.sourceLandmark} → ${ride.destinationLandmark}.\nDriver: ${ride.driverName}\nRide: ${window.location.href}`
-    );
-    window.open(`https://wa.me/?text=${txt}`, '_blank');
-  };
 
   return (
     <div className="page-wrapper" style={{ maxWidth: 580 }}>
       {/* Confetti on ride completion */}
       <Confetti active={showConfetti} />
 
-      {/* SOS Button — passengers during active rides */}
-      {!isDriver && inProgress && (
-        <button className="sos-btn" onClick={handleSOS} title="Send SOS">
-          SOS
-        </button>
+      {/* Safety Toolkit — during active rides */}
+      {inProgress && (
+        <SafetyToolkit ride={ride} user={user} />
       )}
 
       {/* Chat — available when ride is active/in_progress */}

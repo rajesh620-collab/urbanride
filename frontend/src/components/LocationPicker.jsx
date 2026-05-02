@@ -4,7 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTheme } from '../context/ThemeContext';
 import {
-  DARK_TILES, DARK_ATTR, LIGHT_TILES, LIGHT_ATTR,
+  DARK_TILES, DARK_ATTR, LIGHT_TILES, LIGHT_ATTR, SATELLITE_TILES, SATELLITE_ATTR,
   DEFAULT_CENTER, DEFAULT_ZOOM, createMarkerIcon
 } from '../utils/mapStyles';
 import api from '../api/axiosInstance';
@@ -28,6 +28,17 @@ function MapClickHandler({ onLocationSelect, enabled }) {
       }
     }
   });
+  return null;
+}
+
+// Force Leaflet to recalculate its size after mount (fixes collapsed/grey map in flex/absolute layouts)
+function MapResizer() {
+  const map = useMap();
+  useEffect(() => {
+    // Small delay lets the DOM fully render before Leaflet measures
+    const t = setTimeout(() => { map.invalidateSize(); }, 50);
+    return () => clearTimeout(t);
+  }, [map]);
   return null;
 }
 
@@ -55,6 +66,7 @@ export default function LocationPicker({
   const [detecting, setDetecting] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const [mapType, setMapType] = useState('roadmap'); // 'roadmap' | 'satellite'
   const [landmarks, setLandmarks] = useState([]);
   const [geoError, setGeoError] = useState('');
   const searchTimeout = useRef(null);
@@ -64,26 +76,10 @@ export default function LocationPicker({
   // Use useMemo for the marker icon to prevent frequent re-initialization which can lead to invisible markers
   const markerIcon = useRef(null);
   if (!markerIcon.current) {
-    const filterId = `pin-shadow-${mode}`;
-    const svgHtml = `
-      <svg width="32" height="46" viewBox="0 0 32 46" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <filter id="${filterId}" x="-30%" y="-30%" width="160%" height="160%">
-            <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="${color}" flood-opacity="0.4"/>
-          </filter>
-        </defs>
-        <path d="M16 0C7.16 0 0 7.16 0 16c0 10 16 30 16 30S32 26 32 16C32 7.16 24.84 0 16 0z"
-          fill="${color}" filter="url(#${filterId})"/>
-        <circle cx="16" cy="15" r="7" fill="white" opacity="0.95"/>
-        <circle cx="16" cy="15" r="4" fill="${color}" opacity="0.7"/>
-      </svg>
-    `;
-
-    markerIcon.current = L.divIcon({
-      html: `<div style="width:32px;height:46px">${svgHtml}</div>`,
-      className: '',
-      iconSize: [32, 46],
-      iconAnchor: [16, 46],
+    markerIcon.current = L.icon({
+      iconUrl: createMarkerIcon(color, 32),
+      iconSize: [32, 48],
+      iconAnchor: [16, 48],
       popupAnchor: [0, -40]
     });
   }
@@ -375,26 +371,36 @@ export default function LocationPicker({
       {/* Map */}
       {showMap && (
         <div style={{
-          marginTop: 10, borderRadius: 'var(--radius-md)', overflow: 'hidden',
-          border: '1.5px solid var(--border)', height: 250,
-          transition: 'all 0.3s ease',
+          borderRadius: 'var(--radius-md)',
+          overflow: 'hidden',
+          border: '1.5px solid var(--border)',
+          // Use explicit pixel height so it never collapses inside flex/absolute containers
+          height: 260,
           position: minimal ? 'absolute' : 'relative',
-          top: minimal ? '100%' : 'auto',
+          top: minimal ? 'calc(100% + 4px)' : 'auto',
           left: minimal ? 0 : 'auto',
-          right: minimal ? 0 : 'auto',
-          zIndex: minimal ? 1000 : 1,
-          boxShadow: minimal ? 'var(--shadow-lg)' : 'none'
+          // Fixed 340px for minimal (dropdown); full-width block for normal
+          width: minimal ? 340 : '100%',
+          zIndex: minimal ? 1200 : 10,
+          boxShadow: minimal
+            ? '0 8px 32px rgba(0,0,0,0.18)'
+            : '0 2px 8px rgba(0,0,0,0.08)',
+          background: dark ? '#1a1a1a' : '#f0ebe3',
         }}>
+          {/* MapContainer must have explicit px height — "100%" won't work if parent has overflow:hidden */}
           <MapContainer
             center={value?.lat ? [value.lat, value.lng] : DEFAULT_CENTER}
             zoom={value?.lat ? 15 : DEFAULT_ZOOM}
-            style={{ height: '100%', width: '100%' }}
-            zoomControl={false}
+            style={{ height: 212, width: '100%' }}
+            zoomControl={true}
           >
             <TileLayer
-              url={dark ? DARK_TILES : LIGHT_TILES}
-              attribution={dark ? DARK_ATTR : LIGHT_ATTR}
+              key={`${dark}-${mapType}`}
+              url={mapType === 'satellite' ? SATELLITE_TILES : (dark ? DARK_TILES : LIGHT_TILES)}
+              attribution={mapType === 'satellite' ? SATELLITE_ATTR : (dark ? DARK_ATTR : LIGHT_ATTR)}
             />
+            {/* Calls invalidateSize() after DOM settles — fixes grey/blank map on first render */}
+            <MapResizer />
             <MapClickHandler onLocationSelect={handleMapClick} enabled={true} />
             {value?.lat && (
               <>
@@ -406,11 +412,35 @@ export default function LocationPicker({
             )}
           </MapContainer>
           <div style={{
-            padding: '6px 12px', background: 'var(--card-bg)',
-            borderTop: '1px solid var(--border)', fontSize: 11,
-            color: 'var(--muted)', textAlign: 'center'
+            padding: '5px 12px',
+            background: dark ? '#1a1a1a' : '#fff',
+            borderTop: '1px solid var(--border)',
+            fontSize: 11,
+            color: 'var(--muted)',
+            textAlign: 'center',
           }}>
-            Click on the map to drop a pin
+            Tap the map to drop a pin
+          </div>
+
+          {/* Layer Toggle (Mini) */}
+          <div 
+            onClick={() => setMapType(mapType === 'roadmap' ? 'satellite' : 'roadmap')}
+            style={{
+              position: 'absolute', bottom: 35, right: 10, width: 44, height: 44,
+              borderRadius: 6, border: '2px solid white', overflow: 'hidden',
+              cursor: 'pointer', zIndex: 1000, boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+            }}
+          >
+            <img 
+              src={mapType === 'roadmap' ? 'https://khms0.google.com/kh/v=977?x=0&y=0&z=0' : 'https://mt1.google.com/vt/lyrs=m&x=0&y=0&z=0'} 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+            <div style={{
+              position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'white', fontSize: 8, fontWeight: 800
+            }}>{mapType === 'roadmap' ? 'SAT' : 'MAP'}</div>
+          </div>
           </div>
         </div>
       )}

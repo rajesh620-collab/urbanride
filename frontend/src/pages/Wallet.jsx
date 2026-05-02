@@ -47,8 +47,13 @@ export default function WalletPage() {
     }
   };
 
-  const txIcon = (type) => type === 'credit' ? '↑' : '↓';
-  const txColor = (type) => type === 'credit' ? '#16A34A' : '#EF4444';
+  const txIcon = (type, desc) => {
+    if (type === 'credit') return '💰';
+    if (desc.toLowerCase().includes('ride')) return '🚕';
+    if (desc.toLowerCase().includes('refund')) return '↩️';
+    return '💳';
+  };
+  const txColor = (type) => type === 'credit' ? '#16A34A' : 'var(--charcoal)';
 
   return (
     <div className="page-wrapper" style={{ maxWidth: 540 }}>
@@ -134,25 +139,28 @@ export default function WalletPage() {
             ) : (
               wallet.transactions.map((tx, i) => (
                 <div key={i} className="transaction-row">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                     <div style={{
-                      width: 36, height: 36, borderRadius: '50%',
-                      background: tx.type === 'credit' ? 'rgba(22,163,74,0.1)' : 'rgba(239,68,68,0.1)',
+                      width: 44, height: 44, borderRadius: 14,
+                      background: tx.type === 'credit' ? 'rgba(22,163,74,0.1)' : 'var(--cream-dark)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 16, fontWeight: 700, color: txColor(tx.type)
+                      fontSize: 20, border: '1px solid var(--border)'
                     }}>
-                      {txIcon(tx.type)}
+                      {txIcon(tx.type, tx.description)}
                     </div>
                     <div>
-                      <p style={{ fontSize: 13, fontWeight: 500, margin: 0 }}>{tx.description}</p>
-                      <p style={{ fontSize: 11, color: 'var(--muted)', margin: 0 }}>
+                      <p style={{ fontSize: 14, fontWeight: 700, margin: 0, color: 'var(--charcoal)' }}>{tx.description}</p>
+                      <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
                         {new Date(tx.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
-                  <p style={{ fontWeight: 700, fontSize: 15, color: txColor(tx.type), margin: 0 }}>
-                    {tx.type === 'credit' ? '+' : '-'}₹{tx.amount}
-                  </p>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontWeight: 800, fontSize: 16, color: txColor(tx.type), margin: 0 }}>
+                      {tx.type === 'credit' ? '+' : '-'}₹{tx.amount}
+                    </p>
+                    <p style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>Success</p>
+                  </div>
                 </div>
               ))
             )}

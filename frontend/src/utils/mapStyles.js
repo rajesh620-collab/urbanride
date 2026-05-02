@@ -7,9 +7,13 @@
 export const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 export const DARK_ATTR = '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://openstreetmap.org/copyright">OSM</a>';
 
-// Premium light tiles (clean, modern Voyager style like a refined Google Maps)
-export const LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-export const LIGHT_ATTR = '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://openstreetmap.org/copyright">OSM</a>';
+// Google Maps Roadmap tiles (Light theme - exactly as requested)
+export const LIGHT_TILES = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
+export const LIGHT_ATTR = '&copy; Google Maps';
+
+// Google Maps Satellite tiles
+export const SATELLITE_TILES = 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}';
+export const SATELLITE_ATTR = '&copy; Google Maps';
 
 // Navigation-specific dark tiles (deeper contrast for driving)
 export const NAV_DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
@@ -28,22 +32,24 @@ export const markerColors = {
 };
 
 /**
- * Create a custom SVG marker for Leaflet — premium pin design
+ * Create a custom SVG marker for Leaflet — Premium Google-style Pin
  */
-export function createMarkerIcon(color = '#F97316', size = 32) {
-  // Use unique filter ID per color to avoid collisions between multiple maps
+export function createMarkerIcon(color = '#EA4335', size = 32) {
   const filterId = `shadow-${color.replace('#', '')}`;
   const svg = `
-    <svg width="${size}" height="${size + 14}" viewBox="0 0 32 46" xmlns="http://www.w3.org/2000/svg">
+    <svg width="${size}" height="${size * 1.5}" viewBox="0 0 32 46" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <filter id="${filterId}" x="-30%" y="-30%" width="160%" height="160%">
-          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="${color}" flood-opacity="0.4"/>
+          <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#000" flood-opacity="0.25"/>
         </filter>
       </defs>
-      <path d="M16 0C7.16 0 0 7.16 0 16c0 10 16 30 16 30S32 26 32 16C32 7.16 24.84 0 16 0z"
+      <!-- Pin shadow -->
+      <path d="M16 46c-1 0-1-1-1-1 0-3 1-7 1-7s1 4 1 7c0 0 0 1-1 1z" fill="#000" opacity="0.2"/>
+      <!-- Main teardrop -->
+      <path d="M16 0C7.16 0 0 7.16 0 16c0 11.5 16 30 16 30s16-18.5 16-30C32 7.16 24.84 0 16 0z" 
         fill="${color}" filter="url(#${filterId})"/>
-      <circle cx="16" cy="15" r="7" fill="white" opacity="0.95"/>
-      <circle cx="16" cy="15" r="4" fill="${color}" opacity="0.7"/>
+      <!-- Inner white circle -->
+      <circle cx="16" cy="16" r="6" fill="white"/>
     </svg>
   `;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;

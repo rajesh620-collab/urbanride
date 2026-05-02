@@ -4,7 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTheme } from '../context/ThemeContext';
 import {
-  DARK_TILES, DARK_ATTR, LIGHT_TILES, LIGHT_ATTR,
+  DARK_TILES, DARK_ATTR, LIGHT_TILES, LIGHT_ATTR, SATELLITE_TILES, SATELLITE_ATTR,
   DEFAULT_CENTER, DEFAULT_ZOOM, createMarkerIcon, createCarIcon
 } from '../utils/mapStyles';
 import api from '../api/axiosInstance';
@@ -34,6 +34,16 @@ function carIcon() {
   });
 }
 
+// Force Leaflet to recalculate its size after mount
+function MapResizer() {
+  const map = useMap();
+  useEffect(() => {
+    const t = setTimeout(() => { map.invalidateSize(); }, 100);
+    return () => clearTimeout(t);
+  }, [map]);
+  return null;
+}
+
 // Auto-fit bounds
 function FitBounds({ bounds }) {
   const map = useMap();
@@ -58,6 +68,7 @@ export default function RouteMap({
   const [route, setRoute] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [mapType, setMapType] = useState('roadmap'); // 'roadmap' | 'satellite'
 
   // Fetch route when source/dest change
   useEffect(() => {
@@ -117,9 +128,11 @@ export default function RouteMap({
         zoomControl={false}
       >
         <TileLayer
-          url={dark ? DARK_TILES : LIGHT_TILES}
-          attribution={dark ? DARK_ATTR : LIGHT_ATTR}
+          key={`${dark}-${mapType}`}
+          url={mapType === 'satellite' ? SATELLITE_TILES : (dark ? DARK_TILES : LIGHT_TILES)}
+          attribution={mapType === 'satellite' ? SATELLITE_ATTR : (dark ? DARK_ATTR : LIGHT_ATTR)}
         />
+        <MapResizer />
 
         {bounds.length >= 2 && <FitBounds bounds={bounds} />}
 
@@ -147,25 +160,27 @@ export default function RouteMap({
         {/* Route polyline with glow effect */}
         {route && (
           <>
+            {/* Glow halo */}
             <Polyline
               positions={route}
               pathOptions={{
-                color: 'var(--coral)',
-                weight: 8,
-                opacity: 0.2,
+                color: dark ? '#E0926E' : '#CC785C',
+                weight: 10,
+                opacity: 0.18,
                 lineCap: 'round',
                 lineJoin: 'round'
               }}
             />
+            {/* Main route line */}
             <Polyline
               positions={route}
               pathOptions={{
-                color: 'var(--coral)',
+                color: dark ? '#E0926E' : '#CC785C',
                 weight: 4,
-                opacity: 1,
+                opacity: 0.95,
                 lineCap: 'round',
                 lineJoin: 'round',
-                smoothFactor: 2
+                smoothFactor: 1.5
               }}
             />
           </>
@@ -199,6 +214,35 @@ export default function RouteMap({
           </div>
         </div>
       )}
+
+      {/* Layer Toggle (Bottom Left - Google Style) */}
+      <div 
+        onClick={() => setMapType(mapType === 'roadmap' ? 'satellite' : 'roadmap')}
+        style={{
+          position: 'absolute', bottom: 12, left: 12, width: 64, height: 64,
+          borderRadius: 8, border: '2px solid white', overflow: 'hidden',
+          cursor: 'pointer', zIndex: 1000, boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+          transition: 'transform 0.2s'
+        }}
+        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+      >
+        <img 
+          src={mapType === 'roadmap' 
+            ? 'https://khms0.google.com/kh/v=977?x=0&y=0&z=0' // Satellite preview
+            : 'https://mt1.google.com/vt/lyrs=m&x=0&y=0&z=0' // Roadmap preview
+          } 
+          alt="Toggle Layers"
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+        <div style={{
+          position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'white', fontSize: 10, fontWeight: 800, textTransform: 'uppercase'
+        }}>
+          {mapType === 'roadmap' ? 'Satellite' : 'Map'}
+        </div>
+      </div>
 
       {loading && (
         <div style={{

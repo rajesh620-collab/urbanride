@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { useTheme } from '../context/ThemeContext';
 import { getSocket } from '../hooks/useWebSocket';
 import {
-  DARK_TILES, DARK_ATTR, LIGHT_TILES, LIGHT_ATTR,
+  DARK_TILES, DARK_ATTR, LIGHT_TILES, LIGHT_ATTR, SATELLITE_TILES, SATELLITE_ATTR,
   DEFAULT_CENTER, createMarkerIcon, createCarIcon
 } from '../utils/mapStyles';
 
@@ -73,6 +73,15 @@ function FitBounds({ bounds }) {
   return null;
 }
 
+function MapResizer() {
+  const map = useMap();
+  useEffect(() => {
+    const t = setTimeout(() => { map.invalidateSize(); }, 100);
+    return () => clearTimeout(t);
+  }, [map]);
+  return null;
+}
+
 export default function LiveTracking({
   rideId,
   sourceCoords,
@@ -88,6 +97,7 @@ export default function LiveTracking({
   const [eta, setEta] = useState(null);
   const [speed, setSpeed] = useState(0);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [mapType, setMapType] = useState('roadmap'); // 'roadmap' | 'satellite'
   const watchIdRef = useRef(null);
 
   // Listen for driver location updates (passenger side)
@@ -205,9 +215,11 @@ export default function LiveTracking({
         zoomControl={false}
       >
         <TileLayer
-          url={dark ? DARK_TILES : LIGHT_TILES}
-          attribution={dark ? DARK_ATTR : LIGHT_ATTR}
+          key={`${dark}-${mapType}`}
+          url={mapType === 'satellite' ? SATELLITE_TILES : (dark ? DARK_TILES : LIGHT_TILES)}
+          attribution={mapType === 'satellite' ? SATELLITE_ATTR : (dark ? DARK_ATTR : LIGHT_ATTR)}
         />
+        <MapResizer />
 
         {bounds.length >= 2 && <FitBounds bounds={bounds} />}
 
@@ -251,6 +263,29 @@ export default function LiveTracking({
           Last updated: {lastUpdate.toLocaleTimeString()}
         </div>
       )}
+
+      {/* Layer Toggle (Floating) */}
+      <div 
+        onClick={() => setMapType(mapType === 'roadmap' ? 'satellite' : 'roadmap')}
+        style={{
+          position: 'absolute', bottom: lastUpdate ? 40 : 12, left: 12, width: 56, height: 56,
+          borderRadius: 8, border: '2px solid white', overflow: 'hidden',
+          cursor: 'pointer', zIndex: 1000, boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+          transition: 'transform 0.2s'
+        }}
+        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+      >
+        <img 
+          src={mapType === 'roadmap' ? 'https://khms0.google.com/kh/v=977?x=0&y=0&z=0' : 'https://mt1.google.com/vt/lyrs=m&x=0&y=0&z=0'} 
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+        <div style={{
+          position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'white', fontSize: 9, fontWeight: 800
+        }}>{mapType === 'roadmap' ? 'SAT' : 'MAP'}</div>
+      </div>
 
       <style>{`
         @keyframes pulse {

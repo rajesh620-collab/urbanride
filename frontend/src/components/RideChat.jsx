@@ -90,24 +90,33 @@ export default function RideChat({ rideId, isOpen, onClose, driverName }) {
                 <p style={{ fontSize: 12, marginTop: 4 }}>Say hi to your driver or passengers!</p>
               </div>
             ) : (
-              messages.map((msg, i) => {
-                const isMine = String(msg.senderId) === myId;
-                return (
-                  <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start' }}>
-                    {!isMine && (
-                      <span style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 3, paddingLeft: 4 }}>
-                        {msg.senderName}
+              <>
+                {messages.map((msg, i) => {
+                  const isMine = String(msg.senderId) === myId;
+                  return (
+                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start' }}>
+                      {!isMine && (
+                        <span style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 3, paddingLeft: 4 }}>
+                          {msg.senderName}
+                        </span>
+                      )}
+                      <div className={`chat-bubble ${isMine ? 'mine' : 'theirs'}`}>
+                        {msg.message}
+                      </div>
+                      <span style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2, paddingLeft: 4, paddingRight: 4 }}>
+                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {isMine && <span style={{ marginLeft: 6, opacity: 0.7 }}>✓✓</span>}
                       </span>
-                    )}
-                    <div className={`chat-bubble ${isMine ? 'mine' : 'theirs'}`}>
-                      {msg.message}
                     </div>
-                    <span style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2, paddingLeft: 4, paddingRight: 4 }}>
-                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                );
-              })
+                  );
+                })}
+                {/* Simulated typing indicator if unread messages but not from me */}
+                {unread > 0 && messages[messages.length - 1]?.senderId !== myId && (
+                   <div style={{ alignSelf: 'flex-start', padding: '8px 12px', background: 'var(--white)', borderRadius: 12, fontSize: 10, color: 'var(--muted)', border: '1px solid var(--border)', display: 'flex', gap: 4 }}>
+                      <span className="dot-pulse" /> {messages[messages.length - 1]?.senderName} is typing...
+                   </div>
+                )}
+              </>
             )}
             <div ref={bottomRef} />
           </div>
