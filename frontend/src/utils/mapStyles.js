@@ -3,11 +3,10 @@
  * Premium CARTO tiles with custom urban-dark navigation theme
  */
 
-// Navigation-optimized dark tiles (great for driver mode)
-export const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-export const DARK_ATTR = '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://openstreetmap.org/copyright">OSM</a>';
+// Google Maps Roadmap tiles — used for both light and dark modes
+export const DARK_TILES = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
+export const DARK_ATTR = '&copy; Google Maps';
 
-// Google Maps Roadmap tiles (Light theme - exactly as requested)
 export const LIGHT_TILES = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
 export const LIGHT_ATTR = '&copy; Google Maps';
 
@@ -15,9 +14,9 @@ export const LIGHT_ATTR = '&copy; Google Maps';
 export const SATELLITE_TILES = 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}';
 export const SATELLITE_ATTR = '&copy; Google Maps';
 
-// Navigation-specific dark tiles (deeper contrast for driving)
-export const NAV_DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
-export const NAV_LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png';
+// Navigation-specific tiles (Google Maps for consistency)
+export const NAV_DARK_TILES = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
+export const NAV_LIGHT_TILES = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
 
 // Default center (Hyderabad)
 export const DEFAULT_CENTER = [17.385, 78.4867];

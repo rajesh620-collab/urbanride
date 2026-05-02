@@ -522,6 +522,9 @@ input, select, button {
 [data-theme="dark"] .leaflet-container {
   filter: none;
 }
+[data-theme="dark"] .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
+}
 .leaflet-control-attribution {
   font-size: 9px !important;
   opacity: 0.65;
