@@ -5,6 +5,7 @@ import LocationPicker from '../components/LocationPicker';
 import FareEstimator from '../components/FareEstimator';
 import RouteMap from '../components/RouteMap';
 import { getSocket } from '../hooks/useWebSocket';
+import { useAuth } from '../context/AuthContext';
 
 /* ── Constants ─────────────────────────────────────── */
 const VEHICLES = [

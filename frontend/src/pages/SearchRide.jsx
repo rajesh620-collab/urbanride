@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
 import { getSocket } from '../hooks/useWebSocket';
+import { useAuth } from '../context/AuthContext';
 import LocationPicker from '../components/LocationPicker';
 import RouteMap from '../components/RouteMap';
 
