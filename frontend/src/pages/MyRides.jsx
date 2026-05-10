@@ -65,23 +65,19 @@ export default function MyRides() {
       </div>
 
       {/* Tabs */}
-      <div style={{
-        display: 'flex', gap: 4, marginBottom: 24,
-        background: 'var(--cream-dark)', padding: 4,
-        borderRadius: 'var(--radius-md)', width: 'fit-content'
-      }}>
+      <div className="tab-container" style={{ marginBottom: 24 }}>
         {[
           { key: 'posted', label: `Posted (${postedRides.length})` },
           { key: 'booked', label: `Booked (${bookedRides.length})` },
           { key: 'scheduled', label: `Scheduled (${myPools.filter(p => new Date(p.departureTime) > new Date()).length})` }
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
-            padding: '8px 20px', border: 'none', cursor: 'pointer',
-            borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 500,
+            padding: '10px 20px', border: 'none', cursor: 'pointer',
+            borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 600,
             background: activeTab === tab.key ? 'var(--white)' : 'transparent',
             color: activeTab === tab.key ? 'var(--charcoal)' : 'var(--muted)',
             boxShadow: activeTab === tab.key ? 'var(--shadow-sm)' : 'none',
-            transition: 'all 0.2s'
+            transition: 'all 0.2s', whiteSpace: 'nowrap', flex: 1, minWidth: 'fit-content'
           }}>
             {tab.label}
           </button>

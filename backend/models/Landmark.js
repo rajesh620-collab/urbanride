@@ -14,7 +14,7 @@ const landmarkSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['bus_stand', 'metro', 'railway', 'college', 'airport', 'other'],
+    enum: ['bus_stand', 'metro', 'railway', 'college', 'airport', 'mall', 'landmark', 'other'],
     default: 'other'
   },
   lat: {

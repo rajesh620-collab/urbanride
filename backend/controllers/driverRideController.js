@@ -279,8 +279,51 @@ exports.getEarnings = async (req, res) => {
     const totalRides      = allCompleted.length;
     const todayRides      = todayCompleted.length;
 
-    // Last 7 rides
-    const recentRides = allCompleted.slice(-7).reverse();
+    // 1. Daily Activity (Last 24 hours by hour)
+    const dailyActivity = [];
+    for (let i = 23; i >= 0; i--) {
+      const start = new Date();
+      start.setHours(start.getHours() - i, 0, 0, 0);
+      const end = new Date(start);
+      end.setHours(end.getHours() + 1);
+
+      const hourRides = allCompleted.filter(r => 
+        r.completedAt >= start && r.completedAt < end
+      );
+      dailyActivity.push({
+        label: `${start.getHours()}:00`,
+        earnings: hourRides.reduce((s, r) => s + (r.fare || 0), 0),
+        count: hourRides.length
+      });
+    }
+
+    // 2. Weekly Activity (Last 7 days)
+    const weeklyActivity = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0, 0, 0, 0);
+      const next = new Date(d); next.setDate(next.getDate() + 1);
+
+      const dayRides = allCompleted.filter(r => r.completedAt >= d && r.completedAt < next);
+      weeklyActivity.push({
+        label: d.toLocaleDateString('en-US', { weekday: 'short' }),
+        earnings: dayRides.reduce((s, r) => s + (r.fare || 0), 0),
+        count: dayRides.length
+      });
+    }
+
+    // 3. Monthly Activity (Last 30 days)
+    const monthlyActivity = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0, 0, 0, 0);
+      const next = new Date(d); next.setDate(next.getDate() + 1);
+
+      const dayRides = allCompleted.filter(r => r.completedAt >= d && r.completedAt < next);
+      monthlyActivity.push({
+        label: d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
+        earnings: dayRides.reduce((s, r) => s + (r.fare || 0), 0),
+        count: dayRides.length
+      });
+    }
 
     res.json({
       success: true,
@@ -289,7 +332,9 @@ exports.getEarnings = async (req, res) => {
         todayEarnings,
         totalRides,
         todayRides,
-        recentRides,
+        dailyActivity,
+        weeklyActivity,
+        monthlyActivity
       }
     });
   } catch (err) {

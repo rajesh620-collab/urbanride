@@ -226,9 +226,9 @@ export default function LandingPage() {
       </nav>
 
       {/* ══════ HERO ══════ */}
-      <section style={{
+      <section className="hero-section" style={{
         background: 'var(--hero-bg)', padding: '140px 48px 80px', minHeight: '100vh',
-        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center',
+        gap: 60, alignItems: 'center',
         position: 'relative', overflow: 'hidden',
       }}>
         {/* Parallax background shapes */}
@@ -346,7 +346,7 @@ export default function LandingPage() {
       <section style={{ background: dark ? 'linear-gradient(135deg, #1A1412 0%, #0F1A18 100%)' : 'linear-gradient(135deg, #1C1917 0%, #0F2623 100%)', padding: '52px 48px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -60, right: -60, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(204,120,92,0.08) 0%, transparent 70%)' }} />
         <div style={{ position: 'absolute', bottom: -80, left: -40, width: 250, height: 250, borderRadius: '50%', background: 'radial-gradient(circle, rgba(42,157,143,0.06) 0%, transparent 70%)' }} />
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+        <div className="grid-4-col" style={{ maxWidth: 1100, margin: '0 auto', gap: 24 }}>
           {stats.map((s, i) => (
             <RevealOnScroll key={i} delay={i * 0.1}>
               <div style={{
@@ -385,7 +385,7 @@ export default function LandingPage() {
           </div>
         </RevealOnScroll>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, maxWidth: 1100, margin: '0 auto' }}>
+        <div className="grid-3-col" style={{ gap: 24, maxWidth: 1100, margin: '0 auto' }}>
           {features.map((f, i) => (
             <RevealOnScroll key={i} delay={i * 0.08}>
               <div className="feature-card tactile-card" style={{ background: 'var(--card-bg)', borderRadius: 20, border: '1px solid var(--feature-border)', position: 'relative', overflow: 'hidden' }}>
@@ -419,7 +419,7 @@ export default function LandingPage() {
           </div>
         </RevealOnScroll>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28, maxWidth: 1000, margin: '0 auto', position: 'relative' }}>
+        <div className="grid-3-col" style={{ gap: 28, maxWidth: 1000, margin: '0 auto', position: 'relative' }}>
           <div style={{ position: 'absolute', top: 56, left: '18%', right: '18%', height: 2, background: 'var(--border)', zIndex: 0 }} />
           {steps.map((s, i) => (
             <RevealOnScroll key={i} delay={i * 0.15}>
@@ -462,7 +462,7 @@ export default function LandingPage() {
         <div style={{ position: 'absolute', right: -100, top: -100, width: 400, height: 400, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
         <div style={{ position: 'absolute', left: -50, bottom: -150, width: 350, height: 350, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
 
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+        <div className="grid-hero" style={{ maxWidth: 1100, margin: '0 auto', gap: 60, alignItems: 'center' }}>
           <RevealOnScroll direction="left">
             <h2 style={{ fontSize: 38, fontWeight: 800, color: 'white', marginBottom: 16 }}>Download the App</h2>
             <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 16, lineHeight: 1.7, marginBottom: 32 }}>
@@ -600,7 +600,7 @@ export default function LandingPage() {
         </RevealOnScroll>
 
         {/* Footer */}
-        <div style={{ maxWidth: 1100, margin: '48px auto 0', display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr', gap: 40 }}>
+        <div className="footer-grid" style={{ maxWidth: 1100, margin: '48px auto 0', gap: 40 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
               <div style={{ width: 34, height: 34, background: 'var(--coral)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

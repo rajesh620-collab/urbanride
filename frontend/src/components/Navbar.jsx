@@ -345,8 +345,8 @@ export default function Navbar() {
           </span>
         </button>
 
-        {/* Nav links */}
-        <div style={{ display: 'flex', gap: 4 }}>
+        {/* Nav links (Desktop only) */}
+        <div className="top-nav-links" style={{ display: 'flex', gap: 4 }}>
           {navItems.map(item => (
             <button key={item.path} onClick={() => { navigate(item.path); if (item.badge) setPendingRequests(0); }} style={{
               padding: '6px 14px', border: 'none', cursor: 'pointer',
@@ -474,6 +474,40 @@ export default function Navbar() {
           </div>
         </div>
       </nav>
+
+      {/* Bottom Navigation for Mobile */}
+      <div className="bottom-nav">
+        {navItems.map(item => {
+          const isActive = location.pathname === item.path;
+          return (
+            <button
+              key={item.path}
+              className={`bottom-nav-item ${isActive ? 'active' : ''}`}
+              onClick={() => { navigate(item.path); if (item.badge) setPendingRequests(0); }}
+            >
+              <div style={{ 
+                width: 24, height: 24, marginBottom: 2,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: isActive ? 'var(--coral)' : 'var(--muted)',
+                transform: isActive ? 'scale(1.1)' : 'scale(1)',
+                transition: 'transform 0.2s'
+              }}>
+                {item.icon}
+              </div>
+              <span>{item.label}</span>
+              {item.badge > 0 && (
+                <span style={{
+                  position: 'absolute', top: 12, right: '25%',
+                  background: 'var(--coral)', color: 'white',
+                  borderRadius: 10, width: 16, height: 16,
+                  fontSize: 9, fontWeight: 800, display: 'flex',
+                  alignItems: 'center', justifyContent: 'center'
+                }}>{item.badge}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Logout confirmation modal */}
       {showLogoutModal && (

@@ -61,7 +61,9 @@ router.get('/search', async (req, res) => {
     const { q } = req.query;
     if (!q) return fail(res, 400, 'Search query (q) is required');
 
-    const url = `${NOMINATIM_BASE}/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1&countrycodes=in`;
+    // Restrict search to Hyderabad bounding box: approx [78.2, 17.2, 78.7, 17.6]
+    const viewbox = '78.2,17.6,78.7,17.2';
+    const url = `${NOMINATIM_BASE}/search?format=json&q=${encodeURIComponent(q)}&limit=8&addressdetails=1&countrycodes=in&viewbox=${viewbox}&bounded=1`;
     const response = await fetch(url, {
       headers: { 'User-Agent': 'UrbanRide/1.0' }
     });

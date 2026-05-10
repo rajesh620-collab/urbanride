@@ -20,7 +20,88 @@ const STATUS_META = {
   completed:   { label: 'Completed',           color: '#10B981' },
 };
 
-function fmtFare(n) { return `₹${(n || 0).toFixed(0)}`; }
+function fmtFare(n) { return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0); }
+
+function EarningsChart({ data, title }) {
+  // If no data, show a placeholder with zeros to keep the UI consistent
+  const hasData = data && data.length > 0;
+  const chartData = hasData ? data : [
+    { label: '...', earnings: 0 }, { label: '...', earnings: 0 }, { label: '...', earnings: 0 },
+    { label: '...', earnings: 0 }, { label: '...', earnings: 0 }, { label: '...', earnings: 0 }, { label: '...' }
+  ];
+
+  const maxVal = Math.max(...chartData.map(d => d.earnings || 0), 100) * 1.2;
+  const width = 340; const height = 140; const padding = 30;
+  
+  const showAllLabels = chartData.length <= 12;
+  const labelInterval = Math.ceil(chartData.length / 7);
+
+  const points = chartData.map((d, i) => {
+    const x = (i / (chartData.length - 1)) * (width - padding * 2) + padding;
+    const y = height - (((d.earnings || 0) / maxVal) * (height - padding * 2) + padding);
+    return { x, y };
+  });
+
+  const pathD = `M ${points[0].x} ${points[0].y} ` + points.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ');
+  const areaD = `${pathD} L ${points[points.length-1].x} ${height - 10} L ${points[0].x} ${height - 10} Z`;
+
+  return (
+    <div className="earnings-chart-container" style={{ marginTop: 20, background: 'var(--white)', borderRadius: 24, padding: '24px 20px', border: '1.5px solid var(--border)', boxShadow: 'var(--shadow-sm)', position: 'relative', minHeight: 180 }}>
+      {!hasData && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(1px)', zIndex: 1, borderRadius: 24 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', background: 'var(--cream)', padding: '4px 10px', borderRadius: 8, border: '1.5px solid var(--border)', textAlign: 'center' }}>No activity found</p>
+        </div>
+      )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{title}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--coral)' }} />
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)' }}>Earnings</span>
+        </div>
+      </div>
+      <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible', opacity: hasData ? 1 : 0.4 }}>
+        <defs>
+          <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--coral)" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="var(--coral)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        
+        {/* Y-Axis Grid */}
+        {[0, 0.5, 1].map(v => {
+          const y = padding + v * (height - padding * 2);
+          return (
+            <g key={v}>
+              <line x1={padding} y1={y} x2={width - padding} y2={y} stroke="var(--border)" strokeWidth="1" strokeDasharray="4 4" />
+              <text x={padding - 5} y={y + 3} fontSize="8" fill="var(--muted)" textAnchor="end">{fmtFare(maxVal * (1 - v))}</text>
+            </g>
+          );
+        })}
+
+        <path d={areaD} fill="url(#chartGrad)" />
+        <path d={pathD} fill="none" stroke="var(--coral)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 6px 8px rgba(229,90,63,0.25))' }} />
+        
+        {points.map((p, i) => {
+          const shouldShowLabel = showAllLabels || (i % labelInterval === 0) || (i === chartData.length - 1);
+          return (
+            <g key={i} className="chart-point" style={{ cursor: 'pointer' }}>
+              <circle cx={p.x} cy={p.y} r={chartData.length > 20 ? 2 : 4} fill="var(--white)" stroke="var(--coral)" strokeWidth={chartData.length > 20 ? 1.5 : 2.5} />
+              {shouldShowLabel && (
+                <text x={p.x} y={height + 5} fontSize="8" fontWeight="700" fill="var(--muted)" textAnchor="middle">{chartData[i].label}</text>
+              )}
+              {chartData[i].earnings > 0 && (
+                 <g className="point-label">
+                   <rect x={p.x - 25} y={p.y - 24} width="50" height="16" rx="4" fill="var(--charcoal)" />
+                   <text x={p.x} y={p.y - 13} fontSize="8" fontWeight="800" fill="var(--white)" textAnchor="middle">{fmtFare(chartData[i].earnings)}</text>
+                 </g>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
 
 /* ── Shared UI Components ────────────────────────────────────────── */
 
@@ -250,16 +331,16 @@ function ActiveRidePanel({ ride, onArrived, onVerifyOTP, onComplete, onCancel, a
       </div>
 
       {ride.status === 'arrived' && (
-        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', background: '#F5F3FF' }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#6D28D9', marginBottom: 10, textTransform: 'uppercase' }}>🔐 Enter Passenger OTP</p>
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', background: 'var(--cream-dark)' }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--coral)', marginBottom: 10, textTransform: 'uppercase' }}>🔐 Enter Passenger OTP</p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 10 }}>
             {otp.map((d, i) => (
               <input key={i} ref={refs[i]} type="tel" inputMode="numeric" maxLength={1} value={d}
                 onChange={e => handleOtp(i, e.target.value)} onKeyDown={e => handleKey(i, e)}
                 style={{
                   width: 52, height: 58, textAlign: 'center', fontSize: 22, fontWeight: 800,
-                  border: `2px solid ${otpErr ? '#EF4444' : d ? '#8B5CF6' : 'var(--border)'}`,
-                  borderRadius: 12, background: d ? '#fff' : 'var(--cream)',
+                  border: `2px solid ${otpErr ? 'var(--error)' : d ? 'var(--coral)' : 'var(--border)'}`,
+                  borderRadius: 12, background: 'var(--white)',
                   outline: 'none', fontFamily: 'inherit', color: 'var(--charcoal)',
                 }}
               />
@@ -323,6 +404,9 @@ export default function PostRide() {
   const [acting, setActing]         = useState(false);
   const [simulating, setSimulating] = useState(false);
   const [toast, setToast]           = useState({ msg: '', type: 'info' });
+  const [dailyTarget, setDailyTarget] = useState(() => Number(localStorage.getItem('urbanride_daily_target')) || 1000);
+  const [isEditingTarget, setIsEditingTarget] = useState(false);
+  const [chartRange, setChartRange] = useState('weekly'); // 'daily' | 'weekly' | 'monthly'
 
   // Manual Form State
   const [form, setForm] = useState({ totalSeats: 4, baseTotalRideFare: 0 });
@@ -432,6 +516,15 @@ export default function PostRide() {
     try { await api.post('/driver-rides/simulate-request', { vehicleType }); showToast('New request simulated!', 'ride'); await loadRides(); }
     catch { showToast('Simulation failed', 'error'); }
     finally { setSimulating(false); }
+  };
+  
+  const handleUpdateTarget = (val) => {
+    const num = Number(val);
+    if (isNaN(num) || num <= 0) return;
+    setDailyTarget(num);
+    localStorage.setItem('urbanride_daily_target', num);
+    setIsEditingTarget(false);
+    showToast(`Target updated to ${fmtFare(num)}`, 'success');
   };
 
   const handleManualSubmit = async (e) => {
@@ -548,21 +641,99 @@ export default function PostRide() {
                       )}
                     </>
                   ) : (
-                    <div style={{ animation: 'slideIn 0.3s ease' }}>
-                        <div style={{ background: 'linear-gradient(135deg,#1C1917,#292524)', borderRadius: 18, padding: 20, marginBottom: 16 }}>
-                           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Today's Total</p>
-                           <p style={{ fontSize: 32, fontWeight: 800, color: '#4ADE80', marginTop: 4 }}>{fmtFare(earnings?.todayEarnings)}</p>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                           <div style={{ background: 'var(--cream)', padding: 16, borderRadius: 14 }}>
-                              <p style={{ fontSize: 11, color: 'var(--muted)' }}>Total Rides</p>
-                              <p style={{ fontSize: 20, fontWeight: 800 }}>{earnings?.totalRides || 0}</p>
+                    <div style={{ animation: 'slideIn 0.35s ease' }}>
+                        {/* Daily Progress Card */}
+                        <div style={{ 
+                          background: 'linear-gradient(135deg,#1C1917,#292524)', 
+                          borderRadius: 24, padding: '24px 20px', marginBottom: 16,
+                          display: 'flex', alignItems: 'center', gap: 20,
+                          boxShadow: '0 12px 30px rgba(0,0,0,0.15)',
+                          position: 'relative', overflow: 'hidden'
+                        }}>
+                           <div style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }} />
+                           
+                           {/* Progress Ring */}
+                           <div style={{ position: 'relative', width: 72, height: 72 }}>
+                             <svg width="72" height="72" viewBox="0 0 72 72">
+                               <circle cx="36" cy="36" r="32" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="6" />
+                               <circle cx="36" cy="36" r="32" fill="none" stroke="#4ADE80" strokeWidth="6" 
+                                 strokeDasharray={201} 
+                                 strokeDashoffset={201 - (Math.min(earnings?.todayEarnings || 0, dailyTarget) / dailyTarget) * 201}
+                                 strokeLinecap="round" transform="rotate(-90 36 36)"
+                                 style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+                               />
+                             </svg>
+                             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: '#4ADE80' }}>
+                               {Math.round((Math.min(earnings?.todayEarnings || 0, dailyTarget) / dailyTarget) * 100)}%
+                             </div>
                            </div>
-                           <div style={{ background: 'var(--cream)', padding: 16, borderRadius: 14 }}>
-                              <p style={{ fontSize: 11, color: 'var(--muted)' }}>Lifetime</p>
-                              <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--coral)' }}>{fmtFare(earnings?.totalEarnings)}</p>
+
+                           <div style={{ flex: 1 }}>
+                              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.08em' }}>Daily Target</p>
+                              <p style={{ fontSize: 32, fontWeight: 900, color: '#fff', marginTop: 4 }}>{fmtFare(earnings?.todayEarnings)}</p>
+                              
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                                {isEditingTarget ? (
+                                  <div style={{ display: 'flex', gap: 4 }}>
+                                    <input 
+                                      autoFocus
+                                      type="number" 
+                                      defaultValue={dailyTarget}
+                                      onBlur={(e) => handleUpdateTarget(e.target.value)}
+                                      onKeyDown={(e) => e.key === 'Enter' && handleUpdateTarget(e.target.value)}
+                                      style={{ width: 80, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 4, color: '#fff', padding: '2px 6px', fontSize: 11, fontWeight: 700 }}
+                                    />
+                                  </div>
+                                ) : (
+                                  <button 
+                                    onClick={() => setIsEditingTarget(true)}
+                                    style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}
+                                  >
+                                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Goal: {fmtFare(dailyTarget)}</p>
+                                    <span style={{ fontSize: 10, color: 'var(--coral)', fontWeight: 800 }}>✎ Edit</span>
+                                  </button>
+                                )}
+                              </div>
                            </div>
                         </div>
+
+                        {/* Grid Stats */}
+                        <div className="grid-2" style={{ marginBottom: 16 }}>
+                           <div style={{ background: 'var(--white)', padding: '20px', borderRadius: 20, border: '1.5px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                              <p style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Rides</p>
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 8 }}>
+                                <p style={{ fontSize: 28, fontWeight: 900, color: 'var(--charcoal)' }}>{earnings?.totalRides || 0}</p>
+                                <span style={{ fontSize: 11, color: 'var(--success)', fontWeight: 700 }}>+12%</span>
+                              </div>
+                           </div>
+                           <div style={{ background: 'var(--white)', padding: '20px', borderRadius: 20, border: '1.5px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                              <p style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lifetime</p>
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 8 }}>
+                                <p style={{ fontSize: 24, fontWeight: 900, color: 'var(--coral)' }}>{fmtFare(earnings?.totalEarnings)}</p>
+                              </div>
+                           </div>
+                        </div>
+
+                        {/* Activity Range Toggle */}
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                          {['daily', 'weekly', 'monthly'].map(r => (
+                            <button key={r} onClick={() => setChartRange(r)} style={{
+                              flex: 1, padding: '6px 0', border: 'none', borderRadius: 8,
+                              fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+                              background: chartRange === r ? 'var(--charcoal)' : 'var(--cream-dark)',
+                              color: chartRange === r ? 'var(--white)' : 'var(--muted)',
+                              cursor: 'pointer', transition: 'all 0.2s'
+                            }}>
+                              {r}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Earnings Graph */}
+                        <EarningsChart 
+                          title={`${chartRange} Activity`} 
+                          data={earnings?.[`${chartRange}Activity`]} 
+                        />
                     </div>
                   )}
                 </>

@@ -3,10 +3,23 @@
 /* ── Bright theme (default) ── */
 :root,
 [data-theme="bright"] {
-  --coral: #CC785C;
-  --coral-light: #E8A98A;
-  --coral-pale: #F5EDE4;
+  /* Brand Refinement */
+  --coral: #E55A3F;
+  --coral-light: #F08A75;
+  --coral-pale: rgba(229, 90, 63, 0.08);
   --coral-dark: #A85C42;
+  
+  /* Glassmorphism & High-Fidelity Tokens */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-blur: blur(14px);
+  --shimmer-bg: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  
+  --success: #10B981;
+  --success-pale: rgba(16, 185, 129, 0.08);
+  --info: #007AFF;
+  --info-pale: rgba(0, 122, 255, 0.08);
+
   --cream: #FAF9F7;
   --cream-dark: #F0EBE3;
   --charcoal: #1C1917;
@@ -46,6 +59,73 @@
   :root {
     --duration-theme: 0ms !important;
   }
+}
+
+[data-theme='dark'] {
+  --glass-bg: rgba(28, 28, 30, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: blur(16px);
+  --shimmer-bg: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+}
+
+/* Shimmer Animation for Skeletons */
+@keyframes shimmer {
+  0% { transform: translateX(-150%); }
+  100% { transform: translateX(150%); }
+}
+
+.shimmer-wrapper {
+  position: relative;
+  overflow: hidden;
+  background: var(--cream-dark);
+}
+
+.shimmer-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: var(--shimmer-bg);
+  animation: shimmer 1.8s infinite;
+}
+
+/* Glass Card Utility */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+}
+
+/* Premium Button Feedback */
+.btn-premium {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+}
+
+.btn-premium:active {
+  transform: scale(0.96);
+}
+
+/* Pulse Animation for Heatmaps */
+@keyframes mapPulse {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+.map-pulse-dot {
+  width: 12px; height: 12px;
+  background: var(--info);
+  border-radius: 50%;
+  position: relative;
+}
+
+.map-pulse-dot::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  background: var(--info);
+  animation: mapPulse 2.5s infinite;
 }
 
 /* ── Dark theme ── */
@@ -507,11 +587,146 @@ input, select, button {
   }
 }
 
+/* ── Chart Animations ── */
+.chart-point {
+  transition: all 0.3s ease;
+}
+.chart-point:hover {
+  filter: drop-shadow(0 0 8px var(--coral));
+}
+.chart-point:hover circle {
+  r: 7;
+}
+.point-label {
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: translateY(5px);
+  pointer-events: none;
+}
+.chart-point:hover .point-label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.earnings-chart-container {
+  padding: 24px 20px;
+}
+
+@media (max-width: 540px) {
+  .earnings-chart-container {
+    padding: 16px 10px !important;
+  }
+}
+
+/* ── Landing Page Responsive Grids ── */
+.hero-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.grid-hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.grid-3-col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.grid-4-col {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+}
+
+@media (max-width: 900px) {
+  .hero-section, .grid-hero, .grid-3-col, .footer-grid {
+    grid-template-columns: 1fr !important;
+    text-align: center;
+  }
+  .grid-4-col {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .hero-section {
+    padding-top: 100px !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+  .nav-links-landing {
+    display: none !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .grid-4-col {
+    grid-template-columns: 1fr !important;
+  }
+  .hero-section h1 {
+    font-size: 36px !important;
+  }
+  .landing-nav {
+    padding: 0 20px !important;
+  }
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
-  .page-wrapper { padding: 24px 16px; }
-  .card { padding: 20px 16px; }
+  .page-wrapper { padding: 16px 12px 100px 12px; } /* More space at bottom for nav */
+  .card { padding: 16px; }
   .nav-label { display: none; }
+  
+  /* Bottom Nav Container */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 72px;
+    background: var(--card-bg);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 12px;
+    z-index: 1000;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    background: none;
+    border: none;
+    cursor: pointer;
+    flex: 1;
+    transition: all 0.2s;
+  }
+
+  .bottom-nav-item.active {
+    color: var(--coral);
+  }
+
+  .bottom-nav-item svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Hide top nav items on mobile */
+  .top-nav-links {
+    display: none !important;
+  }
+}
+@media (min-width: 769px) {
+  .bottom-nav { display: none !important; }
 }
 
 /* ── Leaflet map overrides ── */
@@ -571,15 +786,24 @@ input, select, button {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Tab bar ── */
-.tab-bar {
+/* ── Tab Container Responsive ── */
+.tab-container {
   display: flex;
   gap: 4px;
   background: var(--cream-dark);
-  padding: 3px;
-  border-radius: var(--radius-sm);
+  padding: 4px;
+  border-radius: var(--radius-md);
   width: fit-content;
-  margin-bottom: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.tab-container::-webkit-scrollbar { display: none; }
+
+@media (max-width: 640px) {
+  .tab-container {
+    width: 100%;
+  }
 }
 .tab-btn {
   padding: 6px 14px;

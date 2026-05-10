@@ -156,16 +156,22 @@ function JoinPoolModal({ onClose }) {
 // ── Skeleton ───────────────────────────────────────────────────────────────
 function RideCardSkeleton() {
   return (
-    <div style={{
+    <div className="shimmer-wrapper" style={{
       background: 'var(--card-bg)', border: '1px solid var(--border)',
-      borderRadius: 'var(--radius-md)', padding: 20, marginBottom: 12
+      borderRadius: 'var(--radius-md)', padding: 20, marginBottom: 12,
+      position: 'relative', height: 100
     }}>
-      {[['70%', '30%'], ['50%', '20%']].map(([w1, w2], i) => (
-        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: i === 0 ? 10 : 0 }}>
-          <div className="skeleton" style={{ width: w1, height: 16, borderRadius: 6 }} />
-          <div className="skeleton" style={{ width: w2, height: 16, borderRadius: 6 }} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{ width: '60%', height: 18, background: 'var(--cream-dark)', borderRadius: 4 }} />
+        <div style={{ width: '20%', height: 18, background: 'var(--cream-dark)', borderRadius: 4 }} />
+      </div>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--cream-dark)' }} />
+        <div style={{ flex: 1 }}>
+           <div style={{ width: '80%', height: 12, background: 'var(--cream-dark)', borderRadius: 4, marginBottom: 8 }} />
+           <div style={{ width: '40%', height: 12, background: 'var(--cream-dark)', borderRadius: 4 }} />
         </div>
-      ))}
+      </div>
     </div>
   );
 }
@@ -460,7 +466,10 @@ export default function SearchRide() {
             <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500 }}>Search available rides near you — instant matches</p>
           </div>
 
-          <div className="unified-search-bar" style={{ maxWidth: 1000, margin: '0 auto' }}>
+          <div className="unified-search-bar glass-card" style={{ 
+            maxWidth: 1000, margin: '0 auto', 
+            boxShadow: '0 20px 50px rgba(0,0,0,0.1)' 
+          }}>
             {/* Leaving From */}
             <div style={{ flex: 1.8, position: 'relative' }}>
               <LocationPicker
@@ -485,9 +494,9 @@ export default function SearchRide() {
 
             <div style={{ flex: 1, position: 'relative' }}>
               <div 
-                className="search-field-item" 
+                className="search-field-item btn-premium" 
                 onClick={() => setShowPaxDropdown(!showPaxDropdown)}
-                style={{ justifyContent: 'center' }}
+                style={{ justifyContent: 'center', cursor: 'pointer' }}
               >
                 <span style={{ fontSize: 22 }}>👥</span>
                 <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--charcoal)' }}>{searchP} pax</p>
@@ -495,18 +504,17 @@ export default function SearchRide() {
               </div>
               
               {showPaxDropdown && (
-                <div style={{
-                  position: 'absolute', top: '100%', left: 0, right: 0, mt: 8,
-                  background: 'var(--card-bg)', borderRadius: 16, border: '1px solid var(--border)',
-                  boxShadow: 'var(--shadow-lg)', zIndex: 100, overflow: 'hidden'
+                <div className="glass-card" style={{
+                  position: 'absolute', top: 'calc(100% + 12px)', left: 0, right: 0,
+                  borderRadius: 20, zIndex: 100, overflow: 'hidden'
                 }}>
                   {[1, 2, 3, 4].map(num => (
                     <div 
                       key={num} 
                       onClick={() => { setSearchP(num); setShowPaxDropdown(false); }}
-                      style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, fontWeight: 600, background: searchP === num ? 'var(--coral-pale)' : 'transparent', color: searchP === num ? 'var(--coral)' : 'var(--charcoal)' }}
+                      style={{ padding: '14px 20px', cursor: 'pointer', fontSize: 14, fontWeight: 700, background: searchP === num ? 'var(--info-pale)' : 'transparent', color: searchP === num ? 'var(--info)' : 'var(--charcoal)' }}
                       onMouseEnter={e => e.currentTarget.style.background = 'var(--cream)'}
-                      onMouseLeave={e => e.currentTarget.style.background = searchP === num ? 'var(--coral-pale)' : 'transparent'}
+                      onMouseLeave={e => e.currentTarget.style.background = searchP === num ? 'var(--info-pale)' : 'transparent'}
                     >
                       {num} Passenger{num > 1 ? 's' : ''}
                     </div>
@@ -515,7 +523,7 @@ export default function SearchRide() {
               )}
             </div>
 
-            <button onClick={() => handleSearch()} disabled={loading} className="search-btn-primary" style={{ padding: '0 40px' }}>
+            <button onClick={() => handleSearch()} disabled={loading} className="search-btn-primary btn-premium">
               {loading ? '...' : 'Search'}
             </button>
           </div>
@@ -571,7 +579,11 @@ export default function SearchRide() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 24, marginBottom: 40 }}>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 450px), 1fr))', 
+            gap: 16 
+          }}>
             {scheduledPools.filter(p => {
               const matchesDate = p.departureTime?.startsWith(selectedDate);
               const matchesSource = !schedSource || (p.sourceCoords?.address?.toLowerCase().includes(schedSource.address.toLowerCase()));
@@ -660,38 +672,59 @@ export default function SearchRide() {
       )}
 
       {sourceCoords && destCoords && (
-        <div style={{ marginBottom: 32 }}>
-          <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>
-            Recommended Service
-          </p>
+        <div style={{ marginBottom: 32, animation: 'pageFadeIn 0.5s ease-out' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 }}>
+            <div>
+              <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+                Recommended Service
+              </p>
+              <h4 style={{ fontSize: 18, fontWeight: 800, color: 'var(--charcoal)' }}>Pick your ride</h4>
+            </div>
+            <div className="glass-card" style={{ 
+              padding: '6px 12px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 6,
+              background: 'var(--success-pale)', border: '1px solid var(--success)' 
+            }}>
+               <span style={{ fontSize: 14 }}>🌱</span>
+               <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--success)' }}>SAVE 2.4kg CO2</span>
+            </div>
+          </div>
 
-          <div style={{
-            borderRadius: 24, overflow: 'hidden',
-            border: '1px solid var(--border)', background: 'var(--card-bg)',
-            boxShadow: 'var(--shadow-sm)'
+          <div className="glass-card" style={{
+            borderRadius: 28, overflow: 'hidden',
+            boxShadow: 'var(--shadow-md)'
           }}>
             {[
-              { name: 'Ride Pool', emoji: '🚐', desc: 'Share & Save', premium: true },
-              { name: 'Auto',      emoji: '🛺', desc: 'Quick budget' },
-              { name: 'Cab',       emoji: '🚕', desc: 'Private AC' }
+              { name: 'Ride Pool', emoji: '🚐', desc: 'Share & Save up to 60%', premium: true, color: 'var(--info)' },
+              { name: 'Auto',      emoji: '🛺', desc: 'Quick budget doorstep pickup', color: '#F59E0B' },
+              { name: 'Cab',       emoji: '🚕', desc: 'Private AC luxury travel', color: 'var(--coral)' }
             ].map((cab, idx, arr) => (
               <div
                 key={cab.name}
+                className="btn-premium"
                 onClick={() => { setSelectedCabType(cab.name); handleSearch(); }}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '18px 24px',
-                  background: selectedCabType === cab.name ? 'var(--coral-pale)' : 'transparent',
-                  borderBottom: idx < arr.length - 1 ? '1px solid var(--border)' : 'none',
-                  cursor: 'pointer', transition: 'all 0.2s'
+                  display: 'flex', alignItems: 'center', gap: 16,
+                  padding: '20px 24px',
+                  background: selectedCabType === cab.name ? 'var(--info-pale)' : 'transparent',
+                  borderBottom: idx < arr.length - 1 ? '1px solid var(--glass-border)' : 'none',
+                  cursor: 'pointer'
                 }}
               >
-                <span style={{ fontSize: 32 }}>{cab.emoji}</span>
+                <div style={{ 
+                  width: 56, height: 56, borderRadius: 16, background: 'var(--cream)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32,
+                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'
+                }}>{cab.emoji}</div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontWeight: 800, fontSize: 15, color: 'var(--charcoal)' }}>{cab.name}</p>
-                  <p style={{ fontSize: 12, color: 'var(--muted)' }}>{cab.desc}</p>
+                  <p style={{ fontWeight: 800, fontSize: 16, color: 'var(--charcoal)' }}>{cab.name}</p>
+                  <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{cab.desc}</p>
                 </div>
-                {cab.premium && <span style={{ fontSize: 10, fontWeight: 900, color: 'var(--coral)', background: 'rgba(229,90,63,0.1)', padding: '4px 8px', borderRadius: 8 }}>POPULAR</span>}
+                <div style={{ textAlign: 'right' }}>
+                   <p style={{ fontSize: 17, fontWeight: 900, color: cab.color }}>
+                     {cab.name === 'Ride Pool' ? '₹85' : cab.name === 'Auto' ? '₹140' : '₹260'}
+                   </p>
+                   {cab.premium && <span style={{ fontSize: 9, fontWeight: 900, color: 'var(--info)', background: 'var(--info-pale)', padding: '2px 6px', borderRadius: 6 }}>CHEAPEST</span>}
+                </div>
               </div>
             ))}
           </div>

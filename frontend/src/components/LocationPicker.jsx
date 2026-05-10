@@ -75,10 +75,9 @@ function FullscreenMapModal({ dark, value, onSelect, onClose, mode, markerIcon, 
     }
   };
 
-  const handleMapClick = ({ lat, lng }) => {
-    setTempPos([lat, lng]);
-    reverseGeocode(lat, lng);
-  };
+  const onMapMove = useCallback(() => {
+    // This will be called by CenterPinHandler
+  }, []);
 
   const handleSearchInput = (query) => {
     setSearchQuery(query);
@@ -92,6 +91,11 @@ function FullscreenMapModal({ dark, value, onSelect, onClose, mode, markerIcon, 
       } catch { setSearchResults([]); }
       finally { setSearching(false); }
     }, 400);
+  };
+
+  const handleCenterChange = (coords) => {
+    setTempPos([coords.lat, coords.lng]);
+    reverseGeocode(coords.lat, coords.lng);
   };
 
   const selectSearchResult = (r) => {
@@ -120,12 +124,29 @@ function FullscreenMapModal({ dark, value, onSelect, onClose, mode, markerIcon, 
     );
   };
 
+  // Component to handle map move for center pin
+  function CenterPinHandler({ onCenterChange }) {
+    const map = useMapEvents({
+      moveend() {
+        const center = map.getCenter();
+        onCenterChange({ lat: center.lat, lng: center.lng });
+      }
+    });
+    return null;
+  }
+
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999,
       background: 'var(--cream)', display: 'flex', flexDirection: 'column',
       animation: 'fadeIn 0.25s ease-out'
     }}>
+      <style>{`
+        @keyframes bounce {
+          from { transform: translateY(0); }
+          to { transform: translateY(-5px); }
+        }
+      `}</style>
       {/* ── Top Bar ── */}
       <div style={{
         padding: '12px 16px', background: 'var(--card-bg)',
@@ -200,17 +221,44 @@ function FullscreenMapModal({ dark, value, onSelect, onClose, mode, markerIcon, 
             attribution={mapType === 'satellite' ? SATELLITE_ATTR : (dark ? DARK_ATTR : LIGHT_ATTR)}
           />
           <MapResizer />
-          <MapClickHandler onLocationSelect={handleMapClick} enabled={true} />
+          <CenterPinHandler onCenterChange={handleCenterChange} />
 
-          {tempPos && (
-            <>
-              <MapRecenter position={tempPos} />
-              <Marker position={tempPos} icon={markerIcon}>
-                <Popup>{tempAddress || 'Selected location'}</Popup>
-              </Marker>
-            </>
-          )}
+          {/* Random Heatmap Pulses (Engagement) */}
+          {[
+            [17.4486, 78.3908], [17.4241, 78.4348], [17.3850, 78.4867], 
+            [17.4448, 78.4664], [17.3660, 78.5200]
+          ].map((pos, i) => (
+            <Marker key={i} position={pos} icon={L.divIcon({
+              className: 'map-pulse-dot',
+              iconSize: [12, 12],
+              iconAnchor: [6, 6]
+            })} />
+          ))}
+
+          {tempPos && <MapRecenter position={tempPos} />}
         </MapContainer>
+
+        {/* Center Pin Overlay (Ola/Uber Style) */}
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%, -100%)',
+          zIndex: 1000, pointerEvents: 'none',
+          display: 'flex', flexDirection: 'column', alignItems: 'center'
+        }}>
+           <div style={{
+             background: 'var(--charcoal)', color: 'white', padding: '4px 10px',
+             borderRadius: 8, fontSize: 10, fontWeight: 800, marginBottom: 4,
+             whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+             animation: 'bounce 0.5s infinite alternate'
+           }}>
+             SET {mode === 'pickup' ? 'PICKUP' : 'DESTINATION'}
+           </div>
+           <img
+             src={createMarkerIcon(color, 40)}
+             style={{ width: 40, height: 60, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))' }}
+             alt="Pin"
+           />
+        </div>
 
         {/* My Location Button (Google style — bottom right circle) */}
         <button onClick={handleMyLocation} style={{
@@ -333,18 +381,24 @@ export default function LocationPicker({
     return (lat > 8.0 && lat < 38.0) && (lng > 68.0 && lng < 98.0);
   };
 
-  // Reverse geocode when value changes
+  // Reverse geocode ONLY if we don't have an address already
   useEffect(() => {
     if (value?.lat && value?.lng) {
       if (isIndia(value.lat, value.lng)) {
         setGeoError('');
-        reverseGeocode(value.lat, value.lng);
+        // If the value already has a meaningful address (not coordinates), don't overwrite it
+        const isCoords = /^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(value.address || '');
+        if (!value.address || isCoords) {
+          reverseGeocode(value.lat, value.lng);
+        } else {
+          setAddress(value.address);
+        }
       } else {
         setGeoError('Currently, UrbanRide is only available in India.');
         setAddress('Outside India');
       }
     }
-  }, [value?.lat, value?.lng]);
+  }, [value?.lat, value?.lng, value?.address]);
 
   const reverseGeocode = async (lat, lng) => {
     try {

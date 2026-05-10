@@ -396,19 +396,15 @@ export default function RideDetail() {
 
         {/* Tabs */}
         {tabs.length > 1 && (
-          <div style={{
-            display: 'flex', gap: 4, marginBottom: 16,
-            background: 'var(--cream-dark)', padding: 3,
-            borderRadius: 'var(--radius-sm)', width: 'fit-content'
-          }}>
+          <div className="tab-container" style={{ marginBottom: 16 }}>
             {tabs.map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
-                padding: '6px 14px', border: 'none', cursor: 'pointer',
-                borderRadius: 6, fontSize: 12, fontWeight: 500,
+                padding: '10px 20px', border: 'none', cursor: 'pointer',
+                borderRadius: 6, fontSize: 12, fontWeight: 600,
                 background: activeTab === tab.key ? 'var(--white)' : 'transparent',
                 color: activeTab === tab.key ? 'var(--charcoal)' : 'var(--muted)',
                 boxShadow: activeTab === tab.key ? 'var(--shadow-sm)' : 'none',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s', whiteSpace: 'nowrap', flex: 1, minWidth: 'fit-content'
               }}>
                 {tab.label}
               </button>
@@ -421,7 +417,7 @@ export default function RideDetail() {
           <>
             <StatusTimeline status={ride.status} />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+            <div className="grid-2" style={{ marginBottom: 20 }}>
               {[
                 { label: 'Driver',  value: ride.driverName },
                 { label: 'Seats',   value: `${ride.availableSeats} / ${ride.totalSeats} free` },
