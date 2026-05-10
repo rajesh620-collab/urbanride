@@ -13,6 +13,7 @@ const ridePoolSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  creatorGender: { type: String, enum: ['male', 'female', 'other'] },
   members: [{
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     joinedAt: { type: Date, default: Date.now }

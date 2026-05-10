@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import api from '../api/axiosInstance';
+import { useAuth } from '../context/AuthContext';
 
 export default function SafetyToolkit({ ride, user }) {
+  const { user: currentUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
   const tools = [
@@ -10,7 +13,21 @@ export default function SafetyToolkit({ ride, user }) {
       icon: '🚨',
       desc: 'Instant alert to contacts',
       color: '#EF4444',
-      action: () => {
+      action: async () => {
+        // 1. Log to backend with priority
+        try {
+          const priority = ride.femaleOnly ? 'high' : 'normal';
+          await api.post('/alerts/trigger', {
+            rideId: ride._id,
+            type: 'sos',
+            priority,
+            location: { lat: 0, lng: 0 } // In real app, get from geolocation
+          });
+        } catch (err) {
+          console.error('Failed to log alert:', err);
+        }
+
+        // 2. Open WhatsApp as before
         const txt = encodeURIComponent(
           `🆘 SOS! I'm in UrbanRide from ${ride.sourceLandmark} → ${ride.destinationLandmark}.\nDriver: ${ride.driverName}\nTrack: ${window.location.href}`
         );

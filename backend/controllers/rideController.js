@@ -33,6 +33,7 @@ async function postRide(req, res) {
     const rideData = {
       driverId: req.user.id,
       driverName: req.user.name,
+      driverGender: req.user.gender,
       sourceLandmark,
       destinationLandmark,
       departureTime: new Date(),
@@ -126,7 +127,7 @@ async function searchRides(req, res) {
  */
 async function searchRidesLegacy(req, res) {
   try {
-    const { source, destination, femaleOnly } = req.query;
+    const { source, destination, femaleOnly, femaleOnlyDriver } = req.query;
 
     const query = {
       status: 'open',
@@ -136,6 +137,7 @@ async function searchRidesLegacy(req, res) {
     if (source) query.sourceLandmark = source;
     if (destination) query.destinationLandmark = destination;
     if (femaleOnly === 'true') query.femaleOnly = true;
+    if (femaleOnlyDriver === 'true') query.driverGender = 'female';
 
     const rides = await Ride.find(query).sort({ createdAt: -1 });
 

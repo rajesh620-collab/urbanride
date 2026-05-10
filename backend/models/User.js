@@ -31,6 +31,18 @@ const userSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  isGenderVerified: {
+    type: Boolean,
+    default: false
+  },
+  isAadharVerified: {
+    type: Boolean,
+    default: false
+  },
+  profilePicture: {
+    type: String,
+    default: ''
+  },
   createdAt: {
     type: Date,
     default: Date.now

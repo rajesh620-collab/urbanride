@@ -200,7 +200,7 @@ export default function SearchRide() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [landmarks, setLandmarks]           = useState([]);
-  const [filters, setFilters]               = useState({ source: '', destination: '', femaleOnly: false });
+  const [filters, setFilters]               = useState({ source: '', destination: '', femaleOnly: false, femaleOnlyDriver: false });
   const [sourceCoords, setSourceCoords]     = useState(null);
   const [destCoords, setDestCoords]         = useState(null);
   const [error, setError]                   = useState('');
@@ -336,6 +336,7 @@ export default function SearchRide() {
         if (filters.source)      params.source      = filters.source;
         if (filters.destination) params.destination = filters.destination;
         if (filters.femaleOnly)  params.femaleOnly  = 'true';
+        if (filters.femaleOnlyDriver) params.femaleOnlyDriver = 'true';
 
         const res = await api.get('/rides/search', { params });
         const foundRides = res.data.data?.rides || res.data.rides || [];
@@ -544,18 +545,33 @@ export default function SearchRide() {
             </div>
 
             {user?.gender === 'female' && (
-              <div style={{ flex: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '0 12px' }}>
-                <input 
-                  type="checkbox" 
-                  name="femaleOnly"
-                  id="femaleOnlySearch"
-                  checked={filters.femaleOnly} 
-                  onChange={handleChange}
-                  style={{ width: 18, height: 18, accentColor: 'var(--coral)' }}
-                />
-                <label htmlFor="femaleOnlySearch" style={{ fontSize: 13, fontWeight: 700, color: 'var(--charcoal)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                  👩‍🤝‍👩 Female-only
-                </label>
+              <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6, padding: '0 12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input 
+                    type="checkbox" 
+                    name="femaleOnly"
+                    id="femaleOnlySearch"
+                    checked={filters.femaleOnly} 
+                    onChange={handleChange}
+                    style={{ width: 16, height: 16, accentColor: 'var(--coral)' }}
+                  />
+                  <label htmlFor="femaleOnlySearch" style={{ fontSize: 11, fontWeight: 700, color: 'var(--charcoal)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    👩‍🤝‍👩 Female-only Pool
+                  </label>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input 
+                    type="checkbox" 
+                    name="femaleOnlyDriver"
+                    id="femaleOnlyDriverSearch"
+                    checked={filters.femaleOnlyDriver} 
+                    onChange={handleChange}
+                    style={{ width: 16, height: 16, accentColor: 'var(--coral)' }}
+                  />
+                  <label htmlFor="femaleOnlyDriverSearch" style={{ fontSize: 11, fontWeight: 700, color: 'var(--charcoal)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    👩‍✈️ Female Driver
+                  </label>
+                </div>
               </div>
             )}
 

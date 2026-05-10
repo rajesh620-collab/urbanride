@@ -61,6 +61,7 @@ safeRoute("/api/pools",        "./routes/pools");
 safeRoute("/api/wallet",        "./routes/wallet");
 safeRoute("/api/saved-routes",  "./routes/savedRoutes");
 safeRoute("/api/driver-rides",  "./routes/driverRides");
+safeRoute("/api/alerts",        "./routes/alerts");
 
 // Debug endpoint to check route status
 app.get("/api/debug/routes", (req, res) => {

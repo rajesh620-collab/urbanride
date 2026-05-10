@@ -46,6 +46,7 @@ exports.createPool = async (req, res) => {
       totalFare,
       maxParticipants: maxParticipants || 4,
       departureTime: departureTime || new Date(),
+      creatorGender: userGender,
       femaleOnly: femaleOnly || false,
       status: 'waiting'
     });

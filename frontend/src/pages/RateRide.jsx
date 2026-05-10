@@ -62,9 +62,9 @@ export default function RateRide() {
 
   const handleSubmit = async () => {
     setError('');
-    const incomplete = usersToRate.filter(u => !ratings[u.id]?.rating);
+    const incomplete = usersToRate.filter(u => !ratings[u.id]?.rating || !ratings[u.id]?.safetyRating);
     if (incomplete.length > 0) {
-      return setError(`Please rate all participants`);
+      return setError(`Please rate all categories for all participants`);
     }
 
     setSubmitting(true);
@@ -74,6 +74,7 @@ export default function RateRide() {
           rideId: id,
           toUserId: u.id,
           rating: ratings[u.id].rating,
+          safetyRating: ratings[u.id].safetyRating,
           comment: ratings[u.id].comment || ''
         });
       }
@@ -150,6 +151,25 @@ export default function RateRide() {
                 {ratings[u.id]?.rating && (
                   <span style={{ fontSize: 13, color: 'var(--muted)', marginLeft: 8, alignSelf: 'center' }}>
                     {ratings[u.id].rating}/5
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500,
+                textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, marginTop: 12 }}>
+                Safety & Comfort
+              </p>
+              <div className="star-rating" style={{ marginBottom: 14 }}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button key={star} type="button"
+                    style={{ color: ratings[u.id]?.safetyRating >= star ? '#10B981' : 'var(--border)' }}
+                    className={ratings[u.id]?.safetyRating >= star ? 'filled' : ''}
+                    onClick={() => setRatingFor(u.id, 'safetyRating', star)}>
+                    {ratings[u.id]?.safetyRating >= star ? '★' : '☆'}
+                  </button>
+                ))}
+                {ratings[u.id]?.safetyRating && (
+                  <span style={{ fontSize: 13, color: 'var(--muted)', marginLeft: 8, alignSelf: 'center' }}>
+                    {ratings[u.id].safetyRating}/5
                   </span>
                 )}
               </div>

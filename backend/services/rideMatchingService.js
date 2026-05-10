@@ -25,7 +25,8 @@ async function smartSearch({
   sourceLandmark,
   userLat,
   userLng,
-  femaleOnly
+  femaleOnly,
+  femaleOnlyDriver
 }) {
   const allLandmarks = await Landmark.find({});
 
@@ -38,6 +39,7 @@ async function smartSearch({
 
   if (sourceLandmark) query.sourceLandmark = sourceLandmark;
   if (femaleOnly) query.femaleOnly = true;
+  if (femaleOnlyDriver) query.driverGender = 'female';
 
   // ── 2. Exact-match shared rides ──────────────────────────────
   const exactRides = await Ride.find(query).sort({ createdAt: -1 }).limit(10);
@@ -63,7 +65,8 @@ async function smartSearch({
       sourceLandmark,
       destinationLandmark,
       allLandmarks,
-      femaleOnly
+      femaleOnly,
+      femaleOnlyDriver
     });
     if (detourResult) return detourResult;
   }
@@ -75,7 +78,8 @@ async function smartSearch({
       userLat,
       userLng,
       allLandmarks,
-      femaleOnly
+      femaleOnly,
+      femaleOnlyDriver
     });
     if (walkOption) return walkOption;
   }
@@ -86,7 +90,8 @@ async function smartSearch({
       sourceLandmark,
       destinationLandmark,
       allLandmarks,
-      femaleOnly
+      femaleOnly,
+      femaleOnlyDriver
     });
     if (nearbyResult) return nearbyResult;
   }
@@ -117,7 +122,7 @@ async function smartSearch({
  * detour = dist(A,B) + dist(B,Z) - dist(A,Z)
  * If detour ≤ DETOUR_THRESHOLD → it's on the way
  */
-async function findDetourRides({ sourceLandmark, destinationLandmark, allLandmarks, femaleOnly }) {
+async function findDetourRides({ sourceLandmark, destinationLandmark, allLandmarks, femaleOnly, femaleOnlyDriver }) {
   const userSrc = allLandmarks.find(l => l.name === sourceLandmark);
   const destLm  = allLandmarks.find(l => l.name === destinationLandmark);
   if (!userSrc?.lat || !destLm?.lat) return null;
@@ -130,6 +135,7 @@ async function findDetourRides({ sourceLandmark, destinationLandmark, allLandmar
     sourceLandmark: { $ne: sourceLandmark } // different source (exact match already checked)
   };
   if (femaleOnly) query.femaleOnly = true;
+  if (femaleOnlyDriver) query.driverGender = 'female';
 
   const rides = await Ride.find(query).sort({ createdAt: -1 });
   if (rides.length === 0) return null;
@@ -182,13 +188,14 @@ async function findDetourRides({ sourceLandmark, destinationLandmark, allLandmar
 /**
  * Find shared rides whose source landmark is within WALKING_THRESHOLD of the user.
  */
-async function findWalkableRides({ destinationLandmark, userLat, userLng, allLandmarks, femaleOnly }) {
+async function findWalkableRides({ destinationLandmark, userLat, userLng, allLandmarks, femaleOnly, femaleOnlyDriver }) {
   const query = {
     status: 'open',
     availableSeats: { $gte: 1 },
     destinationLandmark
   };
   if (femaleOnly) query.femaleOnly = true;
+  if (femaleOnlyDriver) query.driverGender = 'female';
 
   const rides = await Ride.find(query).sort({ createdAt: -1 });
 
@@ -230,7 +237,7 @@ async function findWalkableRides({ destinationLandmark, userLat, userLng, allLan
 /**
  * Find shared rides from nearby source landmarks.
  */
-async function findNearbySourceRides({ sourceLandmark, destinationLandmark, allLandmarks, femaleOnly }) {
+async function findNearbySourceRides({ sourceLandmark, destinationLandmark, allLandmarks, femaleOnly, femaleOnlyDriver }) {
   const userSrc = allLandmarks.find(l => l.name === sourceLandmark);
   if (!userSrc?.lat) return null;
 
@@ -248,6 +255,7 @@ async function findNearbySourceRides({ sourceLandmark, destinationLandmark, allL
     sourceLandmark: { $in: nearbyLandmarks.map(l => l.name) }
   };
   if (femaleOnly) query.femaleOnly = true;
+  if (femaleOnlyDriver) query.driverGender = 'female';
 
   const rides = await Ride.find(query).sort({ createdAt: -1 });
   if (rides.length === 0) return null;

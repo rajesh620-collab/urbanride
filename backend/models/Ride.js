@@ -7,6 +7,7 @@ const rideSchema = new mongoose.Schema({
     required: true
   },
   driverName: { type: String, required: true },
+  driverGender: { type: String, enum: ['male', 'female', 'other'] },
   sourceLandmark: { type: String, required: true },
   destinationLandmark: { type: String, required: true },
   // Coordinates for map display

@@ -88,7 +88,13 @@ export default function PoolDetail() {
                   </div>
                   <div>
                     <p style={{ fontSize: 14, fontWeight: 500 }}>{member.name} {member._id === pool.leader._id && <span style={{ fontSize: 10, background: 'var(--coral-pale)', color: 'var(--coral)', padding: '2px 6px', borderRadius: 4, marginLeft: 4 }}>Leader</span>}</p>
-                    {member.phone && <p style={{ fontSize: 11, color: 'var(--muted)' }}>{member.phone}</p>}
+                    {member.phone && (
+                      <p style={{ fontSize: 11, color: 'var(--muted)' }}>
+                        {pool.femaleOnly && member._id !== user.id 
+                          ? `+91 ******${member.phone.slice(-4)}` 
+                          : member.phone}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

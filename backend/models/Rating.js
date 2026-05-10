@@ -22,6 +22,11 @@ const ratingSchema = new mongoose.Schema({
     min: 1,
     max: 5
   },
+  safetyRating: {
+    type: Number,
+    min: 1,
+    max: 5
+  },
   comment: {
     type: String,
     trim: true,

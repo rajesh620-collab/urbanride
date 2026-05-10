@@ -18,6 +18,7 @@ import DriverPools from './pages/DriverPools';
 import DriverBroadcast from './pages/DriverBroadcast';
 import DriverRequests from './pages/DriverRequests';
 import DriverDashboard from './pages/DriverDashboard';
+import Profile from './pages/Profile';
 import Wallet from './pages/Wallet';
 
 
@@ -58,6 +59,7 @@ function AppContent() {
         <Route path="/driver/requests"   element={<ProtectedRoute><DriverRequests /></ProtectedRoute>} />
         <Route path="/driver/dashboard"  element={<ProtectedRoute><DriverDashboard /></ProtectedRoute>} />
         <Route path="/wallet"            element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
+        <Route path="/profile"           element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
         <Route path="/waiting/:poolId" element={<ProtectedRoute><WaitingScreen /></ProtectedRoute>} />
         <Route path="*"              element={<Navigate to="/" replace />} />
