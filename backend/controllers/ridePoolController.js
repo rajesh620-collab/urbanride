@@ -12,8 +12,9 @@ const calculateBaseFare = (km, type) => {
 
 exports.createPool = async (req, res) => {
   try {
-    const { sourceCoords, destCoords, vehicleType, distanceKm, durationMin, maxParticipants, departureTime } = req.body;
+    const { sourceCoords, destCoords, vehicleType, distanceKm, durationMin, maxParticipants, departureTime, femaleOnly } = req.body;
     const userId = req.user?.id || req.user?._id || req.userId;
+    const userGender = req.user?.gender;
 
     if (!userId) {
        return res.status(401).json({ success: false, message: 'User identification failed. Please re-login.' });
@@ -29,6 +30,10 @@ exports.createPool = async (req, res) => {
     const poolCode = crypto.randomBytes(3).toString('hex').toUpperCase();
     const totalFare = calculateBaseFare(distanceKm || 5, vehicleType || 'auto');
 
+    if (femaleOnly && userGender !== 'female') {
+      return res.status(403).json({ success: false, message: 'Only female users can create female-only pools' });
+    }
+
     const pool = await RidePool.create({
       poolCode,
       creator: userId,
@@ -41,6 +46,7 @@ exports.createPool = async (req, res) => {
       totalFare,
       maxParticipants: maxParticipants || 4,
       departureTime: departureTime || new Date(),
+      femaleOnly: femaleOnly || false,
       status: 'waiting'
     });
 
@@ -59,6 +65,14 @@ exports.joinPool = async (req, res) => {
     const { poolId } = req.params;
     const pool = await RidePool.findById(poolId);
     if (!pool) return res.status(404).json({ success: false, message: 'Pool not found' });
+    
+    const userId = req.user?.id || req.user?._id || req.userId;
+    const userGender = req.user?.gender;
+
+    if (pool.femaleOnly && userGender !== 'female') {
+      return res.status(403).json({ success: false, message: 'This is a female-only pool' });
+    }
+
     if (pool.status !== 'waiting') return res.status(400).json({ success: false, message: 'Pool is no longer joining' });
     if (pool.members.length >= pool.maxParticipants) return res.status(400).json({ success: false, message: 'Pool is full' });
 
@@ -95,11 +109,19 @@ exports.searchPools = async (req, res) => {
 
     // Find waiting pools near pickup
     // (In production use $near, for now simple range check)
-    const pools = await RidePool.find({
+    const query = {
       status: 'waiting',
       'sourceCoords.lat': { $gt: lat - 0.05, $lt: parseFloat(lat) + 0.05 },
       'sourceCoords.lng': { $gt: lng - 0.05, $lt: parseFloat(lng) + 0.05 }
-    }).populate('creator', 'name gender');
+    };
+
+    if (req.user?.gender !== 'female') {
+      query.femaleOnly = { $ne: true };
+    } else if (req.query.femaleOnly === 'true') {
+      query.femaleOnly = true;
+    }
+
+    const pools = await RidePool.find(query).populate('creator', 'name gender');
 
     res.json({ success: true, data: { pools } });
   } catch (error) {
@@ -205,10 +227,16 @@ exports.getMyPools = async (req, res) => {
 
 exports.getAllScheduledPools = async (req, res) => {
     try {
-      const pools = await RidePool.find({
+      const query = {
         status: 'waiting',
         departureTime: { $gt: new Date() }
-      })
+      };
+
+      if (req.user?.gender !== 'female') {
+        query.femaleOnly = { $ne: true };
+      }
+
+      const pools = await RidePool.find(query)
       .populate('creator', 'name gender')
       .sort({ departureTime: 1 })
       .limit(20);

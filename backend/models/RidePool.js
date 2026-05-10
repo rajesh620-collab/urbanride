@@ -62,6 +62,10 @@ const ridePoolSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  femaleOnly: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now

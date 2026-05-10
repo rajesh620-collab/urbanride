@@ -14,8 +14,10 @@ function CreatePoolModal({ landmarks, onClose }) {
   const [sourceCoords, setSourceCoords] = useState(null);
   const [destCoords, setDestCoords] = useState(null);
   const [maxP, setMaxP] = useState(4);
+  const [femaleOnly, setFemaleOnly] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { user } = useAuth();
 
   const handleCreate = async () => {
     if (!source || !destination) return setError('Please select both locations');
@@ -26,7 +28,8 @@ function CreatePoolModal({ landmarks, onClose }) {
       const res = await api.post('/pools/create', {
         sourceCoords: sourceCoords ? { lat: sourceCoords.lat, lng: sourceCoords.lng, address: sourceCoords.address } : undefined,
         destCoords:   destCoords   ? { lat: destCoords.lat,   lng: destCoords.lng,   address: destCoords.address   } : undefined,
-        maxParticipants: maxP
+        maxParticipants: maxP,
+        femaleOnly
       });
       const pool = res.data.data;
       navigate(`/waiting/${pool._id}`);
@@ -77,6 +80,21 @@ function CreatePoolModal({ landmarks, onClose }) {
             {[2, 3, 4, 6].map(n => <option key={n} value={n}>{n} people</option>)}
           </select>
         </div>
+
+        {user?.gender === 'female' && (
+          <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <input 
+              type="checkbox" 
+              id="femaleOnlyCreate" 
+              checked={femaleOnly} 
+              onChange={e => setFemaleOnly(e.target.checked)}
+              style={{ width: 18, height: 18, accentColor: 'var(--coral)' }}
+            />
+            <label htmlFor="femaleOnlyCreate" style={{ fontSize: 14, fontWeight: 700, color: 'var(--charcoal)', cursor: 'pointer' }}>
+              👩‍🤝‍👩 Female-only co-passengers
+            </label>
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
           <button className="btn-outline" onClick={onClose} style={{ flex: 1 }}>Cancel</button>
@@ -179,6 +197,7 @@ function RideCardSkeleton() {
 // ── Main Component ─────────────────────────────────────────────────────────
 export default function SearchRide() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [landmarks, setLandmarks]           = useState([]);
   const [filters, setFilters]               = useState({ source: '', destination: '', femaleOnly: false });
   const [sourceCoords, setSourceCoords]     = useState(null);
@@ -523,6 +542,22 @@ export default function SearchRide() {
               )}
             </div>
 
+            {user?.gender === 'female' && (
+              <div style={{ flex: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '0 12px' }}>
+                <input 
+                  type="checkbox" 
+                  name="femaleOnly"
+                  id="femaleOnlySearch"
+                  checked={filters.femaleOnly} 
+                  onChange={handleChange}
+                  style={{ width: 18, height: 18, accentColor: 'var(--coral)' }}
+                />
+                <label htmlFor="femaleOnlySearch" style={{ fontSize: 13, fontWeight: 700, color: 'var(--charcoal)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  👩‍🤝‍👩 Female-only
+                </label>
+              </div>
+            )}
+
             <button onClick={() => handleSearch()} disabled={loading} className="search-btn-primary btn-premium">
               {loading ? '...' : 'Search'}
             </button>
@@ -618,10 +653,13 @@ export default function SearchRide() {
                               </div>
                            </div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
+                         <div style={{ textAlign: 'right' }}>
                            <p style={{ fontSize: 10, fontWeight: 900, color: 'var(--muted)', marginBottom: 4, letterSpacing: '0.05em' }}>FARE / SEAT</p>
                            <p style={{ fontSize: 22, fontWeight: 900, color: '#007AFF' }}>₹{Math.round(pool.farePerSeat || 0)}</p>
-                        </div>
+                           {pool.femaleOnly && (
+                             <span style={{ fontSize: 9, fontWeight: 900, color: '#DB2777', background: '#FCE7F3', padding: '2px 6px', borderRadius: 6, display: 'block', marginTop: 4 }}>👩‍🤝‍👩 FEMALE-ONLY</span>
+                           )}
+                         </div>
                      </div>
                      
                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 28, position: 'relative' }}>

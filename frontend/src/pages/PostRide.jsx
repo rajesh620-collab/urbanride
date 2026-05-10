@@ -409,7 +409,8 @@ export default function PostRide() {
   const [chartRange, setChartRange] = useState('weekly'); // 'daily' | 'weekly' | 'monthly'
 
   // Manual Form State
-  const [form, setForm] = useState({ totalSeats: 4, baseTotalRideFare: 0 });
+  const [form, setForm] = useState({ totalSeats: 4, baseTotalRideFare: 0, femaleOnly: false });
+  const { user } = useAuth();
   const [sourceCoords, setSourceCoords] = useState(null);
   const [destCoords, setDestCoords]     = useState(null);
   const [error, setError]               = useState('');
@@ -541,7 +542,8 @@ export default function PostRide() {
         sourceCoords: { lat: sourceCoords.lat, lng: sourceCoords.lng, address: sourceCoords.address }, 
         destCoords: { lat: destCoords.lat, lng: destCoords.lng, address: destCoords.address },
         distanceKm: 5, durationMin: 15,
-        departureTime: schedule.toISOString()
+        departureTime: schedule.toISOString(),
+        femaleOnly: form.femaleOnly
       });
       setSuccess('Pool created! Redirecting to waiting room...');
       setTimeout(() => navigate(`/waiting/${r.data.data._id}`), 1200);
