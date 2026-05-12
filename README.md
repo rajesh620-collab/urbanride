@@ -557,15 +557,3 @@ If you like this project:
 📢 Share the project
 
 ---
-
-# 📬 Contact
-
-For queries and collaboration:
-
-📧 Add your email here
-
-🔗 LinkedIn: Add LinkedIn profile
-
-🌐 Portfolio: Add portfolio link
-
----
